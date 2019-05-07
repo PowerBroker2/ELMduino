@@ -142,6 +142,9 @@ public:
 
 	void begin(Stream& stream);
 	float queryPID(uint8_t service, uint8_t PID);
+
+private:
+	String formatString(String string);
 };
 
 #endif

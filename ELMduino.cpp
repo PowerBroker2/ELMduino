@@ -23,15 +23,44 @@ void ELM327::begin(Stream &stream)
 
 
 
+String ELM327::formatString(String string)
+{
+	String result = string;
+
+	if (result.length() < 2)
+	{
+		result = "0" + result;
+	}
+
+	for (uint8_t i; i < result.length(); i++)
+	{
+		if (islower(result[i]))
+		{
+			result[i]; //this line is actually needed for some odd reason
+			result[i] = toupper(result[i]);
+		}
+	}
+
+	return result;
+}
+
+
+
+
 float ELM327::queryPID(uint8_t service, uint8_t PID)
 {
+	String query;
 	float value;
 
 	hexService = String(service, HEX);
-	hexPid = String(PID, HEX);
+	hexService = formatString(hexService);
 
-	Serial.print(hexService);
-	Serial.println(hexPid);
+	hexPid = String(PID, HEX);
+	hexPid = formatString(hexPid);
+
+	query = hexService + hexPid;
+
+	_serial->println(query);
 
 	return value;
 }
