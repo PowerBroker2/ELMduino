@@ -79,6 +79,37 @@ bool ELM327::findPayload(uint8_t payloadSize)
 
 
 
+uint32_t ELM327::findData(uint8_t payloadSize)
+{
+	uint8_t numShifts = 0;
+	uint8_t shifter = 1;
+	uint32_t data = 0;
+
+	for (uint8_t i = 0; i < payloadSize; i++)
+	{
+		for (uint8_t k; k < numShifts; k++)
+			shifter = shifter * 16;
+
+		if ((payload[i] >= '0') && (payload[i] <= '9'))
+		{
+			data = data + ((payload[i] - '0') * shifter);
+			numShifts++;
+		}
+		else if ((payload[i] >= 'A') && (payload[i] <= 'F'))
+		{
+			data = data + ((payload[i] - 55) * shifter);
+			numShifts++;
+		}
+
+		shifter = 1;
+	}
+
+	return data;
+}
+
+
+
+
 bool ELM327::timeout()
 {
 	currentTime = millis();
@@ -145,10 +176,13 @@ bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &
 	// find the first 6 chars expected in the OBD scanner's response
 	responseHeader[0] = '4';
 	responseHeader[1] = hexService[1];
-	responseHeader[2] = " "; 
+	responseHeader[2] = ' '; 
 	responseHeader[3] = hexPid[0];
 	responseHeader[4] = hexPid[1];
-	responseHeader[5] = " ";
+	responseHeader[5] = ' ';
+
+	Serial.write(responseHeader, 6);
+	Serial.println();
 
 	// find if the header was found in the serial input buffer before time runs out
 	if (!findHeader(responseHeader, HEADER_LEN))
@@ -158,6 +192,8 @@ bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &
 	// and read-in all the payload chars
 	if (!findPayload(payloadSize))
 		return false;
+
+	value = findData(payloadSize);
 
 	return true;
 }

@@ -171,6 +171,7 @@ private:
 	void formatString(uint8_t string[], uint8_t buflen);
 	bool findHeader(uint8_t responseHeader[], uint8_t headerlen);
 	bool findPayload(uint8_t payloadSize);
+	uint32_t findData(uint8_t payloadSize);
 	bool timeout();
 };
 
