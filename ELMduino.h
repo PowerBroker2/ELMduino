@@ -152,7 +152,8 @@ public:
 
 
 
-	void begin(Stream& stream);
+	bool begin(Stream& stream);
+	bool initializeELM(char protocol);
 	bool queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &value);
 	
 
@@ -173,6 +174,7 @@ private:
 	bool findPayload(uint8_t payloadSize);
 	uint32_t findData(uint8_t payloadSize);
 	bool timeout();
+	uint8_t ctoi(uint8_t value);
 };
 
 #endif

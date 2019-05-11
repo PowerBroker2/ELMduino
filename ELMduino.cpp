@@ -3,23 +3,62 @@
 
 
 
-void ELM327::begin(Stream &stream)
+bool ELM327::begin(Stream &stream)
 {
 	_serial = &stream;
 
-	//wait to connect to Bluetooth
+	// wait to connect to Bluetooth
 	while (!_serial);
 
-	//initialize scanner
-	_serial->println("AT SP 0");
-
-	//flush the input buffer
-	while (_serial->available())
-		_serial->read();
+	// try to connect twice
+	if (!initializeELM('0'))
+		if (!initializeELM('0'))
+			return false;
 
 	temp.reserve(25);
   
-	return;
+	return true;
+}
+
+
+
+
+/*
+* Protocol - Description
+* 0        - Automatic
+* 1        - SAE J1850 PWM (41.6 kbaud)
+* 2        - SAE J1850 PWM (10.4 kbaud)
+* 4        - ISO 9141-2 (5 baud init)
+* 5        - ISO 14230-4 KWP (5 baud init)
+* 6        - ISO 14230-4 KWP (fast init)
+* 7        - ISO 15765-4 CAN (11 bit ID, 500 kbaud)
+* 8        - ISO 15765-4 CAN (29 bit ID, 500 kbaud)
+* 9        - ISO 15765-4 CAN (11 bit ID, 250 kbaud)
+* A        - ISO 15765-4 CAN (29 bit ID, 250 kbaud)
+* B        - User1 CAN (11* bit ID, 125* kbaud)
+* C        - User2 CAN (11* bit ID, 50* kbaud)
+* 
+* --> *user adjustable
+*/
+bool ELM327::initializeELM(char protocol)
+{
+	// initialize scanner
+	_serial->println("AT SP " + protocol);
+
+	// find response "OK" from the scanner
+	while (_serial->read() != 'O')
+	{
+		if (timeout())
+			return false;
+	}
+
+	while (_serial->read() != 'K')
+	{
+		if (timeout())
+			return false;
+	}
+
+	return true;
 }
 
 
@@ -60,6 +99,12 @@ bool ELM327::findHeader(uint8_t responseHeader[], uint8_t headerlen)
 
 bool ELM327::findPayload(uint8_t payloadSize)
 {
+	uint8_t c;
+
+	// zero out the entire payload buffer array
+	for (uint8_t i = 0; i < MAX_PAYLOAD_LEN; i++)
+		payload[i] = 0;
+
 	// find if the payload was found in the serial input buffer before time runs out
 	while (_serial->available() <= payloadSize)
 	{
@@ -67,10 +112,14 @@ bool ELM327::findPayload(uint8_t payloadSize)
 			return false;
 	}
 
-	// read-in all the payload chars
+	// read-in all the payload chars - don't include space chars
 	for (uint8_t i = 0; i < payloadSize; i++)
 	{
-		payload[i] = _serial->read();
+		c = _serial->read();
+
+		// don't include spaces in the payload
+		if(c != " ")
+			payload[i] = _serial->read();
 	}
 
 	return true;
@@ -87,20 +136,12 @@ uint32_t ELM327::findData(uint8_t payloadSize)
 
 	for (uint8_t i = 0; i < payloadSize; i++)
 	{
-		for (uint8_t k; k < numShifts; k++)
+		for (uint8_t k = 0; k < numShifts; k++)
 			shifter = shifter * 16;
 
-		if ((payload[i] >= '0') && (payload[i] <= '9'))
-		{
-			data = data + ((payload[i] - '0') * shifter);
-			numShifts++;
-		}
-		else if ((payload[i] >= 'A') && (payload[i] <= 'F'))
-		{
-			data = data + ((payload[i] - 55) * shifter);
-			numShifts++;
-		}
+		data = data + (ctoi(payload[i]) * shifter);
 
+		numShifts++;
 		shifter = 1;
 	}
 
@@ -117,6 +158,17 @@ bool ELM327::timeout()
 		return true;
 
 	return false;
+}
+
+
+
+
+uint8_t ELM327::ctoi(uint8_t value)
+{
+	if (value >= 'A')
+		return value - 'A' + 10;
+	else
+		return value - '0';
 }
 
 
@@ -180,9 +232,6 @@ bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &
 	responseHeader[3] = hexPid[0];
 	responseHeader[4] = hexPid[1];
 	responseHeader[5] = ' ';
-
-	Serial.write(responseHeader, 6);
-	Serial.println();
 
 	// find if the header was found in the serial input buffer before time runs out
 	if (!findHeader(responseHeader, HEADER_LEN))
