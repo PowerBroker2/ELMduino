@@ -45,8 +45,7 @@ bool ELM327::begin(Stream &stream)
 */
 bool ELM327::initializeELM()
 {
-	while (_serial->available())
-		_serial->read();
+	flushInputBuff();
 
 	// initialize scanner
 	_serial->println("AT SP 0");
@@ -123,6 +122,8 @@ bool ELM327::findPayload(uint8_t payloadSize)
 			payload[i] = _serial->read();
 	}
 
+	flushInputBuff();
+
 	return true;
 }
 
@@ -175,6 +176,17 @@ uint8_t ELM327::ctoi(uint8_t value)
 
 
 
+void ELM327::flushInputBuff()
+{
+	while (_serial->available())
+		_serial->read();
+
+	return;
+}
+
+
+
+
 bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &value)
 {
 	// find strings containing Service# in hex (with leading zeros)
@@ -219,20 +231,20 @@ bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &
 	query[4] = '\n';
 	query[5] = '\r';
 
+	// find the first 6 chars expected in the OBD scanner's response
+	responseHeader[0] = '4';
+	responseHeader[1] = hexService[1];
+	responseHeader[2] = ' ';
+	responseHeader[3] = hexPid[0];
+	responseHeader[4] = hexPid[1];
+	responseHeader[5] = ' ';
+
 	// make the query
 	_serial->write(query, 6);
 
 	// start timing the response
 	previousTime = millis();
 	currentTime = previousTime;
-
-	// find the first 6 chars expected in the OBD scanner's response
-	responseHeader[0] = '4';
-	responseHeader[1] = hexService[1];
-	responseHeader[2] = ' '; 
-	responseHeader[3] = hexPid[0];
-	responseHeader[4] = hexPid[1];
-	responseHeader[5] = ' ';
 
 	// find if the header was found in the serial input buffer before time runs out
 	if (!findHeader(responseHeader, HEADER_LEN))
@@ -246,4 +258,20 @@ bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &
 	value = findData(payloadSize);
 
 	return true;
+}
+
+
+
+
+bool ELM327::querySpeed(float value)
+{
+	return queryPID(SERVICE_01, VEHICLE_SPEED, 2, value);
+}
+
+
+
+
+bool ELM327::queryRPM(float value)
+{
+	return queryPID(SERVICE_01, ENGINE_RPM, 5, value);
 }
