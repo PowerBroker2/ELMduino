@@ -2,7 +2,7 @@
 
 ELM327 myELM327;
 
-float value;
+float speed;
 uint64_t currentTime = millis();
 uint64_t previousTime = currentTime;
 uint16_t samplePeriod = 200;
@@ -17,10 +17,12 @@ void setup()
   if(!myELM327.begin(Serial1))
     Serial.println("Couldn't connect to ELM327");
 
-  if(!myELM327.queryPID(SERVICE_01, VEHICLE_SPEED, 2, value))
-    Serial.println("\tTimeout");
+  if(!myELM327.querySpeed(speed))
+  {
+    //Serial.println("\tTimeout");
+  }
   else
-    Serial.println(value);
+    Serial.println(speed);
 }
 
 void loop()
@@ -28,9 +30,11 @@ void loop()
   currentTime = millis();
   if((currentTime - previousTime) >= samplePeriod)
   {
-    if(!myELM327.queryPID(SERVICE_01, VEHICLE_SPEED, 2, value))
-      Serial.println("\tTimeout");
+    if(!myELM327.querySpeed(speed))
+    {
+      //Serial.println("\tTimeout");
+    }
     else
-      Serial.println(value);
+      Serial.println(speed);
   }
 }
