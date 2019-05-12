@@ -144,7 +144,7 @@ public:
 	String temp;
 
     // timeout in ms
-	uint16_t timeout_ms = 2000;
+	uint16_t timeout_ms = 100;
 
 	uint32_t currentTime;
 	uint32_t previousTime;

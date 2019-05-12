@@ -136,7 +136,7 @@ uint32_t ELM327::findData(uint8_t payloadSize)
 	uint8_t shifter = 1;
 	uint32_t data = 0;
 
-	for (uint8_t i = 0; i < payloadSize; i++)
+	for (int8_t i = (payloadSize - 1); i >= 0; i--)
 	{
 		for (uint8_t k = 0; k < numShifts; k++)
 			shifter = shifter * 16;
