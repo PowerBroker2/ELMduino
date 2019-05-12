@@ -10,9 +10,11 @@ uint16_t samplePeriod = 200;
 void setup()
 {
   Serial.begin(115200);
-  while(!Serial);
+  Serial1.begin(115200);
   
-  if(!myELM327.begin(Serial))
+  delay(2000);
+  
+  if(!myELM327.begin(Serial1))
     Serial.println("Couldn't connect to ELM327");
 
   if(!myELM327.queryPID(SERVICE_01, VEHICLE_SPEED, 2, value))
