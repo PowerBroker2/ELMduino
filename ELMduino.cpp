@@ -11,9 +11,12 @@ bool ELM327::begin(Stream &stream)
 	while (!_serial);
 
 	// try to connect twice
-	if (!initializeELM('0'))
-		if (!initializeELM('0'))
+	if (!initializeELM())
+	{
+		delay(1000);
+		if (!initializeELM())
 			return false;
+	}
 
 	temp.reserve(25);
   
@@ -40,23 +43,25 @@ bool ELM327::begin(Stream &stream)
 * 
 * --> *user adjustable
 */
-bool ELM327::initializeELM(char protocol)
+bool ELM327::initializeELM()
 {
-	// initialize scanner
-	_serial->println("AT SP " + protocol);
+	while (_serial->available())
+		_serial->read();
 
-	// find response "OK" from the scanner
+	// initialize scanner
+	_serial->println("AT SP 0");
+
+	// start timing the response
+	previousTime = millis();
+	currentTime = previousTime;
+
 	while (_serial->read() != 'O')
-	{
 		if (timeout())
 			return false;
-	}
 
 	while (_serial->read() != 'K')
-	{
 		if (timeout())
 			return false;
-	}
 
 	return true;
 }
@@ -85,10 +90,8 @@ bool ELM327::findHeader(uint8_t responseHeader[], uint8_t headerlen)
 	for (uint8_t i = 0; i < headerlen; i++)
 	{
 		while (_serial->read() != responseHeader[i])
-		{
 			if (timeout())
 				return false;
-		}
 	}
 
 	return true;
@@ -107,10 +110,8 @@ bool ELM327::findPayload(uint8_t payloadSize)
 
 	// find if the payload was found in the serial input buffer before time runs out
 	while (_serial->available() <= payloadSize)
-	{
 		if (timeout())
 			return false;
-	}
 
 	// read-in all the payload chars - don't include space chars
 	for (uint8_t i = 0; i < payloadSize; i++)

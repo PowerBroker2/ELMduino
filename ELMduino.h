@@ -144,7 +144,7 @@ public:
 	String temp;
 
     // timeout in ms
-	uint16_t timeout_ms = 200;
+	uint16_t timeout_ms = 2000;
 
 	uint32_t currentTime;
 	uint32_t previousTime;
@@ -153,7 +153,7 @@ public:
 
 
 	bool begin(Stream& stream);
-	bool initializeELM(char protocol);
+	bool initializeELM();
 	bool queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &value);
 	
 
