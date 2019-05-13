@@ -155,8 +155,8 @@ public:
 	bool begin(Stream& stream);
 	bool initializeELM();
 	bool queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &value);
-	bool querySpeed(float value);
-	bool queryRPM(float value);
+	bool querySpeed(float &value);
+	bool queryRPM(float &value);
 	
 
 

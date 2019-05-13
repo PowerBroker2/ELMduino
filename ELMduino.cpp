@@ -102,6 +102,7 @@ bool ELM327::findHeader(uint8_t responseHeader[], uint8_t headerlen)
 bool ELM327::findPayload(uint8_t payloadSize)
 {
 	uint8_t c;
+	uint8_t k = 0;
 
 	// zero out the entire payload buffer array
 	for (uint8_t i = 0; i < MAX_PAYLOAD_LEN; i++)
@@ -118,9 +119,14 @@ bool ELM327::findPayload(uint8_t payloadSize)
 		c = _serial->read();
 
 		// don't include spaces in the payload
-		if(c != " ")
-			payload[i] = _serial->read();
+		if (c != ' ')
+		{
+			Serial.write(c);
+			payload[k] = c;
+			k++;
+		}	
 	}
+	Serial.println();
 
 	flushInputBuff();
 
@@ -132,11 +138,13 @@ bool ELM327::findPayload(uint8_t payloadSize)
 
 uint32_t ELM327::findData(uint8_t payloadSize)
 {
-	uint8_t numShifts = 0;
-	uint8_t shifter = 1;
+	uint32_t numShifts = 0;
+	uint32_t shifter = 1;
 	uint32_t data = 0;
 
-	for (int8_t i = (payloadSize - 1); i >= 0; i--)
+	// i = payloadSize - 1 - (# of space chars originally spat out by OBD scanner
+	//                        within the payload field)
+	for (int8_t i = (payloadSize - 1 - ((payloadSize / 2)) - 1); i >= 0; i--)
 	{
 		for (uint8_t k = 0; k < numShifts; k++)
 			shifter = shifter * 16;
@@ -263,7 +271,7 @@ bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &
 
 
 
-bool ELM327::querySpeed(float value)
+bool ELM327::querySpeed(float &value)
 {
 	return queryPID(SERVICE_01, VEHICLE_SPEED, 2, value);
 }
@@ -271,7 +279,7 @@ bool ELM327::querySpeed(float value)
 
 
 
-bool ELM327::queryRPM(float value)
+bool ELM327::queryRPM(float &value)
 {
 	return queryPID(SERVICE_01, ENGINE_RPM, 5, value);
 }
