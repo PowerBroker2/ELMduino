@@ -1,11 +1,24 @@
 #include <ELMduino.h>
 
+
+
+
 ELM327 myELM327;
 
+enum fsm{
+  get_speed, 
+  get_rpm};
+fsm state = get_rpm;
+
 float rpm;
+float speed_kmph;
+float speed_mph;
 uint64_t currentTime = millis();
 uint64_t previousTime = currentTime;
 uint16_t samplePeriod = 80;
+
+
+
 
 void setup()
 {
@@ -13,17 +26,10 @@ void setup()
   Serial3.begin(115200);
   
   delay(2000);
-  
-  if(!myELM327.begin(Serial3))
-    Serial.println("Couldn't connect to ELM327");
-
-  if(!myELM327.queryRPM(rpm))
-  {
-    Serial.println("\tTimeout");
-  }
-  else
-    Serial.print("RPM: "); Serial.println(rpm);
 }
+
+
+
 
 void loop()
 {
@@ -31,12 +37,41 @@ void loop()
   if((currentTime - previousTime) >= samplePeriod)
   {
     previousTime = currentTime;
-    
-    if(!myELM327.queryRPM(rpm))
+
+    switch(state)
     {
-      Serial.println("\tTimeout");
+      case get_rpm:
+        if(myELM327.queryRPM(rpm))
+        {
+          Serial.print("RPM: "); Serial.println(rpm);
+          updateLEDs();
+        }
+        else
+          Serial.println("\tTimeout");
+        state = get_speed;
+        break;
+        
+      case get_speed:
+        if(!myELM327.querySpeed(speed_kmph))
+        {
+          speed_mph = speed_kmph * 0.621371;
+          Serial.print("Speed (mph): "); Serial.println(speed_mph);
+          updateLEDs();
+        }
+        else
+          Serial.println("\tTimeout");
+        state = get_rpm;
+        break;
     }
-    else
-      Serial.print("RPM: "); Serial.println(rpm);
   }
+}
+
+
+
+
+void updateLEDs()
+{
+  
+  
+  return;
 }
