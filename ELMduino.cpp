@@ -121,12 +121,10 @@ bool ELM327::findPayload(uint8_t payloadSize)
 		// don't include spaces in the payload
 		if (c != ' ')
 		{
-			Serial.write(c);
 			payload[k] = c;
 			k++;
 		}	
 	}
-	Serial.println();
 
 	flushInputBuff();
 
@@ -141,10 +139,12 @@ uint32_t ELM327::findData(uint8_t payloadSize)
 	uint32_t numShifts = 0;
 	uint32_t shifter = 1;
 	uint32_t data = 0;
+	uint8_t numSpaces;
 
 	// i = payloadSize - 1 - (# of space chars originally spat out by OBD scanner
 	//                        within the payload field)
-	for (int8_t i = (payloadSize - 1 - ((payloadSize / 2)) - 1); i >= 0; i--)
+	numSpaces = ((payloadSize / 2)) - 1;
+	for (int8_t i = (payloadSize - 1 - numSpaces); i >= 0; i--)
 	{
 		for (uint8_t k = 0; k < numShifts; k++)
 			shifter = shifter * 16;
@@ -246,6 +246,9 @@ bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &
 	responseHeader[3] = hexPid[0];
 	responseHeader[4] = hexPid[1];
 	responseHeader[5] = ' ';
+
+	// flush the input buffer
+	flushInputBuff();
 
 	// make the query
 	_serial->write(query, 6);
