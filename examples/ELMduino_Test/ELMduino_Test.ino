@@ -38,7 +38,7 @@ void loop()
   currentTime = millis();
   if((currentTime - previousTime) >= samplePeriod)
   {
-    previousTime = currentTime;
+    previousTime += samplePeriod;
 
     switch(state)
     {
