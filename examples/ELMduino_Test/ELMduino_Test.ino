@@ -55,7 +55,7 @@ void loop()
       case get_speed:
         if(myELM327.querySpeed(speed_kmph))
         {
-          speed_mph = speed_kmph * 0.621371;
+          speed_mph = speed_kmph * 0.6213711922;
           updateLEDs();
         }
         else
