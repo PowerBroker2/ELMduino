@@ -141,12 +141,8 @@ void ELM327::formatHeaderArray()
 void ELM327::formatString(uint8_t string[], uint8_t buflen)
 {
 	for (uint8_t i = 0; i < buflen; i++)
-	{
 		if (string[i] > 'Z')
-		{
 			string[i] = string[i] - 32;
-		}
-	}
 
 	return;
 }
@@ -157,11 +153,9 @@ void ELM327::formatString(uint8_t string[], uint8_t buflen)
 bool ELM327::findHeader(uint8_t responseHeader[], uint8_t headerlen)
 {
 	for (uint8_t i = 0; i < headerlen; i++)
-	{
 		while (_serial->read() != responseHeader[i])
 			if (timeout())
 				return false;
-	}
 
 	return true;
 }
