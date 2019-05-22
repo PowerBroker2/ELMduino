@@ -13,6 +13,7 @@ const uint8_t BAR_START_PIN = 2;
 
 
 
+
 ELM327 myELM327;
 
 enum fsm{
