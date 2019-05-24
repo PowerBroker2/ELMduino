@@ -56,12 +56,19 @@ bool ELM327::initializeELM()
 
 	while (_serial->read() != 'O')
 		if (timeout())
+		{
+			connected = false;
 			return false;
+		}
 
 	while (_serial->read() != 'K')
 		if (timeout())
+		{
+			connected = false;
 			return false;
+		}
 
+	connected = true;
 	return true;
 }
 
@@ -261,47 +268,52 @@ void ELM327::flushInputBuff()
 
 bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &value)
 {
-	// find strings containing Service# in hex (with leading zeros)
-	// each should only be 2 chars wide and all letters (A, B, C, D, E, F)
-	// must be capitalized
-	temp = String(service, HEX);
-	formatServiceArray();
+	if (connected)
+	{
+		// find strings containing Service# in hex (with leading zeros)
+		// each should only be 2 chars wide and all letters (A, B, C, D, E, F)
+		// must be capitalized
+		temp = String(service, HEX);
+		formatServiceArray();
 
-	// find strings containing PID in hex (with leading zeros)
-	// each should only be 2 chars wide and all letters (A, B, C, D, E, F)
-	// must be capitalized
-	temp = String(PID, HEX);
-	formatPidArray();
+		// find strings containing PID in hex (with leading zeros)
+		// each should only be 2 chars wide and all letters (A, B, C, D, E, F)
+		// must be capitalized
+		temp = String(PID, HEX);
+		formatPidArray();
 
-	// find the string needed to be passed to the OBD scanner to make the query
-	formatQueryArray();
+		// find the string needed to be passed to the OBD scanner to make the query
+		formatQueryArray();
 
-	// find the first 6 chars expected in the OBD scanner's response
-	formatHeaderArray();
+		// find the first 6 chars expected in the OBD scanner's response
+		formatHeaderArray();
 
-	// flush the input buffer
-	flushInputBuff();
+		// flush the input buffer
+		flushInputBuff();
 
-	// make the query
-	_serial->write(query, 6);
+		// make the query
+		_serial->write(query, 6);
 
-	// start timing the response
-	previousTime = millis();
-	currentTime = previousTime;
+		// start timing the response
+		previousTime = millis();
+		currentTime = previousTime;
 
-	// find if the header was found in the serial input buffer before time runs out
-	if (!findHeader(responseHeader, HEADER_LEN))
-		return false;
+		// find if the header was found in the serial input buffer before time runs out
+		if (!findHeader(responseHeader, HEADER_LEN))
+			return false;
 
-	// find if the payload was found in the serial input buffer before time runs out
-	// and read-in all the payload chars
-	if (!findPayload(payloadSize))
-		return false;
+		// find if the payload was found in the serial input buffer before time runs out
+		// and read-in all the payload chars
+		if (!findPayload(payloadSize))
+			return false;
 
-	// convert the payload from hex chars to an integer value
-	value = findData(payloadSize);
+		// convert the payload from hex chars to an integer value
+		value = findData(payloadSize);
 
-	return true;
+		return true;
+	}
+	
+	return false;
 }
 
 

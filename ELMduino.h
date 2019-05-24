@@ -148,6 +148,7 @@ public:
 
 	uint32_t currentTime;
 	uint32_t previousTime;
+	bool connected = false;
 
 
 
