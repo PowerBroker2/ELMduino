@@ -282,10 +282,10 @@ bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &
 		temp = String(PID, HEX);
 		formatPidArray();
 
-		// find the string needed to be passed to the OBD scanner to make the query
+		// determine the string needed to be passed to the OBD scanner to make the query
 		formatQueryArray();
 
-		// find the first 6 chars expected in the OBD scanner's response
+		// determine the first 6 chars expected in the OBD scanner's response
 		formatHeaderArray();
 
 		// flush the input buffer
