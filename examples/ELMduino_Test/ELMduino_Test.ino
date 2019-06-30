@@ -13,7 +13,6 @@ const uint8_t BAR_START_PIN = 2;
 
 
 
-
 ELM327 myELM327;
 
 enum fsm{
@@ -35,22 +34,22 @@ uint16_t normalDutyCycle;
 
 
 
-uint8_t speed_led_pin_array[2][7] = { //--------- ones place
-                                     {51,  // A
-                                      50,  // B
-                                      47,  // C
-                                      48,  // D
-                                      49,  // E
-                                      53,  // F
-                                      52}, // G
-                                      //--------- tens place
-                                     {44,  // A
-                                      43,  // B
-                                      40,  // C
-                                      41,  // D
-                                      42,  // E
-                                      45,  // F
-                                      46}  // G
+uint8_t speed_led_pin_array[2][7] = { //--------- one's place
+                                     {23,  // A
+                                      24,  // B
+                                      25,  // C
+                                      26,  // D
+                                      27,  // E
+                                      28,  // F
+                                      36}, // G
+                                      //--------- ten's place
+                                     {29,  // A
+                                      30,  // B
+                                      31,  // C
+                                      32,  // D
+                                      33,  // E
+                                      34,  // F
+                                      35}  // G
                                     };
 
 // 1 lit - 0 off
@@ -143,6 +142,16 @@ uint8_t seven_seg_pix_map[11][7] = { //--------- 0
                                      0,  // F
                                      0}, // G
                                    };
+uint8_t rpm_array[10] = {39,
+                         14,
+                         15,
+                         16,
+                         17,
+                         18,
+                         19,
+                         20,
+                         21,
+                         22};
 
 
 
@@ -151,6 +160,9 @@ void setup()
 {
   Serial.begin(115200);
   Serial3.begin(115200);
+
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
 
   // wait a bit for the ELM327 to come online
   delay(2000);
@@ -216,8 +228,10 @@ void setupLEDs()
       pinMode(speed_led_pin_array[segment][pin], OUTPUT);
 
   // blank out display
-  updateSevenSeg(0, 10);
-  updateSevenSeg(1, 10);
+  initSevenSeg(0);
+  initSevenSeg(1);
+
+  initRpmDisp();
   
   return;
 }
@@ -227,21 +241,50 @@ void setupLEDs()
 
 void updateLEDs()
 {
-  uint8_t tensPlace;
-  uint8_t onesPlace;
-  
   Serial.print(rpm); Serial.print(" "); Serial.println(speed_mph);
 
-  tensPlace = (uint8_t)speed_mph / 10;
+  updateSpeedDisp(speed_mph);
+  updateBar((uint16_t)rpm);
+  
+  return;
+}
+
+
+
+
+void updateSpeedDisp(float speed_mph)
+{
+  uint8_t tensPlace;
+  uint8_t onesPlace;
+  float adjSpeed_mph = speed_mph;
+
+  if(speed_mph > 99)
+    adjSpeed_mph = 99;
+  
+  tensPlace = (uint8_t)adjSpeed_mph / 10;
   if(tensPlace == 0)
     tensPlace = 10; // this will cause a blank to be sent to the display
     
-  onesPlace = (uint8_t)(speed_mph + 0.5) % 10; // add 0.5 and type-cast in order to propperly round float
-
+  onesPlace = (uint8_t)(adjSpeed_mph + 0.5) % 10; // add 0.5 and type-cast in order to propperly round float
+  
   updateSevenSeg(0, onesPlace);
   updateSevenSeg(1, tensPlace);
+}
 
-  updateBar((uint16_t)rpm);
+
+
+
+void initSevenSeg(uint8_t segNum)
+{
+  uint8_t value = 10;
+  
+  for(uint8_t i = 0; i < 7; i++)
+  {
+    if(seven_seg_pix_map[value][i])
+      digitalWrite(speed_led_pin_array[segNum][i], LOW);
+    else
+      digitalWrite(speed_led_pin_array[segNum][i], HIGH);
+  }
   
   return;
 }
@@ -265,12 +308,29 @@ void updateSevenSeg(uint8_t segNum, uint8_t value)
 
 
 
-void updateBar(uint16_t rpm)
+void initRpmDisp()
 {
-  // todo
-  
-  return;
+  for(uint8_t i = 0; i < 9; i++)
+  {
+    pinMode(rpm_array[i], OUTPUT);
+    digitalWrite(rpm_array[i], HIGH);
+  }
 }
 
 
 
+
+void updateBar(uint16_t rpm)
+{
+  uint16_t adjRPM = constrain(map(rpm, 700, 2000, 1, 10), 1, 10);
+  
+  for(uint8_t i = 0; i < 9; i++)
+  {
+    if(adjRPM >= i)
+      digitalWrite(rpm_array[i], LOW);
+    else
+      digitalWrite(rpm_array[i], HIGH);
+  }
+  
+  return;
+}
