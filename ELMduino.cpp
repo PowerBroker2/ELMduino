@@ -549,7 +549,7 @@ bool ELM327::queryPID(uint8_t service,
 
 
 /*
- bool ELM327::querySpeed(float &value)
+ bool ELM327::querySpeed_kph(float &value)
 
  Description:
  ------------
@@ -564,9 +564,37 @@ bool ELM327::queryPID(uint8_t service,
  -------
   * bool - Whether or not the data queried arrived before timing-out
 */
-bool ELM327::querySpeed(float &value)
+bool ELM327::querySpeed_kph(float &value)
 {
 	return queryPID(SERVICE_01, VEHICLE_SPEED, 2, value);
+}
+
+
+
+
+/*
+ bool ELM327::querySpeed_mph(float &value)
+
+ Description:
+ ------------
+  * Queries ELM327 for vehicle speed in mph
+
+ Inputs:
+ -------
+  * float  &value - Pointer to variable to be updated with telemetry
+  data returned by the ELM327
+
+ Return:
+ -------
+  * bool - Whether or not the data queried arrived before timing-out
+*/
+bool ELM327::querySpeed_mph(float &value)
+{
+	bool timeout = queryPID(SERVICE_01, VEHICLE_SPEED, 2, value);
+
+	value = value * KMPH_MPH_CONVERT;
+
+	return timeout;
 }
 
 
