@@ -9,7 +9,6 @@
 
 
 
-const float    KMPH_MPH_CONVERT     = 0.6213711922;
 const uint16_t MIN_RPM              = 800;
 const uint16_t MAX_RPM              = 5200;
 const uint8_t  SAMPLE_PERIOD        = 100;
@@ -203,11 +202,8 @@ void loop()
         break;
         
       case get_speed:
-        if(myELM327.querySpeed(speed_kmph))
-        {
-          speed_mph = speed_kmph * KMPH_MPH_CONVERT;
+        if(myELM327.querySpeed_mph(speed_kmph))
           updateLEDs();
-        }
         else
           DEBUG_PORT.println("\tTimeout");
         state = get_rpm;
@@ -320,6 +316,3 @@ void updateBar(uint16_t rpm)
       digitalWrite(rpm_array[i], HIGH);
   }
 }
-
-
-
