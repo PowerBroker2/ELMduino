@@ -29,7 +29,6 @@ fsm state = get_rpm;
 
 
 float    rpm;
-float    speed_kmph;
 float    speed_mph;
 uint64_t currentTime  = millis();
 uint64_t previousTime = currentTime;
@@ -202,7 +201,7 @@ void loop()
         break;
         
       case get_speed:
-        if(myELM327.querySpeed_mph(speed_kmph))
+        if(myELM327.querySpeed_mph(speed_mph))
           updateLEDs();
         else
           DEBUG_PORT.println("\tTimeout");
