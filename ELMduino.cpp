@@ -3,11 +3,27 @@
 
 
 
+/*
+ bool ELM327::begin(Stream &stream)
+
+ Description:
+ ------------
+  * Constructor for the ELM327 Class; initializes ELM327
+
+ Inputs:
+ -------
+  * Stream &stream - Pointer to Serial port connected
+  to ELM327
+
+ Return:
+ -------
+  * bool - Whether or not the ELM327 was propperly
+  initialized
+*/
 bool ELM327::begin(Stream &stream)
 {
 	_serial = &stream;
 
-	// wait to connect to Bluetooth
 	while (!_serial);
 
 	// try to connect twice
@@ -27,21 +43,38 @@ bool ELM327::begin(Stream &stream)
 
 
 /*
-* Protocol - Description
-* 0        - Automatic
-* 1        - SAE J1850 PWM (41.6 kbaud)
-* 2        - SAE J1850 PWM (10.4 kbaud)
-* 4        - ISO 9141-2 (5 baud init)
-* 5        - ISO 14230-4 KWP (5 baud init)
-* 6        - ISO 14230-4 KWP (fast init)
-* 7        - ISO 15765-4 CAN (11 bit ID, 500 kbaud)
-* 8        - ISO 15765-4 CAN (29 bit ID, 500 kbaud)
-* 9        - ISO 15765-4 CAN (11 bit ID, 250 kbaud)
-* A        - ISO 15765-4 CAN (29 bit ID, 250 kbaud)
-* B        - User1 CAN (11* bit ID, 125* kbaud)
-* C        - User2 CAN (11* bit ID, 50* kbaud)
-* 
-* --> *user adjustable
+ bool ELM327::initializeELM()
+
+ Description:
+ ------------
+  * Initializes ELM327
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * bool - Whether or not the ELM327 was propperly
+  initialized
+
+ Notes:
+ ------
+  * Protocol - Description
+  * 0        - Automatic
+  * 1        - SAE J1850 PWM (41.6 kbaud)
+  * 2        - SAE J1850 PWM (10.4 kbaud)
+  * 4        - ISO 9141-2 (5 baud init)
+  * 5        - ISO 14230-4 KWP (5 baud init)
+  * 6        - ISO 14230-4 KWP (fast init)
+  * 7        - ISO 15765-4 CAN (11 bit ID, 500 kbaud)
+  * 8        - ISO 15765-4 CAN (29 bit ID, 500 kbaud)
+  * 9        - ISO 15765-4 CAN (11 bit ID, 250 kbaud)
+  * A        - ISO 15765-4 CAN (29 bit ID, 250 kbaud)
+  * B        - User1 CAN (11* bit ID, 125* kbaud)
+  * C        - User2 CAN (11* bit ID, 50* kbaud)
+
+  * --> *user adjustable
 */
 bool ELM327::initializeELM()
 {
@@ -75,6 +108,22 @@ bool ELM327::initializeELM()
 
 
 
+/*
+ void ELM327::formatServiceArray()
+
+ Description:
+ ------------
+  * Converts the values of String temp to a char
+  array that holds the queried service number (in hex)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * void
+*/
 void ELM327::formatServiceArray()
 {
 	if (temp.length() == 1)
@@ -95,6 +144,22 @@ void ELM327::formatServiceArray()
 
 
 
+/*
+ void ELM327::formatPidArray()
+
+ Description:
+ ------------
+  * Converts the values of String temp to a char
+  array that holds the queried PID number (in hex)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * void
+*/
 void ELM327::formatPidArray()
 {
 	if (temp.length() == 1)
@@ -108,13 +173,26 @@ void ELM327::formatPidArray()
 		hexPid[1] = temp[1];
 	}
 	formatString(hexPid, PID_LEN);
-
-	return;
 }
 
 
 
 
+/*
+ void ELM327::formatQueryArray()
+
+ Description:
+ ------------
+  * Creates a query stack to be sent to ELM327
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * void
+*/
 void ELM327::formatQueryArray()
 {
 	query[0] = hexService[0];
@@ -123,13 +201,27 @@ void ELM327::formatQueryArray()
 	query[3] = hexPid[1];
 	query[4] = '\n';
 	query[5] = '\r';
-
-	return;
 }
 
 
 
 
+/*
+ void ELM327::formatHeaderArray()
+
+ Description:
+ ------------
+  * Creates a sample response header as expected from
+  the ELM327 based off of the PID queried 
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * void
+*/
 void ELM327::formatHeaderArray()
 {
 	responseHeader[0] = '4';
@@ -138,26 +230,60 @@ void ELM327::formatHeaderArray()
 	responseHeader[3] = hexPid[0];
 	responseHeader[4] = hexPid[1];
 	responseHeader[5] = ' ';
-
-	return;
 }
 
 
 
 
-void ELM327::formatString(uint8_t string[], uint8_t buflen)
+/*
+ void ELM327::formatString(uint8_t string[],
+                           uint8_t buflen)
+
+ Description:
+ ------------
+  * Converts all elements of char array string[] to
+  lowercase ascii
+
+ Inputs:
+ -------
+  * uint8_t string[] - Char array
+  * uint8_t buflen   - Length of char array
+
+ Return:
+ -------
+  * void
+*/
+void ELM327::formatString(uint8_t string[],
+                          uint8_t buflen)
 {
 	for (uint8_t i = 0; i < buflen; i++)
 		if (string[i] > 'Z')
 			string[i] = string[i] - 32;
-
-	return;
 }
 
 
 
 
-bool ELM327::findHeader(uint8_t responseHeader[], uint8_t headerlen)
+/*
+ bool ELM327::findHeader(uint8_t responseHeader[],
+                         uint8_t headerlen)
+
+ Description:
+ ------------
+  * Parses incoming serial data and finds the expected message header
+
+ Inputs:
+ -------
+  * uint8_t responseHeader[] - Array of expected header chars
+  * uint8_t headerlen        - Length of the expected response header (responseHeader[])
+
+ Return:
+ -------
+  * bool - Whether or not the header was found in the serial data before
+  timing-out
+*/
+bool ELM327::findHeader(uint8_t responseHeader[],
+                        uint8_t headerlen)
 {
 	for (uint8_t i = 0; i < headerlen; i++)
 		while (_serial->read() != responseHeader[i])
@@ -170,6 +296,23 @@ bool ELM327::findHeader(uint8_t responseHeader[], uint8_t headerlen)
 
 
 
+/*
+ bool ELM327::findPayload(uint8_t payloadSize)
+
+ Description:
+ ------------
+  * Parses incoming serial data, finds the message payload, and saves payload
+  data into a char array
+
+ Inputs:
+ -------
+  * uint8_t payloadSize - number of characters of telemetry data (including
+  whitespace) expected from the ELM327
+
+ Return:
+ -------
+  * bool - Whether or not the payload was found before timing-out
+*/
 bool ELM327::findPayload(uint8_t payloadSize)
 {
 	uint8_t c;
@@ -205,6 +348,23 @@ bool ELM327::findPayload(uint8_t payloadSize)
 
 
 
+/*
+ uint32_t ELM327::findData(uint8_t payloadSize)
+
+ Description:
+ ------------
+  * Processes received vehicle telemetry chars, converts payload into an int,
+  and then returns the int
+ 
+ Inputs:
+ -------
+  * uint8_t payloadSize - number of characters of telemetry data (including
+  whitespace) expected from the ELM327
+ 
+ Return:
+ -------
+  * uint32_t - telemetry data found from ELM327
+*/
 uint32_t ELM327::findData(uint8_t payloadSize)
 {
 	uint32_t numShifts = 0;
@@ -232,6 +392,21 @@ uint32_t ELM327::findData(uint8_t payloadSize)
 
 
 
+/*
+ bool ELM327::timeout()
+
+ Description:
+ ------------
+  * Determines if a time-out has occurred
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * bool - whether or not a time-out has occurred
+*/
 bool ELM327::timeout()
 {
 	currentTime = millis();
@@ -244,6 +419,21 @@ bool ELM327::timeout()
 
 
 
+/*
+ uint8_t ELM327::ctoi(uint8_t value)
+
+ Description:
+ ------------
+  * converts a char to an int
+
+ Inputs:
+ -------
+  * uint8_t value - char to be converted
+
+ Return:
+ -------
+  * uint8_t - int value of parameter "value"
+*/
 uint8_t ELM327::ctoi(uint8_t value)
 {
 	if (value >= 'A')
@@ -255,18 +445,57 @@ uint8_t ELM327::ctoi(uint8_t value)
 
 
 
+/*
+ void ELM327::flushInputBuff()
+
+ Description:
+ ------------
+  * Flushes input serial buffer
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * void
+*/
 void ELM327::flushInputBuff()
 {
 	while (_serial->available())
 		_serial->read();
-
-	return;
 }
 
 
 
 
-bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &value)
+/*
+ bool ELM327::queryPID(uint8_t service,
+                       uint8_t PID,
+                       uint8_t payloadSize,
+                       float  &value)
+
+ Description:
+ ------------
+  * Queries ELM327 for a specific type of vehicle telemetry data
+
+ Inputs:
+ -------
+  * uint8_t service     - Service number
+  * uint8_t PID         - PID number
+  * uint8_t payloadSize - number of characters of telemetry data (including
+  whitespace) expected from the ELM327
+  * float  &value       - Pointer to variable to be updated with telemetry
+  data returned by the ELM327
+
+ Return:
+ -------
+  * bool - Whether or not the data queried arrived before timing-out
+*/
+bool ELM327::queryPID(uint8_t service,
+                      uint8_t PID,
+                      uint8_t payloadSize,
+                      float  &value)
 {
 	if (connected)
 	{
@@ -319,6 +548,22 @@ bool ELM327::queryPID(uint8_t service, uint8_t PID, uint8_t payloadSize, float &
 
 
 
+/*
+ bool ELM327::querySpeed(float &value)
+
+ Description:
+ ------------
+  * Queries ELM327 for vehicle speed in kph
+
+ Inputs:
+ -------
+  * float  &value - Pointer to variable to be updated with telemetry
+  data returned by the ELM327
+
+ Return:
+ -------
+  * bool - Whether or not the data queried arrived before timing-out
+*/
 bool ELM327::querySpeed(float &value)
 {
 	return queryPID(SERVICE_01, VEHICLE_SPEED, 2, value);
@@ -327,7 +572,27 @@ bool ELM327::querySpeed(float &value)
 
 
 
+/*
+ bool ELM327::queryRPM(float &value)
+
+ Description:
+ ------------
+  * Queries ELM327 for vehicle RPM
+
+ Inputs:
+ -------
+  * float  &value - Pointer to variable to be updated with telemetry
+  data returned by the ELM327
+
+ Return:
+ -------
+  * bool - Whether or not the data queried arrived before timing-out
+*/
 bool ELM327::queryRPM(float &value)
 {
-	return queryPID(SERVICE_01, ENGINE_RPM, 5, value);
+	bool timeout = queryPID(SERVICE_01, ENGINE_RPM, 5, value);
+
+	value = value / 4.0; // necessary conversion factor based off OBD-II standard
+
+	return timeout;
 }
