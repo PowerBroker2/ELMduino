@@ -196,10 +196,7 @@ void loop()
     {
       case get_rpm:
         if(myELM327.queryRPM(rpm))
-        {
-          rpm = rpm / 4.0; // necessary conversion factor based off OBD-II standard
           updateLEDs();
-        }
         else
           DEBUG_PORT.println("\tTimeout");
         state = get_speed;
