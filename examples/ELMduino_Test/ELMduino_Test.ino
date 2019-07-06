@@ -16,6 +16,124 @@ const uint8_t  TENS_PLACE_START_PIN = 3;
 const uint8_t  ONES_PLACE_START_PIN = 4;
 const uint8_t  BAR_START_PIN        = 2;
 
+const uint8_t speed_led_pin_array[2][7] = { //--------- one's place
+                                           {23,  // A
+                                            24,  // B
+                                            25,  // C
+                                            26,  // D
+                                            27,  // E
+                                            28,  // F
+                                            36}, // G
+                                            //--------- ten's place
+                                           {29,  // A
+                                            30,  // B
+                                            31,  // C
+                                            32,  // D
+                                            33,  // E
+                                            34,  // F
+                                            35}  // G
+                                          };
+// 1 lit - 0 off
+const uint8_t seven_seg_pix_map[11][7] = { //--------- 0
+                                          {1,  // A
+                                           1,  // B
+                                           1,  // C
+                                           1,  // D
+                                           1,  // E
+                                           1,  // F
+                                           0}, // G
+                                           //--------- 1
+                                          {0,  // A
+                                           0,  // B
+                                           0,  // C
+                                           0,  // D
+                                           1,  // E
+                                           1,  // F
+                                           0}, // G
+                                           //--------- 2
+                                          {1,  // A
+                                           0,  // B
+                                           1,  // C
+                                           1,  // D
+                                           0,  // E
+                                           1,  // F
+                                           1}, // G
+                                           //--------- 3
+                                          {1,  // A
+                                           0,  // B
+                                           0,  // C
+                                           1,  // D
+                                           1,  // E
+                                           1,  // F
+                                           1}, // G
+                                           //--------- 4
+                                          {0,  // A
+                                           1,  // B
+                                           0,  // C
+                                           0,  // D
+                                           1,  // E
+                                           1,  // F
+                                           1}, // G
+                                           //--------- 5
+                                          {1,  // A
+                                           1,  // B
+                                           0,  // C
+                                           1,  // D
+                                           1,  // E
+                                           0,  // F
+                                           1}, // G
+                                           //--------- 6
+                                          {1,  // A
+                                           1,  // B
+                                           1,  // C
+                                           1,  // D
+                                           1,  // E
+                                           0,  // F
+                                           1}, // G
+                                           //--------- 7
+                                          {1,  // A
+                                           0,  // B
+                                           0,  // C
+                                           0,  // D
+                                           1,  // E
+                                           1,  // F
+                                           0}, // G
+                                           //--------- 8
+                                          {1,  // A
+                                           1,  // B
+                                           1,  // C
+                                           1,  // D
+                                           1,  // E
+                                           1,  // F
+                                           1}, // G
+                                           //--------- 9
+                                          {1,  // A
+                                           1,  // B
+                                           0,  // C
+                                           1,  // D
+                                           1,  // E
+                                           1,  // F
+                                           1}, // G
+                                           //--------- blank
+                                          {0,  // A
+                                           0,  // B
+                                           0,  // C
+                                           0,  // D
+                                           0,  // E
+                                           0,  // F
+                                           0}, // G
+                                         };
+const uint8_t rpm_array[10] = {39,  // 1 (LED #) - Fully left in HUD - Green
+                               14,  // 2
+                               15,  // 3
+                               16,  // 4
+                               17,  // 5
+                               18,  // 6
+                               19,  // 7
+                               20,  // 8
+                               21,  // 9
+                               22}; // 10 - Fully right in HUD - Red
+
 
 
 
@@ -36,127 +154,6 @@ uint64_t previousTime = currentTime;
 
 
 
-uint8_t speed_led_pin_array[2][7] = { //--------- one's place
-                                     {23,  // A
-                                      24,  // B
-                                      25,  // C
-                                      26,  // D
-                                      27,  // E
-                                      28,  // F
-                                      36}, // G
-                                      //--------- ten's place
-                                     {29,  // A
-                                      30,  // B
-                                      31,  // C
-                                      32,  // D
-                                      33,  // E
-                                      34,  // F
-                                      35}  // G
-                                    };
-// 1 lit - 0 off
-uint8_t seven_seg_pix_map[11][7] = { //--------- 0
-                                    {1,  // A
-                                     1,  // B
-                                     1,  // C
-                                     1,  // D
-                                     1,  // E
-                                     1,  // F
-                                     0}, // G
-                                     //--------- 1
-                                    {0,  // A
-                                     0,  // B
-                                     0,  // C
-                                     0,  // D
-                                     1,  // E
-                                     1,  // F
-                                     0}, // G
-                                     //--------- 2
-                                    {1,  // A
-                                     0,  // B
-                                     1,  // C
-                                     1,  // D
-                                     0,  // E
-                                     1,  // F
-                                     1}, // G
-                                     //--------- 3
-                                    {1,  // A
-                                     0,  // B
-                                     0,  // C
-                                     1,  // D
-                                     1,  // E
-                                     1,  // F
-                                     1}, // G
-                                     //--------- 4
-                                    {0,  // A
-                                     1,  // B
-                                     0,  // C
-                                     0,  // D
-                                     1,  // E
-                                     1,  // F
-                                     1}, // G
-                                     //--------- 5
-                                    {1,  // A
-                                     1,  // B
-                                     0,  // C
-                                     1,  // D
-                                     1,  // E
-                                     0,  // F
-                                     1}, // G
-                                     //--------- 6
-                                    {1,  // A
-                                     1,  // B
-                                     1,  // C
-                                     1,  // D
-                                     1,  // E
-                                     0,  // F
-                                     1}, // G
-                                     //--------- 7
-                                    {1,  // A
-                                     0,  // B
-                                     0,  // C
-                                     0,  // D
-                                     1,  // E
-                                     1,  // F
-                                     0}, // G
-                                     //--------- 8
-                                    {1,  // A
-                                     1,  // B
-                                     1,  // C
-                                     1,  // D
-                                     1,  // E
-                                     1,  // F
-                                     1}, // G
-                                     //--------- 9
-                                    {1,  // A
-                                     1,  // B
-                                     0,  // C
-                                     1,  // D
-                                     1,  // E
-                                     1,  // F
-                                     1}, // G
-                                     //--------- blank
-                                    {0,  // A
-                                     0,  // B
-                                     0,  // C
-                                     0,  // D
-                                     0,  // E
-                                     0,  // F
-                                     0}, // G
-                                   };
-uint8_t rpm_array[10] = {39,  // 1 (LED #) - Fully left in HUD - Green
-                         14,  // 2
-                         15,  // 3
-                         16,  // 4
-                         17,  // 5
-                         18,  // 6
-                         19,  // 7
-                         20,  // 8
-                         21,  // 9
-                         22}; // 10 - Fully right in HUD - Red
-
-
-
-
 void setup()
 {
   DEBUG_PORT.begin(115200);
@@ -165,11 +162,11 @@ void setup()
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
 
-  // wait a bit for the ELM327 to come online
-  delay(2000);
-
   // initialize all LEDs in display
   setupLEDs();
+
+  // wait a bit for the ELM327 to come online
+  delay(2000);
 
   // connect to ELM327
   while(!myELM327.begin(ELM_PORT))
@@ -231,7 +228,7 @@ void updateLEDs()
   DEBUG_PORT.print(rpm); DEBUG_PORT.print(" "); DEBUG_PORT.println(speed_mph);
 
   updateSpeedDisp(speed_mph);
-  updateBar((uint16_t)rpm);
+  updateRpmDisp((uint16_t)rpm);
 }
 
 
@@ -303,7 +300,7 @@ void initRpmDisp()
 
 
 
-void updateBar(uint16_t rpm)
+void updateRpmDisp(uint16_t rpm)
 {
   uint16_t adjRPM = constrain(map(rpm, MIN_RPM, MAX_RPM, 1, 10), 1, 10);
   
