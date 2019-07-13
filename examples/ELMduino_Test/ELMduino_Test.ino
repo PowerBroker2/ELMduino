@@ -238,16 +238,13 @@ void updateSpeedDisp(float speed_mph)
 {
   uint8_t tensPlace;
   uint8_t onesPlace;
-  uint8_t adjSpeed_mph = (uint8_t)(speed_mph + 0.5);
-
-  if(speed_mph > 99)
-    adjSpeed_mph = 99;
+  uint8_t adjSpeed_mph = (uint8_t)(speed_mph + 0.5); // add 0.5 and type-cast in order to propperly round float
   
   tensPlace = adjSpeed_mph / 10;
   if(tensPlace == 0)
     tensPlace = 10; // this will cause a blank to be sent to the display
     
-  onesPlace = adjSpeed_mph % 10; // add 0.5 and type-cast in order to propperly round float
+  onesPlace = adjSpeed_mph % 10;
   
   updateSevenSeg(0, onesPlace);
   updateSevenSeg(1, tensPlace);
