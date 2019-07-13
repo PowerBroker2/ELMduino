@@ -10,7 +10,7 @@
 
 
 const uint16_t MIN_RPM              = 700;
-const uint16_t MAX_RPM              = 2000;
+const uint16_t MAX_RPM              = 3500;
 const uint8_t  SAMPLE_PERIOD        = 100;
 const uint8_t  TENS_PLACE_START_PIN = 3;
 const uint8_t  ONES_PLACE_START_PIN = 4;
@@ -290,7 +290,7 @@ void updateSevenSeg(uint8_t segNum, uint8_t value)
 
 void initRpmDisp()
 {
-  for(uint8_t i = 0; i < 9; i++)
+  for(uint8_t i = 0; i < 10; i++)
   {
     pinMode(rpm_array[i], OUTPUT);
     digitalWrite(rpm_array[i], HIGH);
@@ -302,9 +302,9 @@ void initRpmDisp()
 
 void updateRpmDisp(uint16_t rpm)
 {
-  uint16_t adjRPM = constrain(map(rpm, MIN_RPM, MAX_RPM, 1, 10), 1, 10);
+  uint16_t adjRPM = constrain(map(rpm, MIN_RPM, MAX_RPM, 0, 9), 0, 9);
   
-  for(uint8_t i = 0; i < 9; i++)
+  for(uint8_t i = 0; i < 10; i++)
   {
     if(adjRPM >= i)
       digitalWrite(rpm_array[i], LOW);
