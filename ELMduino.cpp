@@ -406,7 +406,7 @@ bool ELM327::available()
 		}
 		else if (!headerFound)
 		{
-			if (messageIndex == 4)
+			if (messageIndex == HEADER_LEN)
 			{
 				headerFound = true;
 				if (recChar != ' ')
