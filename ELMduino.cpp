@@ -26,6 +26,9 @@ bool ELM327::begin(Stream &stream)
 
 	while (!_serial);
 
+	// wait 3 sec for the ELM327 to initialize
+	delay(3000);
+
 	// try to connect twice
 	if (!initializeELM())
 	{
@@ -411,22 +414,129 @@ bool ELM327::available()
 				headerFound = true;
 				if (recChar != ' ')
 				{
-					buff[messageIndex] = recChar;
+					payload[messageIndex] = recChar;
 					messageIndex++;
 				}
 			}
 			else if (recChar == responseHeader[messageIndex])
 			{
-				buff[messageIndex] = recChar;
+				payload[messageIndex] = recChar;
 				messageIndex++;
 			}
 		}
-		else if ((messageIndex < ELM_BUFF_LEN) && (recChar != ' '))
+		else if ((messageIndex < PAYLOAD_LEN) && (recChar != ' '))
 		{
-			buff[messageIndex] = recChar;
+			payload[messageIndex] = recChar;
 			messageIndex++;
 		}
 	}
 
 	return false;
+}
+
+
+
+
+/*
+ float ELM327::rpm()
+
+ Description:
+ ------------
+  * Parses received message for/returns vehicle RMP data
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Vehicle RPM
+*/
+float ELM327::rpm()
+{
+	return (findData(4) * RPM_CONVERT);
+}
+
+
+
+
+/*
+ uint32_t ELM327::kph()
+
+ Description:
+ ------------
+  * Parses received message for/returns vehicle speed data (kph)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Vehicle RPM
+*/
+uint32_t ELM327::kph()
+{
+	return findData(2);
+}
+
+
+
+
+/*
+ float ELM327::mph()
+
+ Description:
+ ------------
+  * Parses received message for/returns vehicle speed data (mph)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Vehicle RPM
+*/
+float ELM327::mph()
+{
+	return (kph() * KPH_MPH_CONVERT);
+}
+
+
+
+
+/*
+ uint32_t ELM327::findData(uint8_t payloadSize)
+ Description:
+ ------------
+  * Processes received vehicle telemetry chars, converts payload into an int,
+  and then returns the int
+
+ Inputs:
+ -------
+  * uint8_t payloadSize - number of characters of telemetry data expected from the ELM327
+
+ Return:
+ -------
+  * uint32_t - telemetry data found from ELM327
+*/
+uint32_t ELM327::findData(uint8_t payloadSize)
+{
+	uint32_t numShifts = 0;
+	uint32_t shifter = 1;
+	uint32_t data = 0;
+
+	for (int8_t i = (HEADER_LEN + payloadSize - 1); i >= HEADER_LEN; i--)
+	{
+		for (uint8_t k = 0; k < numShifts; k++)
+			shifter = shifter * 16;
+
+		data = data + (ctoi(payload[i]) * shifter);
+
+		numShifts++;
+		shifter = 1;
+	}
+
+	return data;
 }
