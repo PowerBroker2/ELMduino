@@ -156,9 +156,9 @@ void ELM327::formatQueryArray(uint16_t service, uint16_t pid)
 void ELM327::formatHeaderArray()
 {
 	responseHeader[0] = '4';
-	responseHeader[1] = hexService[1];
-	responseHeader[2] = hexPid[0];
-	responseHeader[3] = hexPid[1];
+	responseHeader[1] = query[1];
+	responseHeader[2] = query[2];
+	responseHeader[3] = query[3];
 }
 
 
