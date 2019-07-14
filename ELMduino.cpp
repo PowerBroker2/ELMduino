@@ -26,6 +26,9 @@ bool ELM327::begin(Stream &stream)
 
 	while (!_serial);
 
+	// wait 3 sec for the ELM327 to initialize
+	delay(3000);
+
 	// try to connect twice
 	if (!initializeELM())
 	{
@@ -33,8 +36,6 @@ bool ELM327::begin(Stream &stream)
 		if (!initializeELM())
 			return false;
 	}
-
-	temp.reserve(25);
   
 	return true;
 }
@@ -109,77 +110,7 @@ bool ELM327::initializeELM()
 
 
 /*
- void ELM327::formatServiceArray()
-
- Description:
- ------------
-  * Converts the values of String temp to a char
-  array that holds the queried service number (in hex)
-
- Inputs:
- -------
-  * void
-
- Return:
- -------
-  * void
-*/
-void ELM327::formatServiceArray()
-{
-	if (temp.length() == 1)
-	{
-		hexService[0] = '0';
-		hexService[1] = temp[0];
-	}
-	else if (temp.length() == 2)
-	{
-		hexService[0] = temp[0];
-		hexService[1] = temp[1];
-	}
-	formatString(hexService, SERVICE_LEN);
-
-	return;
-}
-
-
-
-
-/*
- void ELM327::formatPidArray()
-
- Description:
- ------------
-  * Converts the values of String temp to a char
-  array that holds the queried PID number (in hex)
-
- Inputs:
- -------
-  * void
-
- Return:
- -------
-  * void
-*/
-void ELM327::formatPidArray()
-{
-	if (temp.length() == 1)
-	{
-		hexPid[0] = '0';
-		hexPid[1] = temp[0];
-	}
-	else if (temp.length() == 2)
-	{
-		hexPid[0] = temp[0];
-		hexPid[1] = temp[1];
-	}
-	formatString(hexPid, PID_LEN);
-}
-
-
-
-
-/*
- void ELM327::formatQueryArray()
+ void ELM327::formatQueryArray(uint16_t service, uint16_t pid)
 
  Description:
  ------------
@@ -187,20 +118,23 @@ void ELM327::formatPidArray()
 
  Inputs:
  -------
-  * void
+  * uint16_t service - Service number of the queried PID
+  * uint16_t pid     - PID number of the queried PID
 
  Return:
  -------
   * void
 */
-void ELM327::formatQueryArray()
+void ELM327::formatQueryArray(uint16_t service, uint16_t pid)
 {
-	query[0] = hexService[0];
-	query[1] = hexService[1];
-	query[2] = hexPid[0];
-	query[3] = hexPid[1];
+	query[0] = ((service >> 8) & 0xFF) + '0';
+	query[1] = (service & 0xFF) + '0';
+	query[2] = ((pid >> 8) & 0xFF) + '0';
+	query[3] = (pid & 0xFF) + '0';
 	query[4] = '\n';
 	query[5] = '\r';
+
+	upper(query, 6);
 }
 
 
@@ -225,24 +159,22 @@ void ELM327::formatQueryArray()
 void ELM327::formatHeaderArray()
 {
 	responseHeader[0] = '4';
-	responseHeader[1] = hexService[1];
-	responseHeader[2] = ' ';
-	responseHeader[3] = hexPid[0];
-	responseHeader[4] = hexPid[1];
-	responseHeader[5] = ' ';
+	responseHeader[1] = query[1];
+	responseHeader[2] = query[2];
+	responseHeader[3] = query[3];
 }
 
 
 
 
 /*
- void ELM327::formatString(uint8_t string[],
-                           uint8_t buflen)
+ void ELM327::upper(uint8_t string[],
+                    uint8_t buflen)
 
  Description:
  ------------
   * Converts all elements of char array string[] to
-  lowercase ascii
+  uppercase ascii
 
  Inputs:
  -------
@@ -253,140 +185,16 @@ void ELM327::formatHeaderArray()
  -------
   * void
 */
-void ELM327::formatString(uint8_t string[],
-                          uint8_t buflen)
+void ELM327::upper(uint8_t string[],
+                   uint8_t buflen)
 {
 	for (uint8_t i = 0; i < buflen; i++)
+	{
 		if (string[i] > 'Z')
-			string[i] = string[i] - 32;
-}
-
-
-
-
-/*
- bool ELM327::findHeader(uint8_t responseHeader[],
-                         uint8_t headerlen)
-
- Description:
- ------------
-  * Parses incoming serial data and finds the expected message header
-
- Inputs:
- -------
-  * uint8_t responseHeader[] - Array of expected header chars
-  * uint8_t headerlen        - Length of the expected response header (responseHeader[])
-
- Return:
- -------
-  * bool - Whether or not the header was found in the serial data before
-  timing-out
-*/
-bool ELM327::findHeader(uint8_t responseHeader[],
-                        uint8_t headerlen)
-{
-	for (uint8_t i = 0; i < headerlen; i++)
-		while (_serial->read() != responseHeader[i])
-			if (timeout())
-				return false;
-
-	return true;
-}
-
-
-
-
-/*
- bool ELM327::findPayload(uint8_t payloadSize)
-
- Description:
- ------------
-  * Parses incoming serial data, finds the message payload, and saves payload
-  data into a char array
-
- Inputs:
- -------
-  * uint8_t payloadSize - number of characters of telemetry data (including
-  whitespace) expected from the ELM327
-
- Return:
- -------
-  * bool - Whether or not the payload was found before timing-out
-*/
-bool ELM327::findPayload(uint8_t payloadSize)
-{
-	uint8_t c;
-	uint8_t k = 0;
-
-	// zero out the entire payload buffer array
-	for (uint8_t i = 0; i < MAX_PAYLOAD_LEN; i++)
-		payload[i] = 0;
-
-	// find if the payload was found in the serial input buffer before time runs out
-	while (_serial->available() <= payloadSize)
-		if (timeout())
-			return false;
-
-	// read-in all the payload chars - don't include space chars
-	for (uint8_t i = 0; i < payloadSize; i++)
-	{
-		c = _serial->read();
-
-		// don't include spaces in the payload
-		if (c != ' ')
-		{
-			payload[k] = c;
-			k++;
-		}	
+			string[i] -= 32;
+		else if ((string[i] > '9') && (string[i] < 'A'))
+			string[i] += 7;
 	}
-
-	flushInputBuff();
-
-	return true;
-}
-
-
-
-
-/*
- uint32_t ELM327::findData(uint8_t payloadSize)
-
- Description:
- ------------
-  * Processes received vehicle telemetry chars, converts payload into an int,
-  and then returns the int
- 
- Inputs:
- -------
-  * uint8_t payloadSize - number of characters of telemetry data (including
-  whitespace) expected from the ELM327
- 
- Return:
- -------
-  * uint32_t - telemetry data found from ELM327
-*/
-uint32_t ELM327::findData(uint8_t payloadSize)
-{
-	uint32_t numShifts = 0;
-	uint32_t shifter = 1;
-	uint32_t data = 0;
-	uint8_t numSpaces;
-
-	// i = payloadSize - 1 - (# of space chars originally spat out by OBD scanner
-	//                        within the payload field)
-	numSpaces = ((payloadSize / 2)) - 1;
-	for (int8_t i = (payloadSize - 1 - numSpaces); i >= 0; i--)
-	{
-		for (uint8_t k = 0; k < numShifts; k++)
-			shifter = shifter * 16;
-
-		data = data + (ctoi(payload[i]) * shifter);
-
-		numShifts++;
-		shifter = 1;
-	}
-
-	return data;
 }
 
 
@@ -483,36 +291,18 @@ void ELM327::flushInputBuff()
  -------
   * uint8_t service     - Service number
   * uint8_t PID         - PID number
-  * uint8_t payloadSize - number of characters of telemetry data (including
-  whitespace) expected from the ELM327
-  * float  &value       - Pointer to variable to be updated with telemetry
-  data returned by the ELM327
 
  Return:
  -------
-  * bool - Whether or not the data queried arrived before timing-out
+  * bool - Whether or not the query was submitted successfully
 */
-bool ELM327::queryPID(uint8_t service,
-                      uint8_t PID,
-                      uint8_t payloadSize,
-                      float  &value)
+bool ELM327::queryPID(uint16_t service,
+                      uint16_t pid)
 {
 	if (connected)
 	{
-		// find strings containing Service# in hex (with leading zeros)
-		// each should only be 2 chars wide and all letters (A, B, C, D, E, F)
-		// must be capitalized
-		temp = String(service, HEX);
-		formatServiceArray();
-
-		// find strings containing PID in hex (with leading zeros)
-		// each should only be 2 chars wide and all letters (A, B, C, D, E, F)
-		// must be capitalized
-		temp = String(PID, HEX);
-		formatPidArray();
-
 		// determine the string needed to be passed to the OBD scanner to make the query
-		formatQueryArray();
+		formatQueryArray(service, pid);
 
 		// determine the first 6 chars expected in the OBD scanner's response
 		formatHeaderArray();
@@ -527,18 +317,6 @@ bool ELM327::queryPID(uint8_t service,
 		previousTime = millis();
 		currentTime = previousTime;
 
-		// find if the header was found in the serial input buffer before time runs out
-		if (!findHeader(responseHeader, HEADER_LEN))
-			return false;
-
-		// find if the payload was found in the serial input buffer before time runs out
-		// and read-in all the payload chars
-		if (!findPayload(payloadSize))
-			return false;
-
-		// convert the payload from hex chars to an integer value
-		value = findData(payloadSize);
-
 		return true;
 	}
 	
@@ -549,7 +327,7 @@ bool ELM327::queryPID(uint8_t service,
 
 
 /*
- bool ELM327::querySpeed_kph(float &value)
+ bool ELM327::querySpeed_kph()
 
  Description:
  ------------
@@ -557,51 +335,22 @@ bool ELM327::queryPID(uint8_t service,
 
  Inputs:
  -------
-  * float  &value - Pointer to variable to be updated with telemetry
-  data returned by the ELM327
+  * void
 
  Return:
  -------
-  * bool - Whether or not the data queried arrived before timing-out
+  * bool - Whether or not the query was submitted successfully
 */
-bool ELM327::querySpeed_kph(float &value)
+bool ELM327::querySpeed_kph()
 {
-	return queryPID(SERVICE_01, VEHICLE_SPEED, 2, value);
+	return queryPID(SERVICE_01, VEHICLE_SPEED);
 }
 
 
 
 
 /*
- bool ELM327::querySpeed_mph(float &value)
-
- Description:
- ------------
-  * Queries ELM327 for vehicle speed in mph
-
- Inputs:
- -------
-  * float  &value - Pointer to variable to be updated with telemetry
-  data returned by the ELM327
-
- Return:
- -------
-  * bool - Whether or not the data queried arrived before timing-out
-*/
-bool ELM327::querySpeed_mph(float &value)
-{
-	bool timeout = queryPID(SERVICE_01, VEHICLE_SPEED, 2, value);
-
-	value = value * KMPH_MPH_CONVERT;
-
-	return timeout;
-}
-
-
-
-
-/*
- bool ELM327::queryRPM(float &value)
+ bool ELM327::queryRPM()
 
  Description:
  ------------
@@ -609,18 +358,185 @@ bool ELM327::querySpeed_mph(float &value)
 
  Inputs:
  -------
-  * float  &value - Pointer to variable to be updated with telemetry
-  data returned by the ELM327
+  * void
 
  Return:
  -------
-  * bool - Whether or not the data queried arrived before timing-out
+  * bool - Whether or not the query was submitted successfully
 */
-bool ELM327::queryRPM(float &value)
+bool ELM327::queryRPM()
 {
-	bool timeout = queryPID(SERVICE_01, ENGINE_RPM, 5, value);
+	return queryPID(SERVICE_01, ENGINE_RPM);
+}
 
-	value = value / 4.0; // necessary conversion factor based off OBD-II standard
 
-	return timeout;
+
+
+/*
+ bool ELM327::available()
+
+ Description:
+ ------------
+  * Parses incoming serial data and determines if a full (queried)
+  message has been successfully received
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * bool - Whether or not the queried message has been received
+*/
+bool ELM327::available()
+{
+	while (_serial->available())
+	{
+		char recChar = _serial->read();
+
+		if (recChar == '>')
+		{
+			messageComplete = true;
+			messageIndex = 0;
+
+			if (headerFound)
+			{
+				headerFound = false;
+				return true;
+			}
+			else
+				return false;
+		}
+		else if (!headerFound)
+		{
+			if (messageIndex == HEADER_LEN)
+			{
+				headerFound = true;
+				if (recChar != ' ')
+				{
+					payload[messageIndex] = recChar;
+					messageIndex++;
+				}
+			}
+			else if (recChar == responseHeader[messageIndex])
+			{
+				payload[messageIndex] = recChar;
+				messageIndex++;
+			}
+		}
+		else if ((messageIndex < PAYLOAD_LEN) && (recChar != ' '))
+		{
+			payload[messageIndex] = recChar;
+			messageIndex++;
+		}
+	}
+
+	return false;
+}
+
+
+
+
+/*
+ float ELM327::rpm()
+
+ Description:
+ ------------
+  * Parses received message for/returns vehicle RMP data
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Vehicle RPM
+*/
+float ELM327::rpm()
+{
+	return (findData(4) * RPM_CONVERT);
+}
+
+
+
+
+/*
+ uint32_t ELM327::kph()
+
+ Description:
+ ------------
+  * Parses received message for/returns vehicle speed data (kph)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Vehicle RPM
+*/
+uint32_t ELM327::kph()
+{
+	return findData(2);
+}
+
+
+
+
+/*
+ float ELM327::mph()
+
+ Description:
+ ------------
+  * Parses received message for/returns vehicle speed data (mph)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Vehicle RPM
+*/
+float ELM327::mph()
+{
+	return (kph() * KPH_MPH_CONVERT);
+}
+
+
+
+
+/*
+ uint32_t ELM327::findData(uint8_t payloadSize)
+ Description:
+ ------------
+  * Processes received vehicle telemetry chars, converts payload into an int,
+  and then returns the int
+
+ Inputs:
+ -------
+  * uint8_t payloadSize - number of characters of telemetry data expected from the ELM327
+
+ Return:
+ -------
+  * uint32_t - telemetry data found from ELM327
+*/
+uint32_t ELM327::findData(uint8_t payloadSize)
+{
+	uint32_t numShifts = 0;
+	uint32_t shifter = 1;
+	uint32_t data = 0;
+
+	for (int8_t i = (HEADER_LEN + payloadSize - 1); i >= HEADER_LEN; i--)
+	{
+		for (uint8_t k = 0; k < numShifts; k++)
+			shifter = shifter * 16;
+
+		data = data + (ctoi(payload[i]) * shifter);
+
+		numShifts++;
+		shifter = 1;
+	}
+
+	return data;
 }
