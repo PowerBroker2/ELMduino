@@ -122,12 +122,13 @@ const uint8_t AUX_INPUT_OUTPUT_SUPPORTED       = 101; // 0x65 - bit encoded
 //-------------------------------------------------------------------------------------//
 // Class constants
 //-------------------------------------------------------------------------------------//
-const float   KMPH_MPH_CONVERT = 0.6213711922;
-const uint8_t QUERY_LEN	       = 6;
-const uint8_t HEADER_LEN       = 4;
-const uint8_t SERVICE_LEN      = 2;
-const uint8_t PID_LEN          = 2;
-const uint8_t ELM_BUFF_LEN     = 45;
+const float   KPH_MPH_CONVERT = 0.6213711922;
+const float   RPM_CONVERT     = 0.25;
+const uint8_t QUERY_LEN	      = 6;
+const uint8_t HEADER_LEN      = 4;
+const uint8_t SERVICE_LEN     = 2;
+const uint8_t PID_LEN         = 2;
+const uint8_t PAYLOAD_LEN    = 20;
 
 
 
@@ -137,7 +138,7 @@ class ELM327
 public:
 	Stream* _serial;
 
-	char buff[ELM_BUFF_LEN] = { NULL };
+	char payload[PAYLOAD_LEN] = { 0 };
 	byte messageIndex = 0;
 	bool messageComplete = false;
 	bool headerFound = false;
@@ -156,6 +157,11 @@ public:
 	bool querySpeed_kph();
 	bool queryRPM();
 	bool available();
+	bool timeout();
+	float rpm();
+	uint32_t kph();
+	float mph();
+	uint32_t findData(uint8_t payloadSize);
 	
 
 
@@ -172,7 +178,6 @@ private:
 	void upper(uint8_t string[], uint8_t buflen);
 	void formatQueryArray(uint16_t service, uint16_t pid);
 	void formatHeaderArray();
-	bool timeout();
 	uint8_t ctoi(uint8_t value);
 	void flushInputBuff();
 };
