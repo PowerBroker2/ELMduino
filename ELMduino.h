@@ -127,7 +127,6 @@ const uint8_t QUERY_LEN	       = 6;
 const uint8_t HEADER_LEN       = 4;
 const uint8_t SERVICE_LEN      = 2;
 const uint8_t PID_LEN          = 2;
-const uint8_t MAX_PAYLOAD_LEN  = 25;
 const uint8_t ELM_BUFF_LEN     = 45;
 
 
@@ -148,7 +147,7 @@ public:
 	uint32_t previousTime;
 	bool connected = false;
 
-
+	
 
 
 	bool begin(Stream& stream);
@@ -163,10 +162,9 @@ public:
 
 private:
 	uint8_t query[QUERY_LEN];
-	uint8_t responseHeader[HEADER_LEN];
 	uint8_t hexService[SERVICE_LEN];
 	uint8_t hexPid[PID_LEN];
-	uint8_t payload[MAX_PAYLOAD_LEN];
+	uint8_t responseHeader[HEADER_LEN];
 
 
 
