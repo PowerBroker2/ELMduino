@@ -9,10 +9,12 @@
 
 
 
-const uint32_t DEBUG_BAUD = 115200;
-const uint32_t ELM_BAUD   = 115200;
-const uint16_t MIN_RPM    = 700;
-const uint16_t MAX_RPM    = 3500;
+const uint16_t MIN_RPM              = 700;
+const uint16_t MAX_RPM              = 3500;
+const uint8_t  SAMPLE_PERIOD        = 100;
+const uint8_t  TENS_PLACE_START_PIN = 3;
+const uint8_t  ONES_PLACE_START_PIN = 4;
+const uint8_t  BAR_START_PIN        = 2;
 
 const uint8_t speed_led_pin_array[2][7] = { //--------- one's place
                                            {23,  // A
@@ -135,7 +137,7 @@ const uint8_t rpm_array[10] = {39,  // 1 (LED #) - Fully left in HUD - Green
 
 
 
-ELM327 myELM;
+ELM327 myELM327;
 
 enum fsm{get_speed, 
          get_rpm};
@@ -146,14 +148,16 @@ fsm state = get_rpm;
 
 float    rpm;
 float    speed_mph;
+uint64_t currentTime  = millis();
+uint64_t previousTime = currentTime;
 
 
 
 
 void setup()
 {
-  DEBUG_PORT.begin(DEBUG_BAUD);
-  ELM_PORT.begin(ELM_BAUD);
+  DEBUG_PORT.begin(115200);
+  ELM_PORT.begin(115200);
 
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
@@ -161,12 +165,11 @@ void setup()
   // initialize all LEDs in display
   setupLEDs();
 
+  // wait a bit for the ELM327 to come online
+  delay(2000);
+
   // connect to ELM327
-  while(!myELM.begin(ELM_PORT))
-  {
-    DEBUG_PORT.println("Couldn't connect to ELM327, trying again...");
-    delay(1000);
-  }
+  myELM327.begin(ELM_PORT);
 }
 
 
@@ -174,45 +177,55 @@ void setup()
 
 void loop()
 {
-  switch(state)
+  // only query the ELM327 every so often
+  currentTime = millis();
+  if((currentTime - previousTime) >= SAMPLE_PERIOD)
   {
-    //------------------------------------------------ RPM
-    case get_rpm:
-      myELM.queryRPM();
-      
-      if(myELM.available())
-      {
-        rpm = myELM.rpm();
-        updateLEDs();
-        state = get_speed;
-      }
-      else if(myELM.timeout())
-      {
-        DEBUG_PORT.println("\tTimeout");
-        state = get_speed;
-      }
-      break;
+    previousTime += SAMPLE_PERIOD;
 
-    //------------------------------------------------ MPH
-    case get_speed:
-      myELM.querySpeed_kph();
-      
-      if(myELM.available())
+    switch(state)
+    {
+      case get_rpm:
       {
-        speed_mph = myELM.mph();
-        updateLEDs();
-        state = get_rpm;
+        float tempRPM = myELM327.rpm();
+        
+        if(myELM327.status == SUCCESS)
+        {
+          rpm = tempRPM;
+          updateLEDs();
+        }
+        else
+        {
+          DEBUG_PORT.print(F("\tERROR: "));
+          DEBUG_PORT.println(myELM327.status);
+        }
+        
+        state = get_speed;
+        break;
       }
-      else if (myELM.timeout())
+
+      case get_speed:
       {
-        DEBUG_PORT.println("\tTimeout");
+        float tempMPH = myELM327.mph();
+        
+        if(myELM327.status == SUCCESS)
+        {
+          speed_mph = tempMPH;
+          updateLEDs();
+        }
+        else
+        {
+          DEBUG_PORT.print(F("\tERROR: "));
+          DEBUG_PORT.println(myELM327.status);
+        }
+        
         state = get_rpm;
+        break;
       }
-      break;
+    }
   }
 
-  //------------------------------------------------ Extra processes
-  // here
+  // extra processing here:
 }
 
 
