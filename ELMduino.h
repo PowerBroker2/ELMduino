@@ -129,7 +129,7 @@ const int8_t QUERY_LEN	       = 6;
 const int8_t HEADER_LEN        = 4;
 const int8_t SERVICE_LEN       = 2;
 const int8_t PID_LEN           = 2;
-const int8_t PAYLOAD_LEN       = 20;
+const int8_t PAYLOAD_LEN       = 30;
 const int8_t SUCCESS           = 0;
 const int8_t NO_RESPONSE       = 1;
 const int8_t BUFFER_OVERFLOW   = 2;
@@ -183,4 +183,5 @@ private:
 	void formatHeaderArray();
 	uint8_t ctoi(uint8_t value);
 	void flushInputBuff();
+	void findResponse(int *response);
 };

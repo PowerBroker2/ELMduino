@@ -267,6 +267,8 @@ bool ELM327::queryPID(uint16_t service,
 		// determine the string needed to be passed to the OBD scanner to make the query
 		formatQueryArray(service, pid);
 
+		Serial.println(query);
+
 		// make the query
 		status = sendCommand(query, payload, PAYLOAD_LEN);
 
@@ -322,8 +324,14 @@ int32_t ELM327::kph()
 */
 float ELM327::mph()
 {
+	int mph = 0;
+
 	if (queryPID(SERVICE_01, VEHICLE_SPEED))
-		return atoi(payload) * KPH_MPH_CONVERT;
+	{
+		findResponse(&mph);
+		return mph * KPH_MPH_CONVERT;
+	}
+
 
 	return GENERAL_ERROR;
 }
@@ -349,8 +357,13 @@ float ELM327::mph()
 */
 float ELM327::rpm()
 {
+	int rpm = 0;
+
 	if (queryPID(SERVICE_01, ENGINE_RPM))
+	{
+		findResponse(&rpm);
 		return atof(payload);
+	}
 
 	return GENERAL_ERROR;
 }
@@ -393,6 +406,12 @@ int8_t ELM327::sendCommand(const char *cmd, char *data, unsigned int dataLength)
 				++counter;
 		}
 	}
+
+	// flush the input buffer
+	flushInputBuff();
+
+	Serial.write(data, counter);
+	Serial.println();
 
 	// If there is still data pending to be read, raise OVERFLOW error.
 	if (!found  && (counter >= dataLength))
@@ -438,4 +457,29 @@ int8_t ELM327::sendCommand(const char *cmd, char *data, unsigned int dataLength)
 
 	// Otherwise return success.
 	return SUCCESS;
+}
+
+
+
+
+void ELM327::findResponse(int *response)
+{
+	char header[6];
+	char data[4];
+
+	for (byte i = 1; i < 6; i++)
+		header[i] = payload[i];
+
+	// compare header to cmd
+
+	data[0] = ctoi(payload[6]);
+	data[1] = ctoi(payload[7]);
+	data[2] = ctoi(payload[9]);
+	data[3] = ctoi(payload[10]);
+
+	for (byte i = 0; i < 4; i++)
+	{
+		Serial.print(data[i], BIN); Serial.print(' ');
+	}
+	Serial.println();
 }
