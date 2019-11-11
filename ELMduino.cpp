@@ -22,20 +22,16 @@
 */
 bool ELM327::begin(Stream &stream)
 {
-	_serial = &stream;
+	elm_port = &stream;
 
-	while (!_serial);
+	while (!elm_port);
 
 	// wait 3 sec for the ELM327 to initialize
 	delay(3000);
 
-	// try to connect twice
-	if (!initializeELM())
-	{
+	// try to connect
+	while (!initializeELM())
 		delay(1000);
-		if (!initializeELM())
-			return false;
-	}
   
 	return true;
 }
@@ -79,31 +75,25 @@ bool ELM327::begin(Stream &stream)
 */
 bool ELM327::initializeELM()
 {
+	char data[20];
+	char *match;
+
 	flushInputBuff();
+	sendCommand("AT E0", data, 20); // echo off
 
-	// initialize scanner
-	_serial->println("AT SP 0");
+	if (sendCommand("AT SP 0", data, 20) == SUCCESS) // automatic protocol
+	{
+		match = strstr(data, "OK");
 
-	// start timing the response
-	previousTime = millis();
-	currentTime = previousTime;
-
-	while (_serial->read() != 'O')
-		if (timeout())
-		{
+		if (match != NULL)
+			connected = true;
+		else
 			connected = false;
-			return false;
-		}
+	}
+	else
+		connected = false;
 
-	while (_serial->read() != 'K')
-		if (timeout())
-		{
-			connected = false;
-			return false;
-		}
-
-	connected = true;
-	return true;
+	return connected;
 }
 
 
@@ -141,34 +131,7 @@ void ELM327::formatQueryArray(uint16_t service, uint16_t pid)
 
 
 /*
- void ELM327::formatHeaderArray()
-
- Description:
- ------------
-  * Creates a sample response header as expected from
-  the ELM327 based off of the PID queried 
-
- Inputs:
- -------
-  * void
-
- Return:
- -------
-  * void
-*/
-void ELM327::formatHeaderArray()
-{
-	responseHeader[0] = '4';
-	responseHeader[1] = query[1];
-	responseHeader[2] = query[2];
-	responseHeader[3] = query[3];
-}
-
-
-
-
-/*
- void ELM327::upper(uint8_t string[],
+ void ELM327::upper(char string[],
                     uint8_t buflen)
 
  Description:
@@ -185,7 +148,7 @@ void ELM327::formatHeaderArray()
  -------
   * void
 */
-void ELM327::upper(uint8_t string[],
+void ELM327::upper(char string[],
                    uint8_t buflen)
 {
 	for (uint8_t i = 0; i < buflen; i++)
@@ -270,8 +233,8 @@ uint8_t ELM327::ctoi(uint8_t value)
 */
 void ELM327::flushInputBuff()
 {
-	while (_serial->available())
-		_serial->read();
+	while (elm_port->available())
+		elm_port->read();
 }
 
 
@@ -304,18 +267,8 @@ bool ELM327::queryPID(uint16_t service,
 		// determine the string needed to be passed to the OBD scanner to make the query
 		formatQueryArray(service, pid);
 
-		// determine the first 6 chars expected in the OBD scanner's response
-		formatHeaderArray();
-
-		// flush the input buffer
-		flushInputBuff();
-
 		// make the query
-		_serial->write(query, 6);
-
-		// start timing the response
-		previousTime = millis();
-		currentTime = previousTime;
+		status = sendCommand(query, payload, PAYLOAD_LEN);
 
 		return true;
 	}
@@ -327,141 +280,7 @@ bool ELM327::queryPID(uint16_t service,
 
 
 /*
- bool ELM327::querySpeed_kph()
-
- Description:
- ------------
-  * Queries ELM327 for vehicle speed in kph
-
- Inputs:
- -------
-  * void
-
- Return:
- -------
-  * bool - Whether or not the query was submitted successfully
-*/
-bool ELM327::querySpeed_kph()
-{
-	return queryPID(SERVICE_01, VEHICLE_SPEED);
-}
-
-
-
-
-/*
- bool ELM327::queryRPM()
-
- Description:
- ------------
-  * Queries ELM327 for vehicle RPM
-
- Inputs:
- -------
-  * void
-
- Return:
- -------
-  * bool - Whether or not the query was submitted successfully
-*/
-bool ELM327::queryRPM()
-{
-	return queryPID(SERVICE_01, ENGINE_RPM);
-}
-
-
-
-
-/*
- bool ELM327::available()
-
- Description:
- ------------
-  * Parses incoming serial data and determines if a full (queried)
-  message has been successfully received
-
- Inputs:
- -------
-  * void
-
- Return:
- -------
-  * bool - Whether or not the queried message has been received
-*/
-bool ELM327::available()
-{
-	while (_serial->available())
-	{
-		char recChar = _serial->read();
-
-		if (recChar == '>')
-		{
-			messageComplete = true;
-			messageIndex = 0;
-
-			if (headerFound)
-			{
-				headerFound = false;
-				return true;
-			}
-			else
-				return false;
-		}
-		else if (!headerFound)
-		{
-			if (messageIndex == HEADER_LEN)
-			{
-				headerFound = true;
-				if (recChar != ' ')
-				{
-					payload[messageIndex] = recChar;
-					messageIndex++;
-				}
-			}
-			else if (recChar == responseHeader[messageIndex])
-			{
-				payload[messageIndex] = recChar;
-				messageIndex++;
-			}
-		}
-		else if ((messageIndex < PAYLOAD_LEN) && (recChar != ' '))
-		{
-			payload[messageIndex] = recChar;
-			messageIndex++;
-		}
-	}
-
-	return false;
-}
-
-
-
-
-/*
- float ELM327::rpm()
-
- Description:
- ------------
-  * Parses received message for/returns vehicle RMP data
-
- Inputs:
- -------
-  * void
-
- Return:
- -------
-  * uint32_t - Vehicle RPM
-*/
-float ELM327::rpm()
-{
-	return (findData(4) * RPM_CONVERT);
-}
-
-
-
-
-/*
- uint32_t ELM327::kph()
+ int32_t ELM327::kph()
 
  Description:
  ------------
@@ -473,11 +292,14 @@ float ELM327::rpm()
 
  Return:
  -------
-  * uint32_t - Vehicle RPM
+  * int32_t - Vehicle RPM
 */
-uint32_t ELM327::kph()
+int32_t ELM327::kph()
 {
-	return findData(2);
+	if (queryPID(SERVICE_01, VEHICLE_SPEED))
+		return atoi(payload);
+
+	return GENERAL_ERROR;
 }
 
 
@@ -500,43 +322,120 @@ uint32_t ELM327::kph()
 */
 float ELM327::mph()
 {
-	return (kph() * KPH_MPH_CONVERT);
+	if (queryPID(SERVICE_01, VEHICLE_SPEED))
+		return atoi(payload) * KPH_MPH_CONVERT;
+
+	return GENERAL_ERROR;
 }
 
 
 
 
+
 /*
- uint32_t ELM327::findData(uint8_t payloadSize)
+ float ELM327::rpm()
+
  Description:
  ------------
-  * Processes received vehicle telemetry chars, converts payload into an int,
-  and then returns the int
+  * Parses received message for/returns vehicle RMP data
 
  Inputs:
  -------
-  * uint8_t payloadSize - number of characters of telemetry data expected from the ELM327
+  * void
 
  Return:
  -------
-  * uint32_t - telemetry data found from ELM327
+  * uint32_t - Vehicle RPM
 */
-uint32_t ELM327::findData(uint8_t payloadSize)
+float ELM327::rpm()
 {
-	uint32_t numShifts = 0;
-	uint32_t shifter = 1;
-	uint32_t data = 0;
+	if (queryPID(SERVICE_01, ENGINE_RPM))
+		return atof(payload);
 
-	for (int8_t i = (HEADER_LEN + payloadSize - 1); i >= HEADER_LEN; i--)
+	return GENERAL_ERROR;
+}
+
+
+
+
+int8_t ELM327::sendCommand(const char *cmd, char *data, unsigned int dataLength)
+{
+	// flush the input buffer
+	flushInputBuff();
+
+	// send the command with carriage return
+	elm_port->print(cmd);
+	elm_port->print('\r');
+
+	uint8_t counter = 0;
+	bool found  = false;
+
+	// prime the timer
+	previousTime = millis();
+	currentTime  = previousTime;
+
+	// start reading the data right away and don't stop 
+	// until either the requested number of bytes has 
+	// been read or the timeout is reached, or the >
+	// has been returned.
+	while (!found && (counter < dataLength) && !timeout())
 	{
-		for (uint8_t k = 0; k < numShifts; k++)
-			shifter = shifter * 16;
+		if (elm_port->available())
+		{
+			data[counter] = elm_port->read();
 
-		data = data + (ctoi(payload[i]) * shifter);
-
-		numShifts++;
-		shifter = 1;
+			if (data[counter] == '>')
+			{
+				found = true;
+				data[counter] = '\0';
+			}
+			else
+				++counter;
+		}
 	}
 
-	return data;
+	// If there is still data pending to be read, raise OVERFLOW error.
+	if (!found  && (counter >= dataLength))
+	{
+		// Send a character, this should cancel any operation on the elm device
+		// so that it doesnt spuriously inject a response during the next 
+		// command
+		return BUFFER_OVERFLOW;
+	}
+
+	// If not found, and there is still buffer space, then raise no response error.
+	if (!found && (counter < dataLength))
+	{
+		// Send a character, this should cancel any operation on the elm device
+		// so that it doesnt spuriously inject a response during the next 
+		// command
+		return NO_RESPONSE;
+	}
+
+	char *match;
+
+	match = strstr(data, "UNABLE TO CONNECT");
+	if (match != NULL)
+		return UNABLE_TO_CONNECT;
+
+	match = strstr(data, "NO DATA");
+	if (match != NULL)
+		return NO_DATA;
+
+	// Remove searching...
+	if (strncmp(data, "SEARCHING...", 12) == 0)
+	{
+		byte i = 12;
+
+		while (data[i] != '\0')
+		{
+			data[i - 12] = data[i];
+			i++;
+		}
+
+		data[i] = '\0';
+	}
+
+	// Otherwise return success.
+	return SUCCESS;
 }
