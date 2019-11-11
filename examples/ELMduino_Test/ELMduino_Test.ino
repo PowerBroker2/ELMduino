@@ -11,7 +11,7 @@
 
 const uint16_t MIN_RPM              = 700;
 const uint16_t MAX_RPM              = 3500;
-const uint8_t  SAMPLE_PERIOD        = 100;
+const uint16_t SAMPLE_PERIOD        = 1000;
 const uint8_t  TENS_PLACE_START_PIN = 3;
 const uint8_t  ONES_PLACE_START_PIN = 4;
 const uint8_t  BAR_START_PIN        = 2;
