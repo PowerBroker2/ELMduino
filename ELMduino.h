@@ -122,21 +122,21 @@ const uint8_t AUX_INPUT_OUTPUT_SUPPORTED       = 101; // 0x65 - bit encoded
 //-------------------------------------------------------------------------------------//
 // Class constants
 //-------------------------------------------------------------------------------------//
-const char   CANCEL_OBD[]      = "XXXXXXXXX\r\r\r";
-const float  KPH_MPH_CONVERT   = 0.6213711922;
-const float  RPM_CONVERT       = 0.25;
-const int8_t QUERY_LEN	       = 6;
-const int8_t HEADER_LEN        = 4;
-const int8_t SERVICE_LEN       = 2;
-const int8_t PID_LEN           = 2;
-const int8_t PAYLOAD_LEN       = 30;
-const int8_t SUCCESS           = 0;
-const int8_t NO_RESPONSE       = 1;
-const int8_t BUFFER_OVERFLOW   = 2;
-const int8_t GARBAGE           = 3;
-const int8_t UNABLE_TO_CONNECT = 4;
-const int8_t NO_DATA           = 5;
-const int8_t GENERAL_ERROR     = -1;
+const char   CANCEL_OBD[]          = "XXXXXXXXX\r\r\r";
+const float  KPH_MPH_CONVERT       = 0.6213711922;
+const float  RPM_CONVERT           = 0.25;
+const int8_t QUERY_LEN	           = 6;
+const int8_t HEADER_LEN            = 4;
+const int8_t SERVICE_LEN           = 2;
+const int8_t PID_LEN               = 2;
+const int8_t PAYLOAD_LEN           = 40;
+const int8_t ELM_SUCCESS           = 0;
+const int8_t ELM_NO_RESPONSE       = 1;
+const int8_t ELM_BUFFER_OVERFLOW   = 2;
+const int8_t ELM_GARBAGE           = 3;
+const int8_t ELM_UNABLE_TO_CONNECT = 4;
+const int8_t ELM_NO_DATA           = 5;
+const int8_t ELM_GENERAL_ERROR     = -1;
 
 
 
@@ -151,7 +151,7 @@ public:
 	uint32_t currentTime;
 	uint32_t previousTime;
 	bool connected = false;
-	int8_t status = GENERAL_ERROR;
+	int8_t status = ELM_GENERAL_ERROR;
 
 
 	
@@ -183,5 +183,5 @@ private:
 	void formatHeaderArray();
 	uint8_t ctoi(uint8_t value);
 	void flushInputBuff();
-	void findResponse(int *response);
+	int findResponse(bool longResponse);
 };

@@ -81,7 +81,7 @@ bool ELM327::initializeELM()
 	flushInputBuff();
 	sendCommand("AT E0", data, 20); // echo off
 
-	if (sendCommand("AT SP 0", data, 20) == SUCCESS) // automatic protocol
+	if (sendCommand("AT SP 0", data, 20) == ELM_SUCCESS) // automatic protocol
 	{
 		match = strstr(data, "OK");
 
@@ -195,7 +195,7 @@ bool ELM327::timeout()
 
  Description:
  ------------
-  * converts a char to an int
+  * converts a decimal or hex char to an int
 
  Inputs:
  -------
@@ -267,8 +267,6 @@ bool ELM327::queryPID(uint16_t service,
 		// determine the string needed to be passed to the OBD scanner to make the query
 		formatQueryArray(service, pid);
 
-		Serial.println(query);
-
 		// make the query
 		status = sendCommand(query, payload, PAYLOAD_LEN);
 
@@ -286,7 +284,7 @@ bool ELM327::queryPID(uint16_t service,
 
  Description:
  ------------
-  * Parses received message for/returns vehicle speed data (kph)
+  *  Queries and parses received message for/returns vehicle speed data (kph)
 
  Inputs:
  -------
@@ -294,14 +292,14 @@ bool ELM327::queryPID(uint16_t service,
 
  Return:
  -------
-  * int32_t - Vehicle RPM
+  * int32_t - Vehicle speed in kph
 */
 int32_t ELM327::kph()
 {
 	if (queryPID(SERVICE_01, VEHICLE_SPEED))
-		return atoi(payload);
+		return findResponse(false);
 
-	return GENERAL_ERROR;
+	return ELM_GENERAL_ERROR;
 }
 
 
@@ -312,7 +310,7 @@ int32_t ELM327::kph()
 
  Description:
  ------------
-  * Parses received message for/returns vehicle speed data (mph)
+  *  Queries and parses received message for/returns vehicle speed data (mph)
 
  Inputs:
  -------
@@ -320,20 +318,16 @@ int32_t ELM327::kph()
 
  Return:
  -------
-  * uint32_t - Vehicle RPM
+  * float - Vehicle speed in mph
 */
 float ELM327::mph()
 {
-	int mph = 0;
+	float mph = kph();
 
-	if (queryPID(SERVICE_01, VEHICLE_SPEED))
-	{
-		findResponse(&mph);
+	if (status == ELM_SUCCESS)
 		return mph * KPH_MPH_CONVERT;
-	}
 
-
-	return GENERAL_ERROR;
+	return ELM_GENERAL_ERROR;
 }
 
 
@@ -345,7 +339,7 @@ float ELM327::mph()
 
  Description:
  ------------
-  * Parses received message for/returns vehicle RMP data
+  * Queries and parses received message for/returns vehicle RMP data
 
  Inputs:
  -------
@@ -357,15 +351,10 @@ float ELM327::mph()
 */
 float ELM327::rpm()
 {
-	int rpm = 0;
-
 	if (queryPID(SERVICE_01, ENGINE_RPM))
-	{
-		findResponse(&rpm);
-		return atof(payload);
-	}
+		return (findResponse(true) / 4);
 
-	return GENERAL_ERROR;
+	return ELM_GENERAL_ERROR;
 }
 
 
@@ -407,79 +396,69 @@ int8_t ELM327::sendCommand(const char *cmd, char *data, unsigned int dataLength)
 		}
 	}
 
-	// flush the input buffer
-	flushInputBuff();
-
-	Serial.write(data, counter);
-	Serial.println();
-
-	// If there is still data pending to be read, raise OVERFLOW error.
-	if (!found  && (counter >= dataLength))
-	{
-		// Send a character, this should cancel any operation on the elm device
-		// so that it doesnt spuriously inject a response during the next 
-		// command
-		return BUFFER_OVERFLOW;
-	}
-
-	// If not found, and there is still buffer space, then raise no response error.
-	if (!found && (counter < dataLength))
-	{
-		// Send a character, this should cancel any operation on the elm device
-		// so that it doesnt spuriously inject a response during the next 
-		// command
-		return NO_RESPONSE;
-	}
-
 	char *match;
 
 	match = strstr(data, "UNABLE TO CONNECT");
 	if (match != NULL)
-		return UNABLE_TO_CONNECT;
+		return ELM_UNABLE_TO_CONNECT;
 
 	match = strstr(data, "NO DATA");
 	if (match != NULL)
-		return NO_DATA;
-
-	// Remove searching...
-	if (strncmp(data, "SEARCHING...", 12) == 0)
-	{
-		byte i = 12;
-
-		while (data[i] != '\0')
-		{
-			data[i - 12] = data[i];
-			i++;
-		}
-
-		data[i] = '\0';
-	}
+		return ELM_NO_DATA;
 
 	// Otherwise return success.
-	return SUCCESS;
+	return ELM_SUCCESS;
 }
 
 
 
 
-void ELM327::findResponse(int *response)
+int ELM327::findResponse(bool longResponse)
 {
-	char header[6];
+	int response = 0;
 	char data[4];
+	char header[5];
+	byte maxIndex;
 
-	for (byte i = 1; i < 6; i++)
-		header[i] = payload[i];
+	header[0] = '4';
+	header[1] = query[1];
+	header[2] = ' ';
+	header[3] = query[2];
+	header[4] = query[3];
 
-	// compare header to cmd
+	char *match;
+
+	match = strstr(data, header);
+	if (match != NULL)
+	{
+		Serial.println("MATCH");
+	}
+	else
+	{
+		Serial.println("NO HEADER");
+		Serial.write(header, 5);
+		Serial.println();
+	}
+
+
+	Serial.write(payload, PAYLOAD_LEN);
+	Serial.println();
 
 	data[0] = ctoi(payload[6]);
 	data[1] = ctoi(payload[7]);
-	data[2] = ctoi(payload[9]);
-	data[3] = ctoi(payload[10]);
 
-	for (byte i = 0; i < 4; i++)
+	if (longResponse)
 	{
-		Serial.print(data[i], BIN); Serial.print(' ');
+		data[2] = ctoi(payload[9]);
+		data[3] = ctoi(payload[10]);
+
+		maxIndex = 3;
 	}
-	Serial.println();
+	else
+		maxIndex = 1;
+
+	for (int i = maxIndex; i >= 0; i--)
+		response += data[i] * pow(16, (maxIndex - i));
+
+	return response;
 }
