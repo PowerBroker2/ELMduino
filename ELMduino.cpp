@@ -377,21 +377,21 @@ int8_t ELM327::sendCommand(const char *cmd)
 	previousTime = millis();
 	currentTime  = previousTime;
 
+	for (byte i = 0; i < PAYLOAD_LEN; i++)
+		payload[i] = '\0';
+
 	// start reading the data right away and don't stop 
 	// until either the requested number of bytes has 
 	// been read or the timeout is reached, or the >
 	// has been returned.
-	while (!found && (counter < PAYLOAD_LEN) && !timeout())
+	while ((counter < (PAYLOAD_LEN + 1)) && !timeout())
 	{
 		if (elm_port->available())
 		{
 			payload[counter] = elm_port->read();
 
 			if (payload[counter] == '>')
-			{
-				found = true;
-				payload[counter] = '\0';
-			}
+				break;
 			else
 				++counter;
 		}
@@ -416,9 +416,10 @@ int8_t ELM327::sendCommand(const char *cmd)
 int ELM327::findResponse(bool longResponse)
 {
 	int response = 0;
-	char header[5];
 	char data[4];
 	byte maxIndex;
+	char header[5];
+	int dataLoc = 0;
 
 	header[0] = '4';
 	header[1] = query[1];
@@ -426,34 +427,41 @@ int ELM327::findResponse(bool longResponse)
 	header[3] = query[2];
 	header[4] = query[3];
 
-	char *match;
+	Serial.print("Received: ");
+	Serial.write(payload, PAYLOAD_LEN);
+	Serial.println();
 
-	match = strstr(payload, header);
-	if (match == NULL)
+	for (byte i = 0; i < (PAYLOAD_LEN + 5); i++)
 	{
-		Serial.write(header, 5);
-		Serial.print(" not found in: ");
-		Serial.write(payload, PAYLOAD_LEN);
-		Serial.println();
-
-		return 0;
+		if (payload[i] == header[0] &&
+			payload[i + 1] == header[1] &&
+			payload[i + 2] == header[2] &&
+			payload[i + 3] == header[3] &&
+			payload[i + 4] == header[4])
+			dataLoc = i + 6;
 	}
 
-	data[0] = ctoi(payload[6]);
-	data[1] = ctoi(payload[7]);
-
-	if (longResponse)
+	if (dataLoc > 0)
 	{
-		data[2] = ctoi(payload[9]);
-		data[3] = ctoi(payload[10]);
+		data[0] = ctoi(payload[6]);
+		data[1] = ctoi(payload[7]);
 
-		maxIndex = 3;
+		if (longResponse)
+		{
+			data[2] = ctoi(payload[9]);
+			data[3] = ctoi(payload[10]);
+
+			maxIndex = 3;
+		}
+		else
+			maxIndex = 1;
+
+		for (int i = maxIndex; i >= 0; i--)
+			response += data[i] * pow(16, (maxIndex - i));
 	}
 	else
-		maxIndex = 1;
-
-	for (int i = maxIndex; i >= 0; i--)
-		response += data[i] * pow(16, (maxIndex - i));
+		Serial.println("Header NOT found");
+	
 
 	return response;
 }
