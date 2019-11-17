@@ -189,7 +189,7 @@ void loop()
       {
         float tempRPM = myELM327.rpm();
         
-        if(myELM327.status == SUCCESS)
+        if(myELM327.status == ELM_SUCCESS)
         {
           rpm = tempRPM;
           updateLEDs();
@@ -208,7 +208,7 @@ void loop()
       {
         float tempMPH = myELM327.mph();
         
-        if(myELM327.status == SUCCESS)
+        if(myELM327.status == ELM_SUCCESS)
         {
           speed_mph = tempMPH;
           updateLEDs();
