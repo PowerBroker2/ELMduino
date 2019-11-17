@@ -75,15 +75,14 @@ bool ELM327::begin(Stream &stream)
 */
 bool ELM327::initializeELM()
 {
-	char data[20];
 	char *match;
 
 	flushInputBuff();
-	sendCommand("AT E0", data, 20); // echo off
+	sendCommand("AT E0"); // echo off
 
-	if (sendCommand("AT SP 0", data, 20) == ELM_SUCCESS) // automatic protocol
+	if (sendCommand("AT SP 0") == ELM_SUCCESS) // automatic protocol
 	{
-		match = strstr(data, "OK");
+		match = strstr(payload, "OK");
 
 		if (match != NULL)
 			connected = true;
@@ -268,7 +267,7 @@ bool ELM327::queryPID(uint16_t service,
 		formatQueryArray(service, pid);
 
 		// make the query
-		status = sendCommand(query, payload, PAYLOAD_LEN);
+		status = sendCommand(query);
 
 		return true;
 	}
@@ -360,7 +359,7 @@ float ELM327::rpm()
 
 
 
-int8_t ELM327::sendCommand(const char *cmd, char *data, unsigned int dataLength)
+int8_t ELM327::sendCommand(const char *cmd)
 {
 	// flush the input buffer
 	flushInputBuff();
@@ -368,6 +367,8 @@ int8_t ELM327::sendCommand(const char *cmd, char *data, unsigned int dataLength)
 	// send the command with carriage return
 	elm_port->print(cmd);
 	elm_port->print('\r');
+
+	delay(waitTime);
 
 	uint8_t counter = 0;
 	bool found  = false;
@@ -380,16 +381,16 @@ int8_t ELM327::sendCommand(const char *cmd, char *data, unsigned int dataLength)
 	// until either the requested number of bytes has 
 	// been read or the timeout is reached, or the >
 	// has been returned.
-	while (!found && (counter < dataLength) && !timeout())
+	while (!found && (counter < PAYLOAD_LEN) && !timeout())
 	{
 		if (elm_port->available())
 		{
-			data[counter] = elm_port->read();
+			payload[counter] = elm_port->read();
 
-			if (data[counter] == '>')
+			if (payload[counter] == '>')
 			{
 				found = true;
-				data[counter] = '\0';
+				payload[counter] = '\0';
 			}
 			else
 				++counter;
@@ -398,15 +399,14 @@ int8_t ELM327::sendCommand(const char *cmd, char *data, unsigned int dataLength)
 
 	char *match;
 
-	match = strstr(data, "UNABLE TO CONNECT");
+	match = strstr(payload, "UNABLE TO CONNECT");
 	if (match != NULL)
 		return ELM_UNABLE_TO_CONNECT;
 
-	match = strstr(data, "NO DATA");
+	match = strstr(payload, "NO DATA");
 	if (match != NULL)
 		return ELM_NO_DATA;
 
-	// Otherwise return success.
 	return ELM_SUCCESS;
 }
 
@@ -416,8 +416,8 @@ int8_t ELM327::sendCommand(const char *cmd, char *data, unsigned int dataLength)
 int ELM327::findResponse(bool longResponse)
 {
 	int response = 0;
-	char data[4];
 	char header[5];
+	char data[4];
 	byte maxIndex;
 
 	header[0] = '4';
@@ -428,21 +428,16 @@ int ELM327::findResponse(bool longResponse)
 
 	char *match;
 
-	match = strstr(data, header);
-	if (match != NULL)
+	match = strstr(payload, header);
+	if (match == NULL)
 	{
-		Serial.println("MATCH");
-	}
-	else
-	{
-		Serial.println("NO HEADER");
 		Serial.write(header, 5);
+		Serial.print(" not found in: ");
+		Serial.write(payload, PAYLOAD_LEN);
 		Serial.println();
+
+		return 0;
 	}
-
-
-	Serial.write(payload, PAYLOAD_LEN);
-	Serial.println();
 
 	data[0] = ctoi(payload[6]);
 	data[1] = ctoi(payload[7]);

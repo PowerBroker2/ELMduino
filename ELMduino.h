@@ -148,6 +148,7 @@ public:
 
 	char payload[PAYLOAD_LEN] = { 0 };
 	uint16_t timeout_ms = 100;
+	uint16_t waitTime = 100;
 	uint32_t currentTime;
 	uint32_t previousTime;
 	bool connected = false;
@@ -160,7 +161,7 @@ public:
 	bool begin(Stream& stream);
 	bool initializeELM();
 	bool queryPID(uint16_t service, uint16_t pid);
-	int8_t sendCommand(const char *cmd, char *data, unsigned int dataLength);
+	int8_t sendCommand(const char *cmd);
 	bool timeout();
 	float rpm();
 	int32_t kph();
