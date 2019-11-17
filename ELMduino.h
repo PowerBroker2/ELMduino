@@ -122,13 +122,21 @@ const uint8_t AUX_INPUT_OUTPUT_SUPPORTED       = 101; // 0x65 - bit encoded
 //-------------------------------------------------------------------------------------//
 // Class constants
 //-------------------------------------------------------------------------------------//
-const float   KPH_MPH_CONVERT = 0.6213711922;
-const float   RPM_CONVERT     = 0.25;
-const uint8_t QUERY_LEN	      = 6;
-const uint8_t HEADER_LEN      = 4;
-const uint8_t SERVICE_LEN     = 2;
-const uint8_t PID_LEN         = 2;
-const uint8_t PAYLOAD_LEN    = 20;
+const char   CANCEL_OBD[]          = "XXXXXXXXX\r\r\r";
+const float  KPH_MPH_CONVERT       = 0.6213711922;
+const float  RPM_CONVERT           = 0.25;
+const int8_t QUERY_LEN	           = 6;
+const int8_t HEADER_LEN            = 4;
+const int8_t SERVICE_LEN           = 2;
+const int8_t PID_LEN               = 2;
+const int8_t PAYLOAD_LEN           = 40;
+const int8_t ELM_SUCCESS           = 0;
+const int8_t ELM_NO_RESPONSE       = 1;
+const int8_t ELM_BUFFER_OVERFLOW   = 2;
+const int8_t ELM_GARBAGE           = 3;
+const int8_t ELM_UNABLE_TO_CONNECT = 4;
+const int8_t ELM_NO_DATA           = 5;
+const int8_t ELM_GENERAL_ERROR     = -1;
 
 
 
@@ -136,17 +144,10 @@ const uint8_t PAYLOAD_LEN    = 20;
 class ELM327
 {
 public:
-	Stream* _serial;
+	Stream* elm_port;
 
-	char payload[PAYLOAD_LEN] = { 0 };
-	byte messageIndex = 0;
-	bool messageComplete = false;
-	bool headerFound = false;
-
-	uint16_t timeout_ms = 100;
-	uint32_t currentTime;
-	uint32_t previousTime;
 	bool connected = false;
+	int8_t status = ELM_GENERAL_ERROR;
 
 	
 
@@ -154,30 +155,32 @@ public:
 	bool begin(Stream& stream);
 	bool initializeELM();
 	bool queryPID(uint16_t service, uint16_t pid);
-	bool querySpeed_kph();
-	bool queryRPM();
-	bool available();
+	int8_t sendCommand(const char *cmd);
 	bool timeout();
 	float rpm();
-	uint32_t kph();
+	int32_t kph();
 	float mph();
-	uint32_t findData(uint8_t payloadSize);
 	
 
 
 
 private:
-	uint8_t query[QUERY_LEN];
+	char payload[PAYLOAD_LEN] = { 0 };
+	char query[QUERY_LEN];
 	uint8_t hexService[SERVICE_LEN];
 	uint8_t hexPid[PID_LEN];
 	uint8_t responseHeader[HEADER_LEN];
+	uint16_t timeout_ms = 150;
+	uint32_t currentTime;
+	uint32_t previousTime;
 
 
 
 
-	void upper(uint8_t string[], uint8_t buflen);
+	void upper(char string[], uint8_t buflen);
 	void formatQueryArray(uint16_t service, uint16_t pid);
 	void formatHeaderArray();
 	uint8_t ctoi(uint8_t value);
 	void flushInputBuff();
+	int findResponse(bool longResponse);
 };

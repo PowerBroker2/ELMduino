@@ -11,7 +11,7 @@
 
 const uint16_t MIN_RPM              = 700;
 const uint16_t MAX_RPM              = 3500;
-const uint8_t  SAMPLE_PERIOD        = 100;
+const uint16_t SAMPLE_PERIOD        = 0;
 const uint8_t  TENS_PLACE_START_PIN = 3;
 const uint8_t  ONES_PLACE_START_PIN = 4;
 const uint8_t  BAR_START_PIN        = 2;
@@ -169,11 +169,7 @@ void setup()
   delay(2000);
 
   // connect to ELM327
-  while(!myELM327.begin(ELM_PORT))
-  {
-    DEBUG_PORT.println("Couldn't connect to ELM327, trying again...");
-    delay(1000);
-  }
+  myELM327.begin(ELM_PORT);
 }
 
 
@@ -190,20 +186,42 @@ void loop()
     switch(state)
     {
       case get_rpm:
-        if(myELM327.queryRPM(rpm))
+      {
+        float tempRPM = myELM327.rpm();
+        
+        if(myELM327.status == ELM_SUCCESS)
+        {
+          rpm = tempRPM;
           updateLEDs();
+        }
         else
-          DEBUG_PORT.println("\tTimeout");
+        {
+          DEBUG_PORT.print(F("\tERROR: "));
+          DEBUG_PORT.println(myELM327.status);
+        }
+        
         state = get_speed;
         break;
-        
+      }
+
       case get_speed:
-        if(myELM327.querySpeed_mph(speed_mph))
+      {
+        float tempMPH = myELM327.mph();
+        
+        if(myELM327.status == ELM_SUCCESS)
+        {
+          speed_mph = tempMPH;
           updateLEDs();
+        }
         else
-          DEBUG_PORT.println("\tTimeout");
+        {
+          DEBUG_PORT.print(F("\tERROR: "));
+          DEBUG_PORT.println(myELM327.status);
+        }
+        
         state = get_rpm;
         break;
+      }
     }
   }
 
@@ -225,7 +243,9 @@ void setupLEDs()
 
 void updateLEDs()
 {
-  DEBUG_PORT.print(rpm); DEBUG_PORT.print(" "); DEBUG_PORT.println(speed_mph);
+  DEBUG_PORT.print("RPM: "); DEBUG_PORT.println(rpm);
+  DEBUG_PORT.print("Speed (MPH): "); DEBUG_PORT.println(speed_mph);
+  DEBUG_PORT.println();
 
   updateSpeedDisp(speed_mph);
   updateRpmDisp((uint16_t)rpm);
