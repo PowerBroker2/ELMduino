@@ -147,8 +147,8 @@ public:
 	Stream* elm_port;
 
 	char payload[PAYLOAD_LEN] = { 0 };
-	uint16_t timeout_ms = 100;
-	uint16_t waitTime = 100;
+	uint16_t timeout_ms = 150;
+	uint16_t waitTime = 150;
 	uint32_t currentTime;
 	uint32_t previousTime;
 	bool connected = false;
