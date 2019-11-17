@@ -149,7 +149,7 @@ public:
 	bool connected = false;
 	int8_t status = ELM_GENERAL_ERROR;
 
-
+	
 
 
 	bool begin(Stream& stream);

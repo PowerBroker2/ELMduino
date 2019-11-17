@@ -171,7 +171,8 @@ void ELM327::upper(char string[],
 
  Inputs:
  -------
-  * void
+  * uint8_t string[] - Char array
+  * uint8_t buflen   - Length of char array
 
  Return:
  -------
@@ -182,7 +183,6 @@ bool ELM327::timeout()
 	currentTime = millis();
 	if ((currentTime - previousTime) >= timeout_ms)
 		return true;
-
 	return false;
 }
 
