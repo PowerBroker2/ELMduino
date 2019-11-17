@@ -146,16 +146,10 @@ class ELM327
 public:
 	Stream* elm_port;
 
-	char payload[PAYLOAD_LEN] = { 0 };
-	uint16_t timeout_ms = 150;
-	uint16_t waitTime = 150;
-	uint32_t currentTime;
-	uint32_t previousTime;
 	bool connected = false;
 	int8_t status = ELM_GENERAL_ERROR;
 
 
-	
 
 
 	bool begin(Stream& stream);
@@ -171,10 +165,14 @@ public:
 
 
 private:
+	char payload[PAYLOAD_LEN] = { 0 };
 	char query[QUERY_LEN];
 	uint8_t hexService[SERVICE_LEN];
 	uint8_t hexPid[PID_LEN];
 	uint8_t responseHeader[HEADER_LEN];
+	uint16_t timeout_ms = 150;
+	uint32_t currentTime;
+	uint32_t previousTime;
 
 
 

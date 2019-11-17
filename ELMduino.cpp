@@ -359,19 +359,31 @@ float ELM327::rpm()
 
 
 
+/*
+ int8_t ELM327::sendCommand(const char *cmd)
+
+ Description:
+ ------------
+  * Sends a command/query and reads/buffers the ELM327's response
+
+ Inputs:
+ -------
+  * const char *cmd - Command/query to send to ELM327
+
+ Return:
+ -------
+  * int8_t - Response status
+*/
 int8_t ELM327::sendCommand(const char *cmd)
 {
+	uint8_t counter = 0;
+
 	// flush the input buffer
 	flushInputBuff();
 
 	// send the command with carriage return
 	elm_port->print(cmd);
 	elm_port->print('\r');
-
-	delay(waitTime);
-
-	uint8_t counter = 0;
-	bool found  = false;
 
 	// prime the timer
 	previousTime = millis();
@@ -380,10 +392,8 @@ int8_t ELM327::sendCommand(const char *cmd)
 	for (byte i = 0; i < PAYLOAD_LEN; i++)
 		payload[i] = '\0';
 
-	// start reading the data right away and don't stop 
-	// until either the requested number of bytes has 
-	// been read or the timeout is reached, or the >
-	// has been returned.
+	// buffer the response of the ELM327 until either the
+	//end marker is read or a timeout has occurred
 	while ((counter < (PAYLOAD_LEN + 1)) && !timeout())
 	{
 		if (elm_port->available())
@@ -401,11 +411,21 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 	match = strstr(payload, "UNABLE TO CONNECT");
 	if (match != NULL)
+	{
+		for (byte i = 0; i < PAYLOAD_LEN; i++)
+			payload[i] = '\0';
+
 		return ELM_UNABLE_TO_CONNECT;
+	}
 
 	match = strstr(payload, "NO DATA");
 	if (match != NULL)
+	{
+		for (byte i = 0; i < PAYLOAD_LEN; i++)
+			payload[i] = '\0';
+
 		return ELM_NO_DATA;
+	}
 
 	return ELM_SUCCESS;
 }
@@ -413,13 +433,30 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 
 
+/*
+ int8_t ELM327::findResponse(bool longResponse)
+
+ Description:
+ ------------
+  * Parses the buffered ELM327's response and returns the queried data
+
+ Inputs:
+ -------
+  * bool longResponse - Some responses are 2 hex digits wide and others are 4.
+  If the response is expected to be 2 hex digits wide, set longResponse to false,
+  else set longResponse to true
+
+ Return:
+ -------
+  * int8_t - Response status
+*/
 int ELM327::findResponse(bool longResponse)
 {
-	int response = 0;
-	char data[4];
-	byte maxIndex;
+	byte maxIndex = 1;
+	int dataLoc   = 0;
+	int response  = 0;
 	char header[5];
-	int dataLoc = 0;
+	char data[4];
 
 	header[0] = '4';
 	header[1] = query[1];
@@ -443,25 +480,22 @@ int ELM327::findResponse(bool longResponse)
 
 	if (dataLoc > 0)
 	{
-		data[0] = ctoi(payload[6]);
-		data[1] = ctoi(payload[7]);
+		data[0] = ctoi(payload[dataLoc]);
+		data[1] = ctoi(payload[dataLoc + 1]);
 
 		if (longResponse)
 		{
-			data[2] = ctoi(payload[9]);
-			data[3] = ctoi(payload[10]);
+			data[2] = ctoi(payload[dataLoc + 3]);
+			data[3] = ctoi(payload[dataLoc + 4]);
 
 			maxIndex = 3;
 		}
-		else
-			maxIndex = 1;
 
 		for (int i = maxIndex; i >= 0; i--)
 			response += data[i] * pow(16, (maxIndex - i));
 	}
 	else
 		Serial.println("Header NOT found");
-	
 
 	return response;
 }
