@@ -11,7 +11,7 @@
 
 const uint16_t MIN_RPM              = 700;
 const uint16_t MAX_RPM              = 3500;
-const uint16_t SAMPLE_PERIOD        = 1000;
+const uint16_t SAMPLE_PERIOD        = 0;
 const uint8_t  TENS_PLACE_START_PIN = 3;
 const uint8_t  ONES_PLACE_START_PIN = 4;
 const uint8_t  BAR_START_PIN        = 2;
@@ -243,7 +243,9 @@ void setupLEDs()
 
 void updateLEDs()
 {
-  DEBUG_PORT.print(rpm); DEBUG_PORT.print(" "); DEBUG_PORT.println(speed_mph);
+  DEBUG_PORT.print("RPM: "); DEBUG_PORT.println(rpm);
+  DEBUG_PORT.print("Speed (MPH): "); DEBUG_PORT.println(speed_mph);
+  DEBUG_PORT.println();
 
   updateSpeedDisp(speed_mph);
   updateRpmDisp((uint16_t)rpm);
