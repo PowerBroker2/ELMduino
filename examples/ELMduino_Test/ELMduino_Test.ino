@@ -165,9 +165,6 @@ void setup()
   // initialize all LEDs in display
   setupLEDs();
 
-  // wait a bit for the ELM327 to come online
-  delay(2000);
-
   // connect to ELM327
   myELM327.begin(ELM_PORT);
 }
@@ -198,6 +195,7 @@ void loop()
         {
           DEBUG_PORT.print(F("\tERROR: "));
           DEBUG_PORT.println(myELM327.status);
+          delay(100);
         }
         
         state = get_speed;
@@ -217,6 +215,7 @@ void loop()
         {
           DEBUG_PORT.print(F("\tERROR: "));
           DEBUG_PORT.println(myELM327.status);
+          delay(100);
         }
         
         state = get_rpm;
