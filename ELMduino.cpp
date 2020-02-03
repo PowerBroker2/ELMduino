@@ -471,7 +471,7 @@ int ELM327::findResponse(bool longResponse)
 	header[4] = query[3];
 
 	Serial.print("Received: ");
-	Serial.write(payload, PAYLOAD_LEN);
+	Serial.write((const uint8_t*)payload, PAYLOAD_LEN);
 	Serial.println();
 
 
