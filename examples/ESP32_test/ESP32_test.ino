@@ -25,11 +25,15 @@ void setup()
 
   if (!ELM_PORT.connect("OBDII"))
   {
-    Serial.println("Couldn't connect to OBD scanner");
+    Serial.println("Couldn't connect to OBD scanner - Phase 1");
     while (1);
   }
 
-  myELM327.begin(ELM_PORT);
+  if (!myELM327.begin(ELM_PORT))
+  {
+    Serial.println("Couldn't connect to OBD scanner - Phase 2");
+    while (1);
+  }
 
   Serial.println("Connected to ELM327");
   Serial.println("Ensure your serial monitor line ending is set to 'Carriage Return'");
