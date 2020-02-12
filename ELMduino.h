@@ -147,6 +147,7 @@ public:
 	Stream* elm_port;
 
 	bool connected = false;
+	char payload[PAYLOAD_LEN] = { 0 };
 	int8_t status = ELM_GENERAL_ERROR;
 
 	
@@ -154,6 +155,8 @@ public:
 
 	bool begin(Stream& stream);
 	bool initializeELM();
+	void flushInputBuff();
+	int findResponse(bool longResponse);
 	bool queryPID(uint16_t service, uint16_t pid);
 	int8_t sendCommand(const char *cmd);
 	bool timeout();
@@ -165,7 +168,6 @@ public:
 
 
 private:
-	char payload[PAYLOAD_LEN] = { 0 };
 	char query[QUERY_LEN];
 	uint8_t hexService[SERVICE_LEN];
 	uint8_t hexPid[PID_LEN];
@@ -181,6 +183,4 @@ private:
 	void formatQueryArray(uint16_t service, uint16_t pid);
 	void formatHeaderArray();
 	uint8_t ctoi(uint8_t value);
-	void flushInputBuff();
-	int findResponse(bool longResponse);
 };
