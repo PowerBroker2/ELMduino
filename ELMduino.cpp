@@ -79,7 +79,7 @@ bool ELM327::initializeELM()
 {
 	char *match;
 
-	sendCommand("AT E0"); // echo off
+	sendCommand(ECHO_OFF);
 
 	delay(100);
 
