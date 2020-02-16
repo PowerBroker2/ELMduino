@@ -258,6 +258,7 @@ public:
 	bool connected = false;
 	char payload[PAYLOAD_LEN] = { 0 };
 	int8_t status = ELM_GENERAL_ERROR;
+	uint16_t timeout_ms = 150;
 
 	
 
@@ -281,7 +282,6 @@ private:
 	uint8_t hexService[SERVICE_LEN];
 	uint8_t hexPid[PID_LEN];
 	uint8_t responseHeader[HEADER_LEN];
-	uint16_t timeout_ms = 150;
 	uint32_t currentTime;
 	uint32_t previousTime;
 
