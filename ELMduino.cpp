@@ -351,12 +351,12 @@ float ELM327::mph()
 
  Return:
  -------
-  * uint32_t - Vehicle RPM
+  * float - Vehicle RPM
 */
 float ELM327::rpm()
 {
 	if (queryPID(SERVICE_01, ENGINE_RPM))
-		return (findResponse(true) / 4);
+		return (findResponse(true) / 4.0);
 
 	return ELM_GENERAL_ERROR;
 }
