@@ -26,9 +26,6 @@ bool ELM327::begin(Stream &stream)
 
 	while (!elm_port);
 
-	// wait 3 sec for the ELM327 to initialize
-	delay(3000);
-
 	// try to connect
 	while (!initializeELM())
 		delay(1000);
@@ -80,10 +77,15 @@ bool ELM327::initializeELM()
 	char *match;
 
 	sendCommand(ECHO_OFF);
-
 	delay(100);
 
-	if (sendCommand("AT SP 0") == ELM_SUCCESS) // automatic protocol
+	sendCommand(PRINTING_SPACES_OFF);
+	delay(100);
+
+	sendCommand(HEADERS_OFF);
+	delay(100);
+
+	if (sendCommand(SET_PROTOCOL_TO_AUTO_H_SAVE) == ELM_SUCCESS)
 	{
 		match = strstr(payload, "OK");
 
