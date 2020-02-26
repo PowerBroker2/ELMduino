@@ -231,13 +231,9 @@ const char * const RESET_ALL                  = "AT Z";      // General
 //-------------------------------------------------------------------------------------//
 // Class constants
 //-------------------------------------------------------------------------------------//
-const char   CANCEL_OBD[]          = "XXXXXXXXX\r\r\r";
 const float  KPH_MPH_CONVERT       = 0.6213711922;
 const float  RPM_CONVERT           = 0.25;
 const int8_t QUERY_LEN	           = 6;
-const int8_t HEADER_LEN            = 4;
-const int8_t SERVICE_LEN           = 2;
-const int8_t PID_LEN               = 2;
 const int8_t PAYLOAD_LEN           = 40;
 const int8_t ELM_SUCCESS           = 0;
 const int8_t ELM_NO_RESPONSE       = 1;
@@ -266,7 +262,7 @@ public:
 	bool begin(Stream& stream);
 	bool initializeELM();
 	void flushInputBuff();
-	int findResponse(bool longResponse);
+	int findResponse();
 	bool queryPID(uint16_t service, uint16_t pid);
 	int8_t sendCommand(const char *cmd);
 	bool timeout();
@@ -279,9 +275,8 @@ public:
 
 private:
 	char query[QUERY_LEN];
-	uint8_t hexService[SERVICE_LEN];
-	uint8_t hexPid[PID_LEN];
-	uint8_t responseHeader[HEADER_LEN];
+	bool longQuery = false;
+	uint16_t recBytes;
 	uint32_t currentTime;
 	uint32_t previousTime;
 
@@ -289,7 +284,7 @@ private:
 
 
 	void upper(char string[], uint8_t buflen);
-	void formatQueryArray(uint16_t service, uint16_t pid);
+	void formatQueryArray(uint16_t service, uint32_t pid);
 	void formatHeaderArray();
 	uint8_t ctoi(uint8_t value);
 };
