@@ -279,10 +279,7 @@ bool ELM327::queryPID(uint16_t service,
 {
 	if (connected)
 	{
-		// determine the string needed to be passed to the OBD scanner to make the query
 		formatQueryArray(service, pid);
-
-		// make the query
 		status = sendCommand(query);
 
 		return true;
@@ -312,7 +309,7 @@ bool ELM327::queryPID(uint16_t service,
 int32_t ELM327::kph()
 {
 	if (queryPID(SERVICE_01, VEHICLE_SPEED))
-		return findResponse(false);
+		return findResponse();
 
 	return ELM_GENERAL_ERROR;
 }
@@ -367,7 +364,7 @@ float ELM327::mph()
 float ELM327::rpm()
 {
 	if (queryPID(SERVICE_01, ENGINE_RPM))
-		return (findResponse(true) / 4.0);
+		return (findResponse() / 4.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -468,13 +465,14 @@ int8_t ELM327::sendCommand(const char *cmd)
 
  Return:
  -------
-  * int - Response status
+  * uint16_t - Response status
 */
-int ELM327::findResponse()
+uint16_t ELM327::findResponse()
 {
 	uint16_t dataLoc  = 0;
 	uint16_t response = 0;
-	char data[4];
+	uint8_t A = 0;
+	uint8_t B = 0;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
@@ -506,21 +504,18 @@ int ELM327::findResponse()
 
 	if (dataLoc > 0)
 	{
-		data[0] = ctoi(payload[dataLoc]);
-		data[1] = ctoi(payload[dataLoc + 1]);
-
-		byte maxIndex = 1;
-
-		if (longResponse)
+		if (recBytes >= 4)
 		{
-			data[2] = ctoi(payload[dataLoc + 3]);
-			data[3] = ctoi(payload[dataLoc + 4]);
-
-			maxIndex = 3;
+			B = (ctoi(payload[dataLoc]) * 16) + ctoi(payload[dataLoc + 1]);
+			A = (ctoi(payload[dataLoc + 2]) * 16) + ctoi(payload[dataLoc + 3]);
+		}
+		else
+		{
+			B = 0;
+			A = (ctoi(payload[dataLoc]) * 16) + ctoi(payload[dataLoc + 1]);
 		}
 
-		for (int i = maxIndex; i >= 0; i--)
-			response += data[i] * pow(16, (maxIndex - i));
+		response = (B << 8) | A;
 	}
 
 	return response;
