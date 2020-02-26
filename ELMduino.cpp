@@ -24,13 +24,13 @@ bool ELM327::begin(Stream &stream)
 {
 	elm_port = &stream;
 
-	while (!elm_port);
+	// test if serial port is connected
+	if (!elm_port)
+		return false;
 
 	// try to connect
-	while (!initializeELM())
-		delay(1000);
-	
-	delay(100);
+	if (!initializeELM())
+		return false;
   
 	return true;
 }
@@ -75,14 +75,12 @@ bool ELM327::begin(Stream &stream)
 bool ELM327::initializeELM()
 {
 	char *match;
+	connected = false;
 
 	sendCommand(ECHO_OFF);
 	delay(100);
 
 	sendCommand(PRINTING_SPACES_OFF);
-	delay(100);
-
-	sendCommand(HEADERS_OFF);
 	delay(100);
 
 	if (sendCommand(SET_PROTOCOL_TO_AUTO_H_SAVE) == ELM_SUCCESS)
@@ -91,11 +89,7 @@ bool ELM327::initializeELM()
 
 		if (match != NULL)
 			connected = true;
-		else
-			connected = false;
 	}
-	else
-		connected = false;
 
 	return connected;
 }
@@ -104,7 +98,7 @@ bool ELM327::initializeELM()
 
 
 /*
- void ELM327::formatQueryArray(uint16_t service, uint16_t pid)
+ void ELM327::formatQueryArray(uint16_t service, uint64_t pid)
 
  Description:
  ------------
@@ -113,22 +107,39 @@ bool ELM327::initializeELM()
  Inputs:
  -------
   * uint16_t service - Service number of the queried PID
-  * uint16_t pid     - PID number of the queried PID
+  * uint64_t pid     - PID number of the queried PID
 
  Return:
  -------
   * void
 */
-void ELM327::formatQueryArray(uint16_t service, uint16_t pid)
+void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 {
 	query[0] = ((service >> 8) & 0xFF) + '0';
 	query[1] = (service & 0xFF) + '0';
-	query[2] = ((pid >> 8) & 0xFF) + '0';
-	query[3] = (pid & 0xFF) + '0';
-	query[4] = '\n';
-	query[5] = '\r';
 
-	upper(query, 6);
+	// determine PID length (standard queries have 16-bit PIDs,
+	// but some custom queries have PIDs with 32-bit values)
+	if (pid & 0xFF00)
+	{
+		longQuery = true;
+
+		query[2] = ((pid >> 24) & 0xFF) + '0';
+		query[3] = ((pid >> 16) & 0xFF) + '0';
+		query[4] = ((pid >> 8) & 0xFF) + '0';
+		query[5] = (pid & 0xFF) + '0';
+
+		upper(query, 6);
+	}
+	else
+	{
+		longQuery = false;
+
+		query[2] = ((pid >> 8) & 0xFF) + '0';
+		query[3] = (pid & 0xFF) + '0';
+
+		upper(query, 4);
+	}
 }
 
 
@@ -383,22 +394,20 @@ int8_t ELM327::sendCommand(const char *cmd)
 {
 	uint8_t counter = 0;
 
-	// flush the input buffer
-	flushInputBuff();
-
-	// send the command with carriage return
-	elm_port->print(cmd);
-	elm_port->print('\r');
-
-	// prime the timer
-	previousTime = millis();
-	currentTime  = previousTime;
-
 	for (byte i = 0; i < PAYLOAD_LEN; i++)
 		payload[i] = '\0';
 
+	flushInputBuff();
+
+	elm_port->print(cmd);
+	elm_port->print('\r');
+
+	// prime the timeout timer
+	previousTime = millis();
+	currentTime  = previousTime;
+
 	// buffer the response of the ELM327 until either the
-	//end marker is read or a timeout has occurred
+	// end marker is read or a timeout has occurred
 	while ((counter < (PAYLOAD_LEN + 1)) && !timeout())
 	{
 		if (elm_port->available())
@@ -411,6 +420,11 @@ int8_t ELM327::sendCommand(const char *cmd)
 				counter++;
 		}
 	}
+
+	// keep track of how many bytes were received in
+	// the ELM327's response (not counting the
+	// end-marker '>')
+	recBytes = counter;
 
 	if (timeout())
 		return ELM_UNABLE_TO_CONNECT;
@@ -442,7 +456,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 
 /*
- int8_t ELM327::findResponse(bool longResponse)
+ uint16_t ELM327::findResponse()
 
  Description:
  ------------
@@ -450,43 +464,43 @@ int8_t ELM327::sendCommand(const char *cmd)
 
  Inputs:
  -------
-  * bool longResponse - Some responses are 2 hex digits wide and others are 4.
-  If the response is expected to be 2 hex digits wide, set longResponse to false,
-  else set longResponse to true
+  * void
 
  Return:
  -------
-  * int8_t - Response status
+  * int - Response status
 */
-int ELM327::findResponse(bool longResponse)
+int ELM327::findResponse()
 {
-	byte maxIndex = 1;
-	int dataLoc   = 0;
-	int response  = 0;
-	char header[5];
+	uint16_t dataLoc  = 0;
+	uint16_t response = 0;
 	char data[4];
-
-	header[0] = '4';
-	header[1] = query[1];
-	header[2] = ' ';
-	header[3] = query[2];
-	header[4] = query[3];
-
-	Serial.print("Received: ");
-	Serial.write((const uint8_t*)payload, PAYLOAD_LEN);
-	Serial.println();
-
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
-	for (byte i = 0; i < (PAYLOAD_LEN + 5); i++)
+	if (longQuery)
 	{
-		if (payload[i] == header[0] &&
-			payload[i + 1] == header[1] &&
-			payload[i + 2] == header[2] &&
-			payload[i + 3] == header[3] &&
-			payload[i + 4] == header[4])
-			dataLoc = i + 6;
+		for (byte i = 0; i < (recBytes + 6); i++)
+		{
+			if (payload[i] == (query[0] + 4) &&
+				payload[i + 1] == query[1] &&
+				payload[i + 2] == query[2] &&
+				payload[i + 3] == query[3] &&
+				payload[i + 4] == query[4] &&
+				payload[i + 5] == query[5])
+				dataLoc = i + 7;
+		}
+	}
+	else
+	{
+		for (byte i = 0; i < (recBytes + 4); i++)
+		{
+			if (payload[i] == (query[0] + 4) &&
+				payload[i + 1] == query[1] &&
+				payload[i + 2] == query[2] &&
+				payload[i + 3] == query[3])
+				dataLoc = i + 5;
+		}
 	}
 #pragma GCC diagnostic pop
 
@@ -494,6 +508,8 @@ int ELM327::findResponse(bool longResponse)
 	{
 		data[0] = ctoi(payload[dataLoc]);
 		data[1] = ctoi(payload[dataLoc + 1]);
+
+		byte maxIndex = 1;
 
 		if (longResponse)
 		{
@@ -506,8 +522,6 @@ int ELM327::findResponse(bool longResponse)
 		for (int i = maxIndex; i >= 0; i--)
 			response += data[i] * pow(16, (maxIndex - i));
 	}
-	else
-		Serial.println("Header NOT found");
 
 	return response;
 }
