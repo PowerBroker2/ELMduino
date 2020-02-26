@@ -117,6 +117,9 @@ const uint8_t ENGINE_PERCENT_TORQUE_DATA       = 100; // 0x64 - %
 const uint8_t AUX_INPUT_OUTPUT_SUPPORTED       = 101; // 0x65 - bit encoded
 
 
+const uint8_t SERVICE_02                       = 2;
+
+
 
 
 //-------------------------------------------------------------------------------------//
@@ -262,7 +265,7 @@ public:
 	bool begin(Stream& stream);
 	bool initializeELM();
 	void flushInputBuff();
-	int findResponse();
+	uint16_t findResponse();
 	bool queryPID(uint16_t service, uint16_t pid);
 	int8_t sendCommand(const char *cmd);
 	bool timeout();
