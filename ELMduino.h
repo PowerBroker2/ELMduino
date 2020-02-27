@@ -272,7 +272,7 @@ public:
 	int8_t sendCommand(const char *cmd);
 	bool timeout();
 	float rpm();
-	int32_t kph();
+	int16_t kph();
 	float mph();
 	
 
