@@ -98,7 +98,7 @@ bool ELM327::initializeELM()
 
 
 /*
- void ELM327::formatQueryArray(uint16_t service, uint64_t pid)
+ void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 
  Description:
  ------------
@@ -107,7 +107,7 @@ bool ELM327::initializeELM()
  Inputs:
  -------
   * uint16_t service - Service number of the queried PID
-  * uint64_t pid     - PID number of the queried PID
+  * uint32_t pid     - PID number of the queried PID
 
  Return:
  -------
@@ -311,9 +311,8 @@ void ELM327::flushInputBuff()
 
 
 /*
- bool ELM327::queryPID(uint8_t service,
-                       uint8_t PID,
-                       uint8_t payloadSize,
+ bool ELM327::queryPID(uint16_t service,
+                       uint32_t PID,
                        float  &value)
 
  Description:
@@ -330,7 +329,7 @@ void ELM327::flushInputBuff()
   * bool - Whether or not the query was submitted successfully
 */
 bool ELM327::queryPID(uint16_t service,
-                      uint16_t pid)
+                      uint32_t pid)
 {
 	if (connected)
 	{
@@ -347,7 +346,7 @@ bool ELM327::queryPID(uint16_t service,
 
 
 /*
- int16_t ELM327::kph()
+ int32_t ELM327::kph()
 
  Description:
  ------------
@@ -361,7 +360,7 @@ bool ELM327::queryPID(uint16_t service,
  -------
   * int16_t - Vehicle speed in kph
 */
-int16_t ELM327::kph()
+int32_t ELM327::kph()
 {
 	if (queryPID(SERVICE_01, VEHICLE_SPEED))
 		return findResponse();
@@ -522,7 +521,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 
 /*
- uint16_t ELM327::findResponse()
+ uint32_t ELM327::findResponse()
 
  Description:
  ------------
@@ -534,15 +533,14 @@ int8_t ELM327::sendCommand(const char *cmd)
 
  Return:
  -------
-  * uint16_t - Response status
+  * uint32_t - Query response value
 */
-uint16_t ELM327::findResponse()
+uint32_t ELM327::findResponse()
 {
-	uint16_t response = 0;
+	uint16_t A = 0;
+	uint16_t B = 0;
 	uint8_t firstDatum = 0;
 	uint8_t payBytes = 0;
-	uint8_t A = 0;
-	uint8_t B = 0;
 	char header[6] = { '\0' };
 
 	if (longQuery)
@@ -593,9 +591,7 @@ uint16_t ELM327::findResponse()
 			B = 0;
 			A = (ctoi(payload[firstDatum]) * 16) + ctoi(payload[firstDatum + 1]);
 		}
-
-		response = (B << 8) | A;
 	}
 
-	return response;
+	return (B << 16) | A;
 }
