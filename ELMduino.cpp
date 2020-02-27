@@ -232,6 +232,61 @@ uint8_t ELM327::ctoi(uint8_t value)
 
 
 /*
+ int8_t ELM327::nextIndex(char const *str,
+                          char const *target,
+                          uint8_t numOccur)
+
+ Description:
+ ------------
+  * Finds and returns the first char index of
+  numOccur'th instance of target in str
+
+ Inputs:
+ -------
+  * char const *str    - string to search target
+  within
+  * char const *target - String to search for in
+  str
+  * uint8_t numOccur   - Which instance of target
+  in str
+  
+ Return:
+ -------
+  * int8_t - First char index of numOccur'th
+  instance of target in str. -1 if there is no
+  numOccur'th instance of target in str
+*/
+int8_t ELM327::nextIndex(char const *str,
+                         char const *target,
+                         uint8_t numOccur=1)
+{
+	char const *p = str;
+	char const *r = str;
+	uint8_t count;
+
+	for (count = 0; ; ++count)
+	{
+		p = strstr(p, target);
+
+		if (count == (numOccur - 1))
+			break;
+
+		if (!p)
+			break;
+
+		p++;
+	}
+
+	if (!p)
+		return -1;
+
+	return p - r;
+}
+
+
+
+
+/*
  void ELM327::flushInputBuff()
 
  Description:
@@ -394,6 +449,8 @@ int8_t ELM327::sendCommand(const char *cmd)
 	for (byte i = 0; i < PAYLOAD_LEN; i++)
 		payload[i] = '\0';
 
+	// reset input buffer and number of received bytes
+	recBytes = 0;
 	flushInputBuff();
 
 	elm_port->print(cmd);
@@ -418,42 +475,45 @@ int8_t ELM327::sendCommand(const char *cmd)
 		}
 	}
 
+	if (timeout())
+		return ELM_TIMEOUT;
+	
+	if (nextIndex(payload, "UNABLE TO CONNECT") >= 0)
+	{
+		for (byte i = 0; i < PAYLOAD_LEN; i++)
+			payload[i] = '\0';
+
+		return ELM_UNABLE_TO_CONNECT;
+	}
+
+	if (nextIndex(payload, "NO DATA") >= 0)
+	{
+		for (byte i = 0; i < PAYLOAD_LEN; i++)
+			payload[i] = '\0';
+
+		return ELM_NO_DATA;
+	}
+
+	if (nextIndex(payload, "STOPPED") >= 0)
+	{
+		for (byte i = 0; i < PAYLOAD_LEN; i++)
+			payload[i] = '\0';
+
+		return ELM_STOPPED;
+	}
+
+	if (nextIndex(payload, "ERROR") >= 0)
+	{
+		for (byte i = 0; i < PAYLOAD_LEN; i++)
+			payload[i] = '\0';
+
+		return ELM_GENERAL_ERROR;
+	}
+
 	// keep track of how many bytes were received in
 	// the ELM327's response (not counting the
-	// end-marker '>')
+	// end-marker '>') if a valid response is found
 	recBytes = counter;
-
-	if (timeout())
-		return ELM_UNABLE_TO_CONNECT;
-
-	char *match;
-
-	match = strstr(payload, "UNABLE TO CONNECT");
-	if (match != NULL)
-	{
-		for (byte i = 0; i < PAYLOAD_LEN; i++)
-			payload[i] = '\0';
-
-		return ELM_UNABLE_TO_CONNECT;
-	}
-
-	match = strstr(payload, "NO DATA");
-	if (match != NULL)
-	{
-		for (byte i = 0; i < PAYLOAD_LEN; i++)
-			payload[i] = '\0';
-
-		return ELM_NO_DATA;
-	}
-
-	match = strstr(payload, "STOPPED");
-	if (match != NULL)
-	{
-		for (byte i = 0; i < PAYLOAD_LEN; i++)
-			payload[i] = '\0';
-
-		return ELM_NO_DATA;
-	}
 
 	return ELM_SUCCESS;
 }
@@ -478,50 +538,60 @@ int8_t ELM327::sendCommand(const char *cmd)
 */
 uint16_t ELM327::findResponse()
 {
-	uint16_t dataLoc  = 0;
 	uint16_t response = 0;
+	uint8_t firstDatum = 0;
+	uint8_t payBytes = 0;
 	uint8_t A = 0;
 	uint8_t B = 0;
+	char header[6] = { '\0' };
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
 	if (longQuery)
 	{
-		for (byte i = 0; i < (recBytes + 6); i++)
-		{
-			if (payload[i] == (query[0] + 4) &&
-				payload[i + 1] == query[1] &&
-				payload[i + 2] == query[2] &&
-				payload[i + 3] == query[3] &&
-				payload[i + 4] == query[4] &&
-				payload[i + 5] == query[5])
-				dataLoc = i + 7;
-		}
+		header[0] = query[0] + 4;
+		header[1] = query[1];
+		header[2] = query[2];
+		header[3] = query[3];
+		header[4] = query[4];
+		header[5] = query[5];
 	}
 	else
 	{
-		for (byte i = 0; i < (recBytes + 4); i++)
-		{
-			if (payload[i] == (query[0] + 4) &&
-				payload[i + 1] == query[1] &&
-				payload[i + 2] == query[2] &&
-				payload[i + 3] == query[3])
-				dataLoc = i + 5;
-		}
+		header[0] = query[0] + 4;
+		header[1] = query[1];
+		header[2] = query[2];
+		header[3] = query[3];
 	}
-#pragma GCC diagnostic pop
 
-	if (dataLoc > 0)
+	int8_t firstHeadIndex  = nextIndex(payload, header);
+	int8_t secondHeadIndex = nextIndex(payload, header, 2);
+
+	if (firstHeadIndex >= 0)
 	{
-		if (recBytes >= 4)
+		if (longQuery)
+			firstDatum = firstHeadIndex + 6;
+		else
+			firstDatum = firstHeadIndex + 4;
+
+		// Some ELM327s (such as my own) respond with two
+		// "responses" per query. "payBytes" represents the
+		// correct number of bytes returned by the ELM327
+		// regardless of how many "responses" were returned
+		if (secondHeadIndex >= 0)
+			payBytes = secondHeadIndex - firstDatum;
+		else
+			payBytes = recBytes - firstDatum;
+
+		// Some PID queries return 4 hex digit values - the
+		// rest return 2 hex digit values
+		if (payBytes >= 4)
 		{
-			B = (ctoi(payload[dataLoc]) * 16) + ctoi(payload[dataLoc + 1]);
-			A = (ctoi(payload[dataLoc + 2]) * 16) + ctoi(payload[dataLoc + 3]);
+			B = (ctoi(payload[firstDatum]) * 16) + ctoi(payload[firstDatum + 1]);
+			A = (ctoi(payload[firstDatum + 2]) * 16) + ctoi(payload[firstDatum + 3]);
 		}
 		else
 		{
 			B = 0;
-			A = (ctoi(payload[dataLoc]) * 16) + ctoi(payload[dataLoc + 1]);
+			A = (ctoi(payload[firstDatum]) * 16) + ctoi(payload[firstDatum + 1]);
 		}
 
 		response = (B << 8) | A;
