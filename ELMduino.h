@@ -244,6 +244,8 @@ const int8_t ELM_BUFFER_OVERFLOW   = 2;
 const int8_t ELM_GARBAGE           = 3;
 const int8_t ELM_UNABLE_TO_CONNECT = 4;
 const int8_t ELM_NO_DATA           = 5;
+const int8_t ELM_STOPPED           = 6;
+const int8_t ELM_TIMEOUT           = 7;
 const int8_t ELM_GENERAL_ERROR     = -1;
 
 
@@ -290,4 +292,7 @@ private:
 	void formatQueryArray(uint16_t service, uint32_t pid);
 	void formatHeaderArray();
 	uint8_t ctoi(uint8_t value);
+	int8_t nextIndex(char const *str,
+	                 char const *target,
+	                 uint8_t numOccur);
 };
