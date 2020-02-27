@@ -347,7 +347,7 @@ bool ELM327::queryPID(uint16_t service,
 
 
 /*
- int32_t ELM327::kph()
+ int16_t ELM327::kph()
 
  Description:
  ------------
@@ -359,9 +359,9 @@ bool ELM327::queryPID(uint16_t service,
 
  Return:
  -------
-  * int32_t - Vehicle speed in kph
+  * int16_t - Vehicle speed in kph
 */
-int32_t ELM327::kph()
+int16_t ELM327::kph()
 {
 	if (queryPID(SERVICE_01, VEHICLE_SPEED))
 		return findResponse();
