@@ -267,12 +267,12 @@ public:
 	bool begin(Stream& stream);
 	bool initializeELM();
 	void flushInputBuff();
-	uint16_t findResponse();
-	bool queryPID(uint16_t service, uint16_t pid);
+	uint32_t findResponse();
+	bool queryPID(uint16_t service, uint32_t pid);
 	int8_t sendCommand(const char *cmd);
 	bool timeout();
 	float rpm();
-	int16_t kph();
+	int32_t kph();
 	float mph();
 	
 
@@ -290,7 +290,6 @@ private:
 
 	void upper(char string[], uint8_t buflen);
 	void formatQueryArray(uint16_t service, uint32_t pid);
-	void formatHeaderArray();
 	uint8_t ctoi(uint8_t value);
 	int8_t nextIndex(char const *str,
 	                 char const *target,
