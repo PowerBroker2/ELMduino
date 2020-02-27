@@ -83,7 +83,7 @@ bool ELM327::initializeELM()
 	sendCommand(PRINTING_SPACES_OFF);
 	delay(100);
 
-	if (sendCommand(SET_PROTOCOL_TO_AUTO_H_SAVE) == ELM_SUCCESS)
+	if (sendCommand("AT SP 0") == ELM_SUCCESS) // Set protocol to auto
 	{
 		match = strstr(payload, "OK");
 
@@ -130,6 +130,11 @@ void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 		query[5] = (pid & 0xFF) + '0';
 
 		upper(query, 6);
+
+		Serial.print("Query: ");
+		for (byte i = 0; i < 6; i++)
+			Serial.print(query[i]);
+		Serial.println();
 	}
 	else
 	{
@@ -139,6 +144,11 @@ void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 		query[3] = (pid & 0xFF) + '0';
 
 		upper(query, 4);
+
+		Serial.print("Query: ");
+		for (byte i = 0; i < 6; i++)
+			Serial.print(query[i]);
+		Serial.println();
 	}
 }
 
@@ -438,6 +448,15 @@ int8_t ELM327::sendCommand(const char *cmd)
 	}
 
 	match = strstr(payload, "NO DATA");
+	if (match != NULL)
+	{
+		for (byte i = 0; i < PAYLOAD_LEN; i++)
+			payload[i] = '\0';
+
+		return ELM_NO_DATA;
+	}
+
+	match = strstr(payload, "STOPPED");
 	if (match != NULL)
 	{
 		for (byte i = 0; i < PAYLOAD_LEN; i++)
