@@ -290,7 +290,6 @@ private:
 
 	void upper(char string[], uint8_t buflen);
 	void formatQueryArray(uint16_t service, uint32_t pid);
-	void formatHeaderArray();
 	uint8_t ctoi(uint8_t value);
 	int8_t nextIndex(char const *str,
 	                 char const *target,
