@@ -34,6 +34,8 @@ void setup()
     Serial.println("Couldn't connect to OBD scanner - Phase 2");
     while (1);
   }
+  
+  Serial.println("Connected to ELM327");
 }
 
 
