@@ -130,11 +130,6 @@ void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 		query[5] = (pid & 0xFF) + '0';
 
 		upper(query, 6);
-
-		Serial.print("Query: ");
-		for (byte i = 0; i < 6; i++)
-			Serial.print(query[i]);
-		Serial.println();
 	}
 	else
 	{
@@ -144,11 +139,6 @@ void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 		query[3] = (pid & 0xFF) + '0';
 
 		upper(query, 4);
-
-		Serial.print("Query: ");
-		for (byte i = 0; i < 6; i++)
-			Serial.print(query[i]);
-		Serial.println();
 	}
 }
 
