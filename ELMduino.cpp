@@ -465,12 +465,15 @@ int8_t ELM327::sendCommand(const char *cmd)
 	{
 		if (elm_port->available())
 		{
-			payload[counter] = elm_port->read();
+			char recChar = elm_port->read();
 
-			if (payload[counter] == '>')
+			if (recChar == '>')
 				break;
-			else
-				counter++;
+			else if ((recChar == '\r') || (recChar == '\n') || (recChar == ' '))
+				continue;
+			
+			payload[counter] = recChar;
+			counter++;
 		}
 	}
 
@@ -582,16 +585,10 @@ uint32_t ELM327::findResponse()
 		// Some PID queries return 4 hex digit values - the
 		// rest return 2 hex digit values
 		if (payBytes >= 4)
-		{
-			B = (ctoi(payload[firstDatum]) * 16) + ctoi(payload[firstDatum + 1]);
-			A = (ctoi(payload[firstDatum + 2]) * 16) + ctoi(payload[firstDatum + 3]);
-		}
+			return (ctoi(payload[firstDatum]) * 4096) + (ctoi(payload[firstDatum + 1]) * 256) + (ctoi(payload[firstDatum + 2]) * 16) + ctoi(payload[firstDatum + 3]);
 		else
-		{
-			B = 0;
-			A = (ctoi(payload[firstDatum]) * 16) + ctoi(payload[firstDatum + 1]);
-		}
+			return (ctoi(payload[firstDatum]) * 16) + ctoi(payload[firstDatum + 1]);
 	}
 
-	return (B << 16) | A;
+	return 0;
 }
