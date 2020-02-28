@@ -117,6 +117,9 @@ const uint8_t ENGINE_PERCENT_TORQUE_DATA       = 100; // 0x64 - %
 const uint8_t AUX_INPUT_OUTPUT_SUPPORTED       = 101; // 0x65 - bit encoded
 
 
+const uint8_t SERVICE_02                       = 2;
+
+
 
 
 //-------------------------------------------------------------------------------------//
@@ -231,13 +234,9 @@ const char * const RESET_ALL                  = "AT Z";      // General
 //-------------------------------------------------------------------------------------//
 // Class constants
 //-------------------------------------------------------------------------------------//
-const char   CANCEL_OBD[]          = "XXXXXXXXX\r\r\r";
 const float  KPH_MPH_CONVERT       = 0.6213711922;
 const float  RPM_CONVERT           = 0.25;
 const int8_t QUERY_LEN	           = 6;
-const int8_t HEADER_LEN            = 4;
-const int8_t SERVICE_LEN           = 2;
-const int8_t PID_LEN               = 2;
 const int8_t PAYLOAD_LEN           = 40;
 const int8_t ELM_SUCCESS           = 0;
 const int8_t ELM_NO_RESPONSE       = 1;
@@ -245,6 +244,8 @@ const int8_t ELM_BUFFER_OVERFLOW   = 2;
 const int8_t ELM_GARBAGE           = 3;
 const int8_t ELM_UNABLE_TO_CONNECT = 4;
 const int8_t ELM_NO_DATA           = 5;
+const int8_t ELM_STOPPED           = 6;
+const int8_t ELM_TIMEOUT           = 7;
 const int8_t ELM_GENERAL_ERROR     = -1;
 
 
@@ -266,8 +267,8 @@ public:
 	bool begin(Stream& stream);
 	bool initializeELM();
 	void flushInputBuff();
-	int findResponse(bool longResponse);
-	bool queryPID(uint16_t service, uint16_t pid);
+	uint32_t findResponse();
+	bool queryPID(uint16_t service, uint32_t pid);
 	int8_t sendCommand(const char *cmd);
 	bool timeout();
 	float rpm();
@@ -279,9 +280,8 @@ public:
 
 private:
 	char query[QUERY_LEN];
-	uint8_t hexService[SERVICE_LEN];
-	uint8_t hexPid[PID_LEN];
-	uint8_t responseHeader[HEADER_LEN];
+	bool longQuery = false;
+	uint16_t recBytes;
 	uint32_t currentTime;
 	uint32_t previousTime;
 
@@ -289,7 +289,9 @@ private:
 
 
 	void upper(char string[], uint8_t buflen);
-	void formatQueryArray(uint16_t service, uint16_t pid);
-	void formatHeaderArray();
+	void formatQueryArray(uint16_t service, uint32_t pid);
 	uint8_t ctoi(uint8_t value);
+	int8_t nextIndex(char const *str,
+	                 char const *target,
+	                 uint8_t numOccur);
 };

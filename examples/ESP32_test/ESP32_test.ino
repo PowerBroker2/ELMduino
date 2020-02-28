@@ -34,11 +34,8 @@ void setup()
     Serial.println("Couldn't connect to OBD scanner - Phase 2");
     while (1);
   }
-
+  
   Serial.println("Connected to ELM327");
-  Serial.println("Ensure your serial monitor line ending is set to 'Carriage Return'");
-  Serial.println("Type and send commands/queries to your ELM327 through the serial monitor");
-  Serial.println();
 }
 
 

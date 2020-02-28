@@ -29,9 +29,6 @@ void setup()
   }
 
   Serial.println("Connected to ELM327");
-  Serial.println("Ensure your serial monitor line ending is set to 'Carriage Return'");
-  Serial.println("Type and send commands/queries to your ELM327 through the serial monitor");
-  Serial.println();
 }
 
 
