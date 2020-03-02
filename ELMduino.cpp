@@ -137,6 +137,8 @@ void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 
 		query[2] = ((pid >> 8) & 0xFF) + '0';
 		query[3] = (pid & 0xFF) + '0';
+		query[4] = '\0';
+		query[5] = '\0';
 
 		upper(query, 4);
 	}
