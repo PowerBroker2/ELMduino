@@ -115,8 +115,8 @@ bool ELM327::initializeELM()
 */
 void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 {
-	query[0] = ((service >> 8) & 0xFF) + '0';
-	query[1] = (service & 0xFF) + '0';
+	query[0] = ((service >> 4) & 0xF) + '0';
+	query[1] = (service & 0xF) + '0';
 
 	// determine PID length (standard queries have 16-bit PIDs,
 	// but some custom queries have PIDs with 32-bit values)
@@ -124,10 +124,10 @@ void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 	{
 		longQuery = true;
 
-		query[2] = ((pid >> 24) & 0xFF) + '0';
-		query[3] = ((pid >> 16) & 0xFF) + '0';
-		query[4] = ((pid >> 8) & 0xFF) + '0';
-		query[5] = (pid & 0xFF) + '0';
+		query[2] = ((pid >> 12) & 0xF) + '0';
+		query[3] = ((pid >> 8) & 0xF) + '0';
+		query[4] = ((pid >> 4) & 0xF) + '0';
+		query[5] = (pid & 0xF) + '0';
 
 		upper(query, 6);
 	}
@@ -135,8 +135,8 @@ void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 	{
 		longQuery = false;
 
-		query[2] = ((pid >> 8) & 0xFF) + '0';
-		query[3] = (pid & 0xFF) + '0';
+		query[2] = ((pid >> 4) & 0xF) + '0';
+		query[3] = (pid & 0xF) + '0';
 		query[4] = '\0';
 		query[5] = '\0';
 
