@@ -236,7 +236,7 @@ const char * const RESET_ALL                  = "AT Z";      // General
 //-------------------------------------------------------------------------------------//
 const float  KPH_MPH_CONVERT       = 0.6213711922;
 const float  RPM_CONVERT           = 0.25;
-const int8_t QUERY_LEN	           = 6;
+const int8_t QUERY_LEN	           = 7;
 const int8_t PAYLOAD_LEN           = 40;
 const int8_t ELM_SUCCESS           = 0;
 const int8_t ELM_NO_RESPONSE       = 1;
@@ -279,7 +279,7 @@ public:
 
 
 private:
-	char query[QUERY_LEN];
+	char query[QUERY_LEN] = { '\0' };
 	bool longQuery = false;
 	uint16_t recBytes;
 	uint32_t currentTime;
