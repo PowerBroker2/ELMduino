@@ -336,7 +336,7 @@ bool ELM327::queryPID(uint16_t service,
 	if (connected)
 	{
 		formatQueryArray(service, pid);
-		status = sendCommand(query);
+		sendCommand(query);
 
 		return true;
 	}
@@ -480,14 +480,18 @@ int8_t ELM327::sendCommand(const char *cmd)
 	}
 
 	if (timeout())
-		return ELM_TIMEOUT;
+	{
+		status = ELM_TIMEOUT;
+		return status;
+	}
 	
 	if (nextIndex(payload, "UNABLE TO CONNECT") >= 0)
 	{
 		for (byte i = 0; i < PAYLOAD_LEN; i++)
 			payload[i] = '\0';
 
-		return ELM_UNABLE_TO_CONNECT;
+		status = ELM_UNABLE_TO_CONNECT;
+		return status;
 	}
 
 	if (nextIndex(payload, "NO DATA") >= 0)
@@ -495,7 +499,8 @@ int8_t ELM327::sendCommand(const char *cmd)
 		for (byte i = 0; i < PAYLOAD_LEN; i++)
 			payload[i] = '\0';
 
-		return ELM_NO_DATA;
+		status = ELM_NO_DATA;
+		return status;
 	}
 
 	if (nextIndex(payload, "STOPPED") >= 0)
@@ -503,7 +508,8 @@ int8_t ELM327::sendCommand(const char *cmd)
 		for (byte i = 0; i < PAYLOAD_LEN; i++)
 			payload[i] = '\0';
 
-		return ELM_STOPPED;
+		status = ELM_STOPPED;
+		return status;
 	}
 
 	if (nextIndex(payload, "ERROR") >= 0)
@@ -511,7 +517,8 @@ int8_t ELM327::sendCommand(const char *cmd)
 		for (byte i = 0; i < PAYLOAD_LEN; i++)
 			payload[i] = '\0';
 
-		return ELM_GENERAL_ERROR;
+		status = ELM_GENERAL_ERROR;
+		return status;
 	}
 
 	// keep track of how many bytes were received in
@@ -519,7 +526,8 @@ int8_t ELM327::sendCommand(const char *cmd)
 	// end-marker '>') if a valid response is found
 	recBytes = counter;
 
-	return ELM_SUCCESS;
+	status = ELM_SUCCESS;
+	return status;
 }
 
 
