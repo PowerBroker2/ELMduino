@@ -595,9 +595,9 @@ uint32_t ELM327::findResponse()
 		// Some PID queries return 4 hex digit values - the
 		// rest return 2 hex digit values
 		if (payBytes >= 4)
-			return (ctoi(payload[firstDatum]) * 4096) + (ctoi(payload[firstDatum + 1]) * 256) + (ctoi(payload[firstDatum + 2]) * 16) + ctoi(payload[firstDatum + 3]);
+			return (ctoi(payload[firstDatum]) << 12) + (ctoi(payload[firstDatum + 1]) << 8) + (ctoi(payload[firstDatum + 2]) << 4) + ctoi(payload[firstDatum + 3]);
 		else
-			return (ctoi(payload[firstDatum]) * 16) + ctoi(payload[firstDatum + 1]);
+			return (ctoi(payload[firstDatum]) << 4) + ctoi(payload[firstDatum + 1]);
 	}
 
 	return 0;
