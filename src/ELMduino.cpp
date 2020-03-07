@@ -553,8 +553,6 @@ int8_t ELM327::sendCommand(const char *cmd)
 */
 uint32_t ELM327::findResponse()
 {
-	uint16_t A = 0;
-	uint16_t B = 0;
 	uint8_t firstDatum = 0;
 	uint8_t payBytes = 0;
 	char header[7] = { '\0' };
