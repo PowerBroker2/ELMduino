@@ -259,7 +259,7 @@ public:
 	bool connected = false;
 	char payload[PAYLOAD_LEN] = { 0 };
 	int8_t status = ELM_GENERAL_ERROR;
-	uint16_t timeout_ms = 150;
+	uint16_t timeout_ms = 1000;
 
 	
 
