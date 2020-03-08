@@ -199,11 +199,11 @@ const char * const MONITOR_FOR_TRANSMITTER    = "AT MT %s";  // OBD
 const char * const NORMAL_LENGTH_MESSAGES     = "AT NL";     // OBD
 const char * const SET_PROTO_OPTIONS_AND_BAUD = "AT PB %s";  // OBD
 const char * const PROTOCOL_CLOSE             = "AT PC";     // OBD
-const char * const ALL_PROG_PARAMS_OFF        = "AT PP FF OFF";  // PPs
-const char * const ALL_PROG_PARAMS_ON         = "AT PP FF ON";   // PPs
-const char * const SET_PROG_PARAM_OFF        = "AT PP %s OFF";   // PPs
-const char * const SET_PROG_PARAM_ON         = "AT PP %s ON";    // PPs
-const char * const SET_PROG_PARAM_VAL        = "AT PP %s SV %s"; // PPs
+const char * const ALL_PROG_PARAMS_OFF        = "AT PP FF OFF";   // PPs
+const char * const ALL_PROG_PARAMS_ON         = "AT PP FF ON";    // PPs
+const char * const SET_PROG_PARAM_OFF         = "AT PP %s OFF";   // PPs
+const char * const SET_PROG_PARAM_ON          = "AT PP %s ON";    // PPs
+const char * const SET_PROG_PARAM_VAL         = "AT PP %s SV %s"; // PPs
 const char * const DISP_PP_SUMMARY            = "AT PPS";    // PPs
 const char * const RESPONSES_OFF              = "AT R0";     // OBD
 const char * const RESPONSES_ON               = "AT R1";     // OBD
@@ -269,7 +269,7 @@ public:
 
 
 	bool begin(Stream& stream);
-	bool initializeELM();
+	bool initializeELM(char protocol='0');
 	void flushInputBuff();
 	uint32_t findResponse();
 	bool queryPID(uint16_t service, uint32_t pid);
