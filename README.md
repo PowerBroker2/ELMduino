@@ -168,7 +168,8 @@ const uint8_t ENGINE_PERCENT_TORQUE_DATA       = 100; // 0x64 - %
 const uint8_t AUX_INPUT_OUTPUT_SUPPORTED       = 101; // 0x65 - bit encoded
 ```
 
-# List of AT Commands (https://www.sparkfun.com/datasheets/Widgets/ELM327_AT_Commands.pdf):
+# List of AT Commands:
+(https://www.sparkfun.com/datasheets/Widgets/ELM327_AT_Commands.pdf)
 ```C++
 const char * const DISP_DEVICE_DESCRIPT       = "AT @1";     // General
 const char * const DISP_DEVICE_ID             = "AT @2";     // General
