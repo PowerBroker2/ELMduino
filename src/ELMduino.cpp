@@ -72,8 +72,9 @@ bool ELM327::begin(Stream &stream)
 
   * --> *user adjustable
 */
-bool ELM327::initializeELM()
+bool ELM327::initializeELM(char protocol)
 {
+	char command[10] = { '\0' };
 	char *match;
 	connected = false;
 
@@ -83,7 +84,9 @@ bool ELM327::initializeELM()
 	sendCommand(PRINTING_SPACES_OFF);
 	delay(100);
 
-	if (sendCommand("AT SP 0") == ELM_SUCCESS) // Set protocol to auto
+	sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
+
+	if (sendCommand(command) == ELM_SUCCESS) // Set protocol to auto
 	{
 		match = strstr(payload, "OK");
 
