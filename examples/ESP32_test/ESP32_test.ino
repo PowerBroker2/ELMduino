@@ -15,8 +15,10 @@ uint32_t rpm = 0;
 
 void setup()
 {
+#if LED_BUILTIN
   pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(LED_BUILTIN, LOW);
+#endif
 
   Serial.begin(115200);
   ELM_PORT.begin(ESP_BLUETOOTH_NAME, true);
