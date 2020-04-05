@@ -475,7 +475,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 			if (recChar == '>')
 				break;
-			else if ((recChar == '\r') || (recChar == '\n') || (recChar == ' '))
+			else if (isspace(recChar))
 				continue;
 			
 			payload[counter] = recChar;
@@ -491,9 +491,6 @@ int8_t ELM327::sendCommand(const char *cmd)
 	
 	if (nextIndex(payload, "UNABLETOCONNECT") >= 0)
 	{
-		for (byte i = 0; i < PAYLOAD_LEN; i++)
-			payload[i] = '\0';
-
 		status = ELM_UNABLE_TO_CONNECT;
 		return status;
 	}
@@ -502,27 +499,18 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 	if (nextIndex(payload, "NODATA") >= 0)
 	{
-		for (byte i = 0; i < PAYLOAD_LEN; i++)
-			payload[i] = '\0';
-
 		status = ELM_NO_DATA;
 		return status;
 	}
 
 	if (nextIndex(payload, "STOPPED") >= 0)
 	{
-		for (byte i = 0; i < PAYLOAD_LEN; i++)
-			payload[i] = '\0';
-
 		status = ELM_STOPPED;
 		return status;
 	}
 
 	if (nextIndex(payload, "ERROR") >= 0)
 	{
-		for (byte i = 0; i < PAYLOAD_LEN; i++)
-			payload[i] = '\0';
-
 		status = ELM_GENERAL_ERROR;
 		return status;
 	}
