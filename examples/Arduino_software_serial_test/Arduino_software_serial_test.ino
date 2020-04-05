@@ -44,10 +44,34 @@ void loop()
     Serial.print("RPM: "); Serial.println(rpm);
   }
   else
-  {
-    Serial.print(F("\tERROR: "));
-    Serial.println(myELM327.status);
-    delay(100);
-  }
+    printError();
+}
+
+
+void printError()
+{
+  Serial.print("Received: ");
+  for (byte i = 0; i < PAYLOAD_LEN; i++)
+    Serial.write(myELM327.payload[i]);
+  Serial.println();
+  
+  if (myELM327.status == ELM_SUCCESS)
+    Serial.println(F("\tELM_SUCCESS"));
+  else if (myELM327.status == ELM_NO_RESPONSE)
+    Serial.println(F("\tERROR: ELM_NO_RESPONSE"));
+  else if (myELM327.status == ELM_BUFFER_OVERFLOW)
+    Serial.println(F("\tERROR: ELM_BUFFER_OVERFLOW"));
+  else if (myELM327.status == ELM_UNABLE_TO_CONNECT)
+    Serial.println(F("\tERROR: ELM_UNABLE_TO_CONNECT"));
+  else if (myELM327.status == ELM_NO_DATA)
+    Serial.println(F("\tERROR: ELM_NO_DATA"));
+  else if (myELM327.status == ELM_STOPPED)
+    Serial.println(F("\tERROR: ELM_STOPPED"));
+  else if (myELM327.status == ELM_TIMEOUT)
+    Serial.println(F("\tERROR: ELM_TIMEOUT"));
+  else if (myELM327.status == ELM_TIMEOUT)
+    Serial.println(F("\tERROR: ELM_GENERAL_ERROR"));
+
+  delay(100);
 }
 
