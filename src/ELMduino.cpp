@@ -489,7 +489,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 		return status;
 	}
 	
-	if (nextIndex(payload, "UNABLE TO CONNECT") >= 0)
+	if (nextIndex(payload, "UNABLETOCONNECT") >= 0)
 	{
 		for (byte i = 0; i < PAYLOAD_LEN; i++)
 			payload[i] = '\0';
@@ -500,7 +500,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 	connected = true;
 
-	if (nextIndex(payload, "NO DATA") >= 0)
+	if (nextIndex(payload, "NODATA") >= 0)
 	{
 		for (byte i = 0; i < PAYLOAD_LEN; i++)
 			payload[i] = '\0';
