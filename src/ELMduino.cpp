@@ -4,7 +4,7 @@
 
 
 /*
- bool ELM327::begin(Stream &stream)
+ bool ELM327::begin(Stream &stream, char protocol)
 
  Description:
  ------------
@@ -14,13 +14,15 @@
  -------
   * Stream &stream - Pointer to Serial port connected
   to ELM327
+  * char protocol - Protocol ID to specify the
+  ELM327 to communicate with the ECU over
 
  Return:
  -------
   * bool - Whether or not the ELM327 was propperly
   initialized
 */
-bool ELM327::begin(Stream &stream)
+bool ELM327::begin(Stream &stream, char protocol)
 {
 	elm_port = &stream;
 
@@ -29,7 +31,7 @@ bool ELM327::begin(Stream &stream)
 		return false;
 
 	// try to connect
-	if (!initializeELM())
+	if (!initializeELM(protocol))
 		return false;
   
 	return true;
@@ -39,7 +41,7 @@ bool ELM327::begin(Stream &stream)
 
 
 /*
- bool ELM327::initializeELM()
+ bool ELM327::initializeELM(char protocol)
 
  Description:
  ------------
@@ -47,7 +49,8 @@ bool ELM327::begin(Stream &stream)
 
  Inputs:
  -------
-  * void
+  * char protocol - Protocol ID to specify the
+  ELM327 to communicate with the ECU over
 
  Return:
  -------
@@ -60,13 +63,14 @@ bool ELM327::begin(Stream &stream)
   * 0        - Automatic
   * 1        - SAE J1850 PWM (41.6 kbaud)
   * 2        - SAE J1850 PWM (10.4 kbaud)
-  * 4        - ISO 9141-2 (5 baud init)
-  * 5        - ISO 14230-4 KWP (5 baud init)
-  * 6        - ISO 14230-4 KWP (fast init)
-  * 7        - ISO 15765-4 CAN (11 bit ID, 500 kbaud)
-  * 8        - ISO 15765-4 CAN (29 bit ID, 500 kbaud)
-  * 9        - ISO 15765-4 CAN (11 bit ID, 250 kbaud)
-  * A        - ISO 15765-4 CAN (29 bit ID, 250 kbaud)
+  * 3        - ISO 9141-2 (5 baud init)
+  * 4        - ISO 14230-4 KWP (5 baud init)
+  * 5        - ISO 14230-4 KWP (fast init)
+  * 6        - ISO 15765-4 CAN (11 bit ID, 500 kbaud)
+  * 7        - ISO 15765-4 CAN (29 bit ID, 500 kbaud)
+  * 8        - ISO 15765-4 CAN (11 bit ID, 250 kbaud)
+  * 9        - ISO 15765-4 CAN (29 bit ID, 250 kbaud)
+  * A        - SAE J1939 CAN (29 bit ID, 250* kbaud)
   * B        - User1 CAN (11* bit ID, 125* kbaud)
   * C        - User2 CAN (11* bit ID, 50* kbaud)
 
@@ -151,8 +155,7 @@ void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
 
 
 /*
- void ELM327::upper(char string[],
-                    uint8_t buflen)
+ void ELM327::upper(char string[], uint8_t buflen)
 
  Description:
  ------------
@@ -168,8 +171,7 @@ void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
  -------
   * void
 */
-void ELM327::upper(char string[],
-                   uint8_t buflen)
+void ELM327::upper(char string[], uint8_t buflen)
 {
 	for (uint8_t i = 0; i < buflen; i++)
 	{
