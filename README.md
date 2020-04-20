@@ -59,6 +59,23 @@ void loop()
 }
 ```
 
+# List of OBD Protocols:
+```C++
+const char AUTOMATIC                  = '0';
+const char SAE_J1850_PWM_41_KBAUD     = '1';
+const char SAE_J1850_PWM_10_KBAUD     = '2';
+const char ISO_9141_5_BAUD_INIT       = '3';
+const char ISO_14230_5_BAUD_INIT      = '4';
+const char ISO_14230_FAST_INIT        = '5';
+const char ISO_15765_11_BIT_500_KBAUD = '6';
+const char ISO_15765_29_BIT_500_KBAUD = '7';
+const char ISO_15765_11_BIT_250_KBAUD = '8';
+const char ISO_15765_29_BIT_250_KBAUD = '9';
+const char SAE_J1939_29_BIT_250_KBAUD = 'A';
+const char USER_1_CAN                 = 'B';
+const char USER_2_CAN                 = 'C';
+```
+
 # List of standard PIDs:
 ```C++
 const uint8_t SUPPORTED_PIDS_1_20              = 0;   // 0x00 - bit encoded
