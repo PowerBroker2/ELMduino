@@ -1,5 +1,5 @@
 # ELMduino
-
+[![GitHub version](https://badge.fury.io/gh/PowerBroker2%2FELMduino.svg)](https://badge.fury.io/gh/PowerBroker2%2FELMduino) [![arduino-library-badge](https://www.ardu-badge.com/badge/ELMDuino.svg?)](https://www.ardu-badge.com/ELMDuino)<br /><br />
 This is a simple yet powerful library to effortlessly interface your Arduino with an ELM327 OBD-II scanner. With this library, you can query any and all OBD-II supported PIDs to collect a wide variety of car data (i.e. speed, rpm, engine temp, etc). Also, you can use ELMduino to view and clear your car's trouble codes - no need ot go to AutoZone anymore!
 
 # Install:
