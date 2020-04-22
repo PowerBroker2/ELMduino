@@ -233,8 +233,8 @@ const char * const SEND_RTR_MESSAGE           = "AT RTR";    // CAN
 const char * const READ_VOLTAGE               = "AT RV";     // Volts
 const char * const PRINTING_SPACES_OFF        = "AT S0";     // OBD
 const char * const PRINTING_SPACES_ON         = "AT S1";     // OBD
-const char * const STORE_DATA_BYTE            = "AT SD %s";  // General
-const char * const SET_HEADER                 = "AT SH %s";  // OBD
+const char * const STORE_DATA_BYTE            = "AT SD ";    // General
+const char * const SET_HEADER                 = "AT SH ";    // OBD
 const char * const PERFORM_SLOW_INIT          = "AT SI";     // ISO
 const char * const SET_PROTOCOL_TO_AUTO_H_SAVE = "AT SP A%c"; // OBD
 const char * const SET_PROTOCOL_TO_H_SAVE     = "AT SP %c";  // OBD
@@ -292,7 +292,8 @@ public:
 	bool initializeELM(char protocol='0');
 	void flushInputBuff();
 	uint32_t findResponse();
-	bool queryPID(uint16_t service, uint32_t pid);
+	bool queryPID(uint8_t service, uint16_t pid);
+	bool queryPID(char queryStr[]);
 	int8_t sendCommand(const char *cmd);
 	bool timeout();
 	float rpm();
@@ -313,7 +314,7 @@ private:
 
 
 	void upper(char string[], uint8_t buflen);
-	void formatQueryArray(uint16_t service, uint32_t pid);
+	void formatQueryArray(uint8_t service, uint16_t pid);
 	uint8_t ctoi(uint8_t value);
 	int8_t nextIndex(char const *str,
 	                 char const *target,
