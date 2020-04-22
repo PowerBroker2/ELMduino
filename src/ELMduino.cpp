@@ -91,12 +91,8 @@ bool ELM327::initializeELM(char protocol)
 	sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
 
 	if (sendCommand(command) == ELM_SUCCESS) // Set protocol to auto
-	{
-		match = strstr(payload, "OK");
-
-		if (match != NULL)
+		if (strstr(payload, "OK") != NULL)
 			connected = true;
-	}
 
 	return connected;
 }
@@ -105,7 +101,7 @@ bool ELM327::initializeELM(char protocol)
 
 
 /*
- void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
+ void ELM327::formatQueryArray(uint8_t service, uint16_t pid)
 
  Description:
  ------------
@@ -120,7 +116,7 @@ bool ELM327::initializeELM(char protocol)
  -------
   * void
 */
-void ELM327::formatQueryArray(uint16_t service, uint32_t pid)
+void ELM327::formatQueryArray(uint8_t service, uint16_t pid)
 {
 	query[0] = ((service >> 4) & 0xF) + '0';
 	query[1] = (service & 0xF) + '0';
@@ -318,8 +314,8 @@ void ELM327::flushInputBuff()
 
 
 /*
- bool ELM327::queryPID(uint16_t service,
-                       uint32_t PID,
+ bool ELM327::queryPID(uint8_t service,
+                       uint16_t PID,
                        float  &value)
 
  Description:
@@ -328,15 +324,15 @@ void ELM327::flushInputBuff()
 
  Inputs:
  -------
-  * uint8_t service     - Service number
-  * uint8_t PID         - PID number
+  * uint8_t service - Service number
+  * uint8_t PID     - PID number
 
  Return:
  -------
   * bool - Whether or not the query was submitted successfully
 */
-bool ELM327::queryPID(uint16_t service,
-                      uint32_t pid)
+bool ELM327::queryPID(uint8_t service,
+                      uint16_t pid)
 {
 	if (connected)
 	{
@@ -346,6 +342,41 @@ bool ELM327::queryPID(uint16_t service,
 		return true;
 	}
 	
+	return false;
+}
+
+
+
+
+/*
+ bool ELM327::queryPID(char queryStr[])
+
+ Description:
+ ------------
+  * Queries ELM327 for a specific type of vehicle telemetry data
+
+ Inputs:
+ -------
+  * char queryStr[] - Query string (service and PID)
+
+ Return:
+ -------
+  * bool - Whether or not the query was submitted successfully
+*/
+bool ELM327::queryPID(char queryStr[])
+{
+	if (connected)
+	{
+		if (strlen(queryStr) <= 4)
+			longQuery = false;
+		else
+			longQuery = true;
+
+		sendCommand(queryStr);
+
+		return true;
+	}
+
 	return false;
 }
 
