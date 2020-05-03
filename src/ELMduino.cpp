@@ -91,6 +91,9 @@ bool ELM327::initializeELM(char protocol)
 
 	sendCommand(PRINTING_SPACES_OFF);
 	delay(100);
+	
+	sendCommand(ALLOW_LONG_MESSAGES);
+	delay(100);
 
 	sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
 
