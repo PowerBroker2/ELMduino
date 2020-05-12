@@ -4,7 +4,7 @@
 
 
 /*
- bool ELM327::begin(Stream &stream, char protocol)
+ bool ELM327::begin(Stream &stream, uint16_t payloadLen, char protocol)
 
  Description:
  ------------
@@ -14,6 +14,8 @@
  -------
   * Stream &stream - Pointer to Serial port connected
   to ELM327
+  * uint16_t payloadLen - Maximum number of bytes expected
+  to be returned by the ELM327 after a query
   * char protocol - Protocol ID to specify the
   ELM327 to communicate with the ECU over
 
@@ -22,9 +24,12 @@
   * bool - Whether or not the ELM327 was propperly
   initialized
 */
-bool ELM327::begin(Stream &stream, char protocol)
+bool ELM327::begin(Stream &stream, uint16_t payloadLen, char protocol)
 {
 	elm_port = &stream;
+	PAYLOAD_LEN = payloadLen;
+
+	payload = (char*)malloc(PAYLOAD_LEN);
 
 	// test if serial port is connected
 	if (!elm_port)
@@ -79,16 +84,15 @@ bool ELM327::begin(Stream &stream, char protocol)
 bool ELM327::initializeELM(char protocol)
 {
 	char command[10] = { '\0' };
-	char *match;
 	connected = false;
-	
-	sendCommand(RESET_ALL);
-	delay(100);
 
 	sendCommand(ECHO_OFF);
 	delay(100);
 
 	sendCommand(PRINTING_SPACES_OFF);
+	delay(100);
+	
+	sendCommand(ALLOW_LONG_MESSAGES);
 	delay(100);
 
 	sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);

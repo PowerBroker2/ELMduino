@@ -67,7 +67,7 @@ void loop()
 void printError()
 {
   Serial.print("Received: ");
-  for (byte i = 0; i < PAYLOAD_LEN; i++)
+  for (byte i = 0; i < myELM327.recBytes; i++)
     Serial.write(myELM327.payload[i]);
   Serial.println();
   

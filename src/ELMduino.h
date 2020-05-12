@@ -261,7 +261,6 @@ const char * const RESET_ALL                  = "AT Z";      // General
 const float  KPH_MPH_CONVERT       = 0.6213711922;
 const float  RPM_CONVERT           = 0.25;
 const int8_t QUERY_LEN	           = 7;
-const int8_t PAYLOAD_LEN           = 40;
 const int8_t ELM_SUCCESS           = 0;
 const int8_t ELM_NO_RESPONSE       = 1;
 const int8_t ELM_BUFFER_OVERFLOW   = 2;
@@ -281,14 +280,16 @@ public:
 	Stream* elm_port;
 
 	bool connected = false;
-	char payload[PAYLOAD_LEN] = { 0 };
+	char* payload;
+	uint16_t PAYLOAD_LEN;
 	int8_t status = ELM_GENERAL_ERROR;
+	uint16_t recBytes;
 	uint16_t timeout_ms = 1000;
 
 	
 
 
-	bool begin(Stream& stream, char protocol='0');
+	bool begin(Stream& stream, uint16_t payloadLen=40, char protocol='0');
 	bool initializeELM(char protocol='0');
 	void flushInputBuff();
 	uint32_t findResponse();
@@ -306,7 +307,6 @@ public:
 private:
 	char query[QUERY_LEN] = { '\0' };
 	bool longQuery = false;
-	uint16_t recBytes;
 	uint32_t currentTime;
 	uint32_t previousTime;
 
