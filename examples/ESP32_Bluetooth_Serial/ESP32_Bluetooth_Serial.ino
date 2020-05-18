@@ -21,6 +21,7 @@ void setup()
 #endif
 
   DEBUG_PORT.begin(115200);
+  //SerialBT.setPin("1234");
   ELM_PORT.begin("ArduHUD", true);
   
   if (!ELM_PORT.connect("OBDII"))
