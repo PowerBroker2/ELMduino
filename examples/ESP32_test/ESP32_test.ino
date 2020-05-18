@@ -14,6 +14,7 @@ void setup()
   digitalWrite(LED_BUILTIN, HIGH);
 
   DEBUG_PORT.begin(115200);
+  //ELM_PORT.setPin("1234");
   ELM_PORT.begin("ESP32test", true);
 
   DEBUG_PORT.println("Attempting to connect to ELM327...");
