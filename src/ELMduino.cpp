@@ -85,6 +85,9 @@ bool ELM327::initializeELM(char protocol)
 {
 	char command[10] = { '\0' };
 	connected = false;
+	
+	sendCommand(RESET_ALL);
+	delay(100);
 
 	sendCommand(ECHO_OFF);
 	delay(100);
