@@ -85,6 +85,9 @@ bool ELM327::initializeELM(char protocol)
 {
 	char command[10] = { '\0' };
 	connected = false;
+	
+	sendCommand(RESET_ALL);
+        delay(100);
 
 	sendCommand(ECHO_OFF);
 	delay(100);
@@ -95,11 +98,19 @@ bool ELM327::initializeELM(char protocol)
 	sendCommand(ALLOW_LONG_MESSAGES);
 	delay(100);
 
-	sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
+	sprintf(command, TRY_PROT_H_AUTO_SEARCH, protocol);
 
 	if (sendCommand(command) == ELM_SUCCESS) // Set protocol to auto
-		if (strstr(payload, "OK") != NULL)
-			connected = true;
+		if (strstr(payload, "OK") != NULL){
+                  connected = true;
+                  return connected;
+                 }
+	
+	sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
+
+        if (sendCommand(command) == ELM_SUCCESS) // Set protocol to auto
+           if (strstr(payload, "OK") != NULL)
+             connected = true;
 
 	return connected;
 }
