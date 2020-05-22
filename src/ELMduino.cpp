@@ -4,7 +4,7 @@
 
 
 /*
- bool ELM327::begin(Stream &stream, uint16_t payloadLen, char protocol)
+ bool ELM327::begin(Stream &stream, char protocol, uint16_t payloadLen)
 
  Description:
  ------------
@@ -14,17 +14,17 @@
  -------
   * Stream &stream - Pointer to Serial port connected
   to ELM327
-  * uint16_t payloadLen - Maximum number of bytes expected
-  to be returned by the ELM327 after a query
   * char protocol - Protocol ID to specify the
   ELM327 to communicate with the ECU over
+  * uint16_t payloadLen - Maximum number of bytes expected
+  to be returned by the ELM327 after a query
 
  Return:
  -------
   * bool - Whether or not the ELM327 was propperly
   initialized
 */
-bool ELM327::begin(Stream &stream, uint16_t payloadLen, char protocol)
+bool ELM327::begin(Stream &stream, char protocol, uint16_t payloadLen)
 {
 	elm_port = &stream;
 	PAYLOAD_LEN = payloadLen;
@@ -98,19 +98,24 @@ bool ELM327::initializeELM(char protocol)
 	sendCommand(ALLOW_LONG_MESSAGES);
 	delay(100);
 
+	// Set protocol
 	sprintf(command, TRY_PROT_H_AUTO_SEARCH, protocol);
 
-	if (sendCommand(command) == ELM_SUCCESS) // Set protocol to auto
-		if (strstr(payload, "OK") != NULL){
-                  connected = true;
-                  return connected;
-                 }
+	if (sendCommand(command) == ELM_SUCCESS)
+	{
+		if (strstr(payload, "OK") != NULL)
+		{
+			connected = true;
+			return connected;
+		}
+	}
 	
+	// Set protocol and save
 	sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
 
-        if (sendCommand(command) == ELM_SUCCESS) // Set protocol to auto
-           if (strstr(payload, "OK") != NULL)
-             connected = true;
+    if (sendCommand(SET_PROTOCOL_TO_H_SAVE) == ELM_SUCCESS)
+        if (strstr(payload, "OK") != NULL)
+            connected = true;
 
 	return connected;
 }

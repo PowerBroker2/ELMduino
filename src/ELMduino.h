@@ -182,7 +182,7 @@ const char * const ECHO_OFF                   = "AT E0";     // General
 const char * const ECHO_ON                    = "AT E1";     // General
 const char * const FLOW_CONTROL_SET_DATA_TO   = "AT FC SD %s"; // CAN
 const char * const FLOW_CONTROL_SET_HEAD_TO   = "AT FC SH %s"; // CAN
-const char * const FLOW_CONTROL_SET_MODE_TO   = "AT FC SM %s"; // CAN
+const char * const FLOW_CONTROL_SET_MODE_TO   = "AT FC SM %c"; // CAN
 const char * const FORGE_EVENTS               = "AT FE";     // General
 const char * const PERFORM_FAST_INIT          = "AT FI";     // ISO
 const char * const HEADERS_OFF                = "AT H0";     // OBD
@@ -244,8 +244,8 @@ const char * const SET_STANDARD_SEARCH_ORDER  = "AT SS";     // OBD
 const char * const SET_TIMEOUT_TO_H_X_4MS     = "AT ST %s";  // OBD
 const char * const SET_WAKEUP_TO_H_X_20MS     = "AT SW %s";  // ISO
 const char * const SET_TESTER_ADDRESS_TO      = "AT TA %s";  // OBD
-const char * const TRY_PROT_H_AUTO_SEARCH     = "AT TP A%s"; // OBD
-const char * const TRY_PROT_H                 = "AT TP %s";  // OBD
+const char * const TRY_PROT_H_AUTO_SEARCH     = "AT TP A%c"; // OBD
+const char * const TRY_PROT_H                 = "AT TP %c";  // OBD
 const char * const VARIABLE_DLC_OFF           = "AT V0";     // CAN
 const char * const VARIABLE_DLC_ON            = "AT V1";     // CAN
 const char * const SET_WAKEUP_MESSAGE         = "AT WM";     // ISO
@@ -289,7 +289,7 @@ public:
 	
 
 
-	bool begin(Stream& stream, uint16_t payloadLen=40, char protocol='0');
+	bool begin(Stream& stream, char protocol='0', uint16_t payloadLen = 40);
 	bool initializeELM(char protocol='0');
 	void flushInputBuff();
 	uint32_t findResponse();
