@@ -113,7 +113,7 @@ bool ELM327::initializeELM(char protocol)
 	// Set protocol and save
 	sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
 
-    if (sendCommand(SET_PROTOCOL_TO_H_SAVE) == ELM_SUCCESS)
+    if (sendCommand(command) == ELM_SUCCESS)
         if (strstr(payload, "OK") != NULL)
             connected = true;
 
