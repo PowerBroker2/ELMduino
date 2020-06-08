@@ -5,6 +5,9 @@ This is a simple yet powerful library to effortlessly interface your Arduino wit
 # Install:
 Install ELMduino using the Arduino IDE's Libraries Manager (search "ELMduino.h")
 
+# Note:
+If you're having difficulty in connecting/keeping connection to your ELM327, try using 38400 baud instead of 115200.
+
 # Example Code:
 ```C++
 #include <SoftwareSerial.h>
