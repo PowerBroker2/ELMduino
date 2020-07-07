@@ -292,7 +292,7 @@ public:
 	bool begin(Stream& stream, char protocol='0', uint16_t payloadLen = 40);
 	bool initializeELM(char protocol='0');
 	void flushInputBuff();
-	uint32_t findResponse();
+	uint64_t findResponse();
 	bool queryPID(uint8_t service, uint16_t pid);
 	bool queryPID(char queryStr[]);
 	int8_t sendCommand(const char *cmd);
