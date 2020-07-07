@@ -419,12 +419,12 @@ bool ELM327::queryPID(char queryStr[])
 
  Return:
  -------
-  * int16_t - Vehicle speed in kph
+  * int32_t - Vehicle speed in kph
 */
 int32_t ELM327::kph()
 {
 	if (queryPID(SERVICE_01, VEHICLE_SPEED))
-		return findResponse();
+		return (int32_t)findResponse();
 
 	return ELM_GENERAL_ERROR;
 }
@@ -584,7 +584,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 
 /*
- uint32_t ELM327::findResponse()
+ uint64_t ELM327::findResponse()
 
  Description:
  ------------
@@ -596,9 +596,9 @@ int8_t ELM327::sendCommand(const char *cmd)
 
  Return:
  -------
-  * uint32_t - Query response value
+  * uint64_t - Query response value
 */
-uint32_t ELM327::findResponse()
+uint64_t ELM327::findResponse()
 {
 	uint8_t firstDatum = 0;
 	uint8_t payBytes = 0;
@@ -641,12 +641,14 @@ uint32_t ELM327::findResponse()
 			payBytes = recBytes - firstDatum;
 
 
-		uint32_t response = 0;
-		for(uint8_t i = 0; i < payBytes; i++) {
+		uint64_t response = 0;
+		for(uint8_t i = 0; i < payBytes; i++)
+		{
 			uint8_t payloadIndex = firstDatum + i;
 			uint8_t bitsOffset = 4 * (payBytes - i - 1);
 			response = response | (ctoi(payload[payloadIndex]) << bitsOffset);
 		}
+		
 		return response;
 	}
 
