@@ -640,12 +640,14 @@ uint32_t ELM327::findResponse()
 		else
 			payBytes = recBytes - firstDatum;
 
-		// Some PID queries return 4 hex digit values - the
-		// rest return 2 hex digit values
-		if (payBytes >= 4)
-			return (ctoi(payload[firstDatum]) << 12) | (ctoi(payload[firstDatum + 1]) << 8) | (ctoi(payload[firstDatum + 2]) << 4) | ctoi(payload[firstDatum + 3]);
-		else
-			return (ctoi(payload[firstDatum]) << 4) | ctoi(payload[firstDatum + 1]);
+
+		uint32_t response = 0;
+		for(uint8_t i = 0; i < payBytes; i++) {
+			uint8_t payloadIndex = firstDatum + i;
+			uint8_t bitsOffset = 4 * (payBytes - i - 1);
+			response = response | (ctoi(payload[payloadIndex]) << bitsOffset);
+		}
+		return response;
 	}
 
 	return 0;
