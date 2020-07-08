@@ -648,6 +648,19 @@ uint64_t ELM327::findResponse()
 			uint8_t bitsOffset = 4 * (payBytes - i - 1);
 			response = response | (ctoi(payload[payloadIndex]) << bitsOffset);
 		}
+
+		// It is usefull to have the response bytes
+		// broken-out because some PID algorithms (standard
+		// and custom) require special operations for each
+		// byte returned
+		responseByte_0 = response & 0xFF;
+		responseByte_1 = (response >> 8) & 0xFF;
+		responseByte_2 = (response >> 16) & 0xFF;
+		responseByte_3 = (response >> 24) & 0xFF;
+		responseByte_4 = (response >> 32) & 0xFF;
+		responseByte_5 = (response >> 40) & 0xFF;
+		responseByte_6 = (response >> 48) & 0xFF;
+		responseByte_7 = (response >> 56) & 0xFF;
 		
 		return response;
 	}

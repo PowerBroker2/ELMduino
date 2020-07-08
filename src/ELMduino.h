@@ -285,6 +285,14 @@ public:
 	int8_t status = ELM_GENERAL_ERROR;
 	uint16_t recBytes;
 	uint16_t timeout_ms = 1000;
+	byte responseByte_0;
+	byte responseByte_1;
+	byte responseByte_2;
+	byte responseByte_3;
+	byte responseByte_4;
+	byte responseByte_5;
+	byte responseByte_6;
+	byte responseByte_7;
 
 	
 
