@@ -505,7 +505,6 @@ float ELM327::rpm()
 int8_t ELM327::sendCommand(const char *cmd)
 {
 	uint8_t counter = 0;
-	connected = false;
 
 	for (byte i = 0; i < PAYLOAD_LEN; i++)
 		payload[i] = '\0';
@@ -550,8 +549,6 @@ int8_t ELM327::sendCommand(const char *cmd)
 		status = ELM_UNABLE_TO_CONNECT;
 		return status;
 	}
-
-	connected = true;
 
 	if (nextIndex(payload, "NODATA") >= 0)
 	{
