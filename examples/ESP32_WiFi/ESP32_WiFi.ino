@@ -23,7 +23,7 @@ void setup()
   Serial.print("Connecting to ");
   Serial.println(ssid);
 
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_AP);
   WiFi.begin(ssid);
   // WiFi.begin(ssid, password); //Use this line if your ELM327 has a password protected WiFi
 
