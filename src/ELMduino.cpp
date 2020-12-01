@@ -357,15 +357,10 @@ void ELM327::flushInputBuff()
 bool ELM327::queryPID(uint8_t service,
                       uint16_t pid)
 {
-	if (connected)
-	{
-		formatQueryArray(service, pid);
-		sendCommand(query);
-
-		return true;
-	}
+	formatQueryArray(service, pid);
+	sendCommand(query);
 	
-	return false;
+	return connected;
 }
 
 
@@ -388,19 +383,14 @@ bool ELM327::queryPID(uint8_t service,
 */
 bool ELM327::queryPID(char queryStr[])
 {
-	if (connected)
-	{
-		if (strlen(queryStr) <= 4)
-			longQuery = false;
-		else
-			longQuery = true;
+	if (strlen(queryStr) <= 4)
+		longQuery = false;
+	else
+		longQuery = true;
 
-		sendCommand(queryStr);
-
-		return true;
-	}
-
-	return false;
+	sendCommand(queryStr);
+	
+	return connected;
 }
 
 
