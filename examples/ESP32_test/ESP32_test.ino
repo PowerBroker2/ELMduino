@@ -1,3 +1,12 @@
+/*
+To test connection, type the following into the serial monitor:
+  AT Z
+  AT E0
+  AT S0
+  AT AL
+  AT TP A0
+*/
+
 #include "BluetoothSerial.h"
 
 
