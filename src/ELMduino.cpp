@@ -29,7 +29,7 @@ bool ELM327::begin(Stream &stream, char protocol, uint16_t payloadLen)
 	elm_port = &stream;
 	PAYLOAD_LEN = payloadLen;
 
-	payload = (char*)malloc(PAYLOAD_LEN);
+	payload = (char*)malloc(PAYLOAD_LEN+1); // allow for terminating '\0'
 
 	// test if serial port is connected
 	if (!elm_port)
@@ -496,8 +496,9 @@ int8_t ELM327::sendCommand(const char *cmd)
 {
 	uint8_t counter = 0;
 	connected = false;
-
-	for (byte i = 0; i < PAYLOAD_LEN; i++)
+    // malloc is size PAYLOAD_LEN+1
+    // last valid idx is PAYLOAD_LEN
+	for (byte i = 0; i < (PAYLOAD_LEN+1); i++)
 		payload[i] = '\0';
 
 	// reset input buffer and number of received bytes
@@ -513,7 +514,9 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 	// buffer the response of the ELM327 until either the
 	// end marker is read or a timeout has occurred
-	while ((counter < (PAYLOAD_LEN + 1)) && !timeout())
+    // last valid idx is PAYLOAD_LEN but want to keep on free for terminating '\0'
+    // so limit counter to < PAYLOAD_LEN
+	while ((counter < PAYLOAD_LEN) && !timeout())
 	{
 		if (elm_port->available())
 		{
