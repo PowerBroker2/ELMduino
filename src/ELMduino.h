@@ -105,9 +105,9 @@ const uint8_t RELATIVE_THROTTLE_POSITION       = 69;  // 0x45 - %
 const uint8_t AMBIENT_AIR_TEMP                 = 70;  // 0x46 - °C
 const uint8_t ABS_THROTTLE_POSITION_B          = 71;  // 0x47 - %
 const uint8_t ABS_THROTTLE_POSITION_C          = 72;  // 0x48 - %
-const uint8_t ACCELERATOR_PEDAL_POSITION_D     = 73;  // 0x49 - %
-const uint8_t ACCELERATOR_PEDAL_POSITION_E     = 74;  // 0x4A - %
-const uint8_t ACCELERATOR_PEDAL_POSITION_F     = 75;  // 0x4B - %
+const uint8_t ABS_THROTTLE_POSITION_D          = 73;  // 0x49 - %
+const uint8_t ABS_THROTTLE_POSITION_E          = 74;  // 0x4A - %
+const uint8_t ABS_THROTTLE_POSITION_F          = 75;  // 0x4B - %
 const uint8_t COMMANDED_THROTTLE_ACTUATOR      = 76;  // 0x4C - %
 const uint8_t TIME_RUN_WITH_MIL_ON             = 77;  // 0x4D - min
 const uint8_t TIME_SINCE_CODES_CLEARED         = 78;  // 0x4E - min
@@ -356,7 +356,40 @@ public:
 
 	uint32_t supportedPIDs_41_60();
 
+	uint32_t monitorDriveCycleStatus();
+	float ctrlModVoltage();
+	float absLoad();
+	float commandedAirFuelRatio();
+	float relativeThrottle();
+	float ambientAirTemp();
+	float absThrottlePosB();
+	float absThrottlePosC();
+	float absThrottlePosD();
+	float absThrottlePosE();
+	float absThrottlePosF();
+	float commandedThrottleActuator();
+	uint16_t timeRunWithMIL();
+	uint16_t timeSinceCodesCleared();
+	float maxMafRate();
+	uint8_t fuelType();
+	float ethonolPercent();
+	float absEvapSysVapPressure();
+	float evapSysVapPressure2();
+	float absFuelRailPressure();
+	float relativePedalPos();
+	float hybridBatLife();
+	float oilTemp();
+	float fuelInjectTiming();
+	float fuelRate();
+	uint8_t emissionRqmts();
 
+
+	uint32_t supportedPIDs_61_80();
+
+	float demandedTorque();
+	float torque();
+	uint16_t referenceTorque();
+	uint16_t auxSupported();
 	
 
 

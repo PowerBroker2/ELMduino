@@ -1493,6 +1493,812 @@ uint32_t ELM327::supportedPIDs_41_60()
 
 
 /*
+ uint32_t ELM327::monitorDriveCycleStatus()
+
+ Description:
+ ------------
+  *  Find status this drive cycle (https://en.wikipedia.org/wiki/OBD-II_PIDs#Service_01_PID_41)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Bit encoded status (https://en.wikipedia.org/wiki/OBD-II_PIDs#Service_01_PID_41)
+*/
+uint32_t ELM327::monitorDriveCycleStatus()
+{
+	if (queryPID(SERVICE_01, MONITOR_STATUS_THIS_DRIVE_CYCLE))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::ctrlModVoltage()
+
+ Description:
+ ------------
+  *  Find control module voltage in V
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Control module voltage in V
+*/
+float ELM327::ctrlModVoltage()
+{
+	if (queryPID(SERVICE_01, CONTROL_MODULE_VOLTAGE))
+		return (findResponse() / 1000.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::absLoad()
+
+ Description:
+ ------------
+  *  Find absolute load value in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Absolute load value in %
+*/
+float ELM327::absLoad()
+{
+	if (queryPID(SERVICE_01, ABS_LOAD_VALUE))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::commandedAirFuelRatio()
+
+ Description:
+ ------------
+  *  Find commanded air-fuel equivalence ratio
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Commanded air-fuel equivalence ratio
+*/
+float ELM327::commandedAirFuelRatio()
+{
+	if (queryPID(SERVICE_01, FUEL_AIR_COMMANDED_EQUIV_RATIO))
+		return (findResponse() / 32768.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::relativeThrottle()
+
+ Description:
+ ------------
+  *  Find relative throttle position in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Relative throttle position in %
+*/
+float ELM327::relativeThrottle()
+{
+	if (queryPID(SERVICE_01, RELATIVE_THROTTLE_POSITION))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::ambientAirTemp()
+
+ Description:
+ ------------
+  *  Find ambient air temperature in C
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Ambient air temperature in C
+*/
+float ELM327::ambientAirTemp()
+{
+	if (queryPID(SERVICE_01, AMBIENT_AIR_TEMP))
+		return (findResponse() - 40.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::absThrottlePosB()
+
+ Description:
+ ------------
+  *  Find absolute throttle position B in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Absolute throttle position B in %
+*/
+float ELM327::absThrottlePosB()
+{
+	if (queryPID(SERVICE_01, ABS_THROTTLE_POSITION_B))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::absThrottlePosC()
+
+ Description:
+ ------------
+  *  Find absolute throttle position C in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Absolute throttle position C in %
+*/
+float ELM327::absThrottlePosC()
+{
+	if (queryPID(SERVICE_01, ABS_THROTTLE_POSITION_C))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::absThrottlePosD()
+
+ Description:
+ ------------
+  *  Find absolute throttle position D in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Absolute throttle position D in %
+*/
+float ELM327::absThrottlePosD()
+{
+	if (queryPID(SERVICE_01, ABS_THROTTLE_POSITION_D))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::absThrottlePosE()
+
+ Description:
+ ------------
+  *  Find absolute throttle position E in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Absolute throttle position E in %
+*/
+float ELM327::absThrottlePosE()
+{
+	if (queryPID(SERVICE_01, ABS_THROTTLE_POSITION_E))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::absThrottlePosF()
+
+ Description:
+ ------------
+  *  Find absolute throttle position F in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Absolute throttle position F in %
+*/
+float ELM327::absThrottlePosF()
+{
+	if (queryPID(SERVICE_01, ABS_THROTTLE_POSITION_F))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::commandedThrottleActuator()
+
+ Description:
+ ------------
+  *  Find commanded throttle actuator in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Commanded throttle actuator in %
+*/
+float ELM327::commandedThrottleActuator()
+{
+	if (queryPID(SERVICE_01, COMMANDED_THROTTLE_ACTUATOR))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint16_t ELM327::timeRunWithMIL()
+
+ Description:
+ ------------
+  *  Find time run with MIL on in min
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint16_t - Time run with MIL on in min
+*/
+uint16_t ELM327::timeRunWithMIL()
+{
+	if (queryPID(SERVICE_01, TIME_RUN_WITH_MIL_ON))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint16_t ELM327::timeSinceCodesCleared()
+
+ Description:
+ ------------
+  *  Find time since trouble codes cleared in min
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint16_t - Time since trouble codes cleared in min
+*/
+uint16_t ELM327::timeSinceCodesCleared()
+{
+	if (queryPID(SERVICE_01, TIME_SINCE_CODES_CLEARED))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::maxMafRate()
+
+ Description:
+ ------------
+  *  Find maximum value for air flow rate from mass air flow sensor in g/s
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Maximum value for air flow rate from mass air flow sensor in g/s
+*/
+float ELM327::maxMafRate()
+{
+	if (queryPID(SERVICE_01, MAX_MAF_RATE))
+		return (findResponse() * 10.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint8_t ELM327::fuelType()
+
+ Description:
+ ------------
+  *  Find fuel type (https://en.wikipedia.org/wiki/OBD-II_PIDs#Fuel_Type_Coding)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint8_t - Bit encoded (https://en.wikipedia.org/wiki/OBD-II_PIDs#Fuel_Type_Coding)
+*/
+uint8_t ELM327::fuelType()
+{
+	if (queryPID(SERVICE_01, FUEL_TYPE))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::ethonolPercent()
+
+ Description:
+ ------------
+  *  Find ethanol fuel in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Ethanol fuel in %
+*/
+float ELM327::ethonolPercent()
+{
+	if (queryPID(SERVICE_01, ETHONOL_FUEL_PERCENT))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::absEvapSysVapPressure()
+
+ Description:
+ ------------
+  *  Find absolute evap. system vapor pressure in kPa
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Absolute evap. system vapor pressure in kPa
+*/
+float ELM327::absEvapSysVapPressure()
+{
+	if (queryPID(SERVICE_01, ABS_EVAP_SYS_VAPOR_PRESSURE))
+		return (findResponse() / 200.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::evapSysVapPressure2()
+
+ Description:
+ ------------
+  *  Find evap. system vapor pressure in Pa
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Evap. system vapor pressure in Pa
+*/
+float ELM327::evapSysVapPressure2()
+{
+	if (queryPID(SERVICE_01, EVAP_SYS_VAPOR_PRESSURE))
+		return (findResponse() - 32767.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::absFuelRailPressure()
+
+ Description:
+ ------------
+  *  Find absolute fuel rail pressure in kPa
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - absolute fuel rail pressure in kPa
+*/
+float ELM327::absFuelRailPressure()
+{
+	if (queryPID(SERVICE_01, FUEL_RAIL_ABS_PRESSURE))
+		return (findResponse() * 10.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::relativePedalPos()
+
+ Description:
+ ------------
+  *  Find relative accelerator pedal position in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Relative accelerator pedal position in %
+*/
+float ELM327::relativePedalPos()
+{
+	if (queryPID(SERVICE_01, RELATIVE_ACCELERATOR_PEDAL_POS))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::hybridBatLife()
+
+ Description:
+ ------------
+  *  Find hybrid battery pack remaining life in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Hybrid battery pack remaining life in %
+*/
+float ELM327::hybridBatLife()
+{
+	if (queryPID(SERVICE_01, HYBRID_BATTERY_REMAINING_LIFE))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::oilTemp()
+
+ Description:
+ ------------
+  *  Find engine oil temperature in C
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Engine oil temperature in C
+*/
+float ELM327::oilTemp()
+{
+	if (queryPID(SERVICE_01, ENGINE_OIL_TEMP))
+		return (findResponse() - 40.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::fuelInjectTiming()
+
+ Description:
+ ------------
+  *  Find fuel injection timing in degrees
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Fuel injection timing in degrees
+*/
+float ELM327::fuelInjectTiming()
+{
+	if (queryPID(SERVICE_01, FUEL_INJECTION_TIMING))
+		return ((findResponse() / 128.0) - 210.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::fuelRate()
+
+ Description:
+ ------------
+  *  Find engine fuel rate in L/h
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Engine fuel rate in L/h
+*/
+float ELM327::fuelRate()
+{
+	if (queryPID(SERVICE_01, ENGINE_FUEL_RATE))
+		return (findResponse() / 20.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint8_t ELM327::emissionRqmts()
+
+ Description:
+ ------------
+  *  Find emission requirements to which vehicle is designed
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint8_t - Bit encoded (?)
+*/
+uint8_t ELM327::emissionRqmts()
+{
+	if (queryPID(SERVICE_01, EMISSION_REQUIREMENTS))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint32_t ELM327::supportedPIDs_61_80()
+
+ Description:
+ ------------
+  * Determine which of PIDs 0x61 through 0x80 are supported (bit encoded)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Bit encoded booleans of supported PIDs 0x61-0x80
+*/
+uint32_t ELM327::supportedPIDs_61_80()
+{
+	if (queryPID(SERVICE_01, SUPPORTED_PIDS_61_80))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::demandedTorque()
+
+ Description:
+ ------------
+  *  Find driver's demanded engine torque in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Driver's demanded engine torque in %
+*/
+float ELM327::demandedTorque()
+{
+	if (queryPID(SERVICE_01, DEMANDED_ENGINE_PERCENT_TORQUE))
+		return (findResponse() - 125.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::torque()
+
+ Description:
+ ------------
+  *  Find actual engine torque in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Actual engine torque in %
+*/
+float ELM327::torque()
+{
+	if (queryPID(SERVICE_01, ACTUAL_ENGINE_TORQUE))
+		return (findResponse() - 125.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint16_t ELM327::referenceTorque()
+
+ Description:
+ ------------
+  *  Find engine reference torque in Nm
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint16_t - Engine reference torque in Nm
+*/
+uint16_t ELM327::referenceTorque()
+{
+	if (queryPID(SERVICE_01, ENGINE_REFERENCE_TORQUE))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint16_t ELM327::auxSupported()
+
+ Description:
+ ------------
+  *  Find auxiliary input/output supported
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint16_t - Bit encoded (?)
+*/
+uint16_t ELM327::auxSupported()
+{
+	if (queryPID(SERVICE_01, AUX_INPUT_OUTPUT_SUPPORTED))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
  int8_t ELM327::sendCommand(const char *cmd)
 
  Description:
