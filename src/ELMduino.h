@@ -305,9 +305,58 @@ public:
 	bool queryPID(char queryStr[]);
 	int8_t sendCommand(const char *cmd);
 	bool timeout();
+
+
+	uint32_t supportedPIDs_1_20();
+
+	uint32_t monitorStatus();
+	uint16_t freezeDTC();
+	uint16_t fuelSystemStatus();
+	float engineLoad();
+	float engineCoolantTemp();
+	float shortTermFuelTrimBank_1();
+	float longTermFuelTrimBank_1();
+	float shortTermFuelTrimBank_2();
+	float longTermFuelTrimBank_2();
+	float fuelPressure();
+	uint8_t manifoldPressure();
 	float rpm();
 	int32_t kph();
 	float mph();
+	float timingAdvance();
+	float intakeAirTemp();
+	float mafRate();
+	float throttle();
+	uint8_t commandedSecAirStatus();
+	uint8_t oxygenSensorsPresent_2banks();
+	uint8_t obdStandards();
+	uint8_t oxygenSensorsPresent_4banks();
+	bool auxInputStatus();
+	uint16_t runTime();
+
+
+	uint32_t supportedPIDs_21_40();
+
+	uint16_t distTravelWithMIL();
+	float fuelRailPressure();
+	float fuelRailGuagePressure();
+	float commandedEGR();
+	float egrError();
+	float commandedEvapPurge();
+	float fuelLevel();
+	uint8_t warmUpsSinceCodesCleared();
+	uint16_t distSinceCodesCleared();
+	float evapSysVapPressure();
+	uint8_t absBaroPressure();
+	float catTempB1S1();
+	float catTempB2S1();
+	float catTempB1S2();
+	float catTempB2S2();
+
+
+	uint32_t supportedPIDs_41_60();
+
+
 	
 
 

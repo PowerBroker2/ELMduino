@@ -397,6 +397,346 @@ bool ELM327::queryPID(char queryStr[])
 
 
 /*
+ uint32_t ELM327::supportedPIDs_1_20()
+
+ Description:
+ ------------
+  * Determine which of PIDs 0x1 through 0x20 are supported (bit encoded)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Bit encoded booleans of supported PIDs 0x1-0x20
+*/
+uint32_t ELM327::supportedPIDs_1_20()
+{
+	if (queryPID(SERVICE_01, SUPPORTED_PIDS_1_20))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint32_t ELM327::monitorStatus()
+
+ Description:
+ ------------
+  * Monitor status since DTCs cleared (Includes malfunction indicator
+  lamp (MIL) status and number of DTCs). See https://en.wikipedia.org/wiki/OBD-II_PIDs#Service_01_PID_01
+  for more info
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Bit encoded status (https://en.wikipedia.org/wiki/OBD-II_PIDs#Service_01_PID_01)
+*/
+uint32_t ELM327::monitorStatus()
+{
+	if (queryPID(SERVICE_01, MONITOR_STATUS_SINCE_DTC_CLEARED))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint16_t ELM327::freezeDTC()
+
+ Description:
+ ------------
+  * Freeze DTC - see https://www.samarins.com/diagnose/freeze-frame.html for more info
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint16_t - Various vehicle information (https://www.samarins.com/diagnose/freeze-frame.html)
+*/
+uint16_t ELM327::freezeDTC()
+{
+	if (queryPID(SERVICE_01, FREEZE_DTC))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint16_t ELM327::fuelSystemStatus()
+
+ Description:
+ ------------
+  * Freeze DTC - see https://en.wikipedia.org/wiki/OBD-II_PIDs#Service_01_PID_03 for more info
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint16_t - Bit encoded status (https://en.wikipedia.org/wiki/OBD-II_PIDs#Service_01_PID_03)
+*/
+uint16_t ELM327::fuelSystemStatus()
+{
+	if (queryPID(SERVICE_01, FUEL_SYSTEM_STATUS))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::engineLoad()
+
+ Description:
+ ------------
+  * Find the current engine load in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Engine load %
+*/
+float ELM327::engineLoad()
+{
+	if (queryPID(SERVICE_01, ENGINE_LOAD))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::engineCoolantTemp()
+
+ Description:
+ ------------
+  * Find the current engine coolant temp in C
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Engine load %
+*/
+float ELM327::engineCoolantTemp()
+{
+	if (queryPID(SERVICE_01, ENGINE_COOLANT_TEMP))
+		return (findResponse() - 40.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::shortTermFuelTrimBank_1()
+
+ Description:
+ ------------
+  * Find fuel trim %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Fuel trim %
+*/
+float ELM327::shortTermFuelTrimBank_1()
+{
+	if (queryPID(SERVICE_01, SHORT_TERM_FUEL_TRIM_BANK_1))
+		return ((findResponse() / 2.55) - 100.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::longTermFuelTrimBank_1()
+
+ Description:
+ ------------
+  * Find fuel trim %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Fuel trim %
+*/
+float ELM327::longTermFuelTrimBank_1()
+{
+	if (queryPID(SERVICE_01, LONG_TERM_FUEL_TRIM_BANK_1))
+		return ((findResponse() / 2.55) - 100.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::shortTermFuelTrimBank_2()
+
+ Description:
+ ------------
+  * Find fuel trim %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Fuel trim %
+*/
+float ELM327::shortTermFuelTrimBank_2()
+{
+	if (queryPID(SERVICE_01, SHORT_TERM_FUEL_TRIM_BANK_2))
+		return ((findResponse() / 2.55) - 100.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::longTermFuelTrimBank_2()
+
+ Description:
+ ------------
+  * Find fuel trim %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Fuel trim %
+*/
+float ELM327::longTermFuelTrimBank_2()
+{
+	if (queryPID(SERVICE_01, LONG_TERM_FUEL_TRIM_BANK_2))
+		return ((findResponse() / 2.55) - 100.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::fuelPressure()
+
+ Description:
+ ------------
+  * Find fuel pressure in kPa
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Fuel pressure in kPa
+*/
+float ELM327::fuelPressure()
+{
+	if (queryPID(SERVICE_01, FUEL_PRESSURE))
+		return (findResponse() * 3.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint8_t ELM327::manifoldPressure()
+
+ Description:
+ ------------
+  * Find intake manifold absolute pressure in kPa
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint8_t - Intake manifold absolute pressure in kPa
+*/
+uint8_t ELM327::manifoldPressure()
+{
+	if (queryPID(SERVICE_01, INTAKE_MANIFOLD_ABS_PRESSURE))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::rpm()
+
+ Description:
+ ------------
+  * Queries and parses received message for/returns vehicle RMP data
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Vehicle RPM
+*/
+float ELM327::rpm()
+{
+	if (queryPID(SERVICE_01, ENGINE_RPM))
+		return (findResponse() / 4.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
  int32_t ELM327::kph()
 
  Description:
@@ -414,7 +754,7 @@ bool ELM327::queryPID(char queryStr[])
 int32_t ELM327::kph()
 {
 	if (queryPID(SERVICE_01, VEHICLE_SPEED))
-		return (int32_t)findResponse();
+		return findResponse();
 
 	return ELM_GENERAL_ERROR;
 }
@@ -450,13 +790,12 @@ float ELM327::mph()
 
 
 
-
 /*
- float ELM327::rpm()
+ float ELM327::timingAdvance()
 
  Description:
  ------------
-  * Queries and parses received message for/returns vehicle RMP data
+  *  Find timing advance in degrees before Top Dead Center (TDC)
 
  Inputs:
  -------
@@ -464,12 +803,688 @@ float ELM327::mph()
 
  Return:
  -------
-  * float - Vehicle RPM
+  * float - Timing advance in degrees before Top Dead Center (TDC)
 */
-float ELM327::rpm()
+float ELM327::timingAdvance()
 {
-	if (queryPID(SERVICE_01, ENGINE_RPM))
-		return (findResponse() / 4.0);
+	if (queryPID(SERVICE_01, TIMING_ADVANCE))
+		return ((findResponse() / 2.0) - 64.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::intakeAirTemp()
+
+ Description:
+ ------------
+  *  Find intake air temperature in C
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Intake air temperature in C
+*/
+float ELM327::intakeAirTemp()
+{
+	if (queryPID(SERVICE_01, INTAKE_AIR_TEMP))
+		return (findResponse() - 40.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::mafRate()
+
+ Description:
+ ------------
+  *  Find mass air flow sensor (MAF) air flow rate rate in g/s
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Mass air flow sensor (MAF) air flow rate rate in g/s
+*/
+float ELM327::mafRate()
+{
+	if (queryPID(SERVICE_01, MAF_FLOW_RATE))
+		return (findResponse() / 100.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::throttle()
+
+ Description:
+ ------------
+  *  Find throttle position in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Throttle position in %
+*/
+float ELM327::throttle()
+{
+	if (queryPID(SERVICE_01, THROTTLE_POSITION))
+		return (findResponse() / 100.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint8_t ELM327::commandedSecAirStatus()
+
+ Description:
+ ------------
+  *  Find commanded secondary air status
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint8_t - Bit encoded status (https://en.wikipedia.org/wiki/OBD-II_PIDs#Service_01_PID_12)
+*/
+uint8_t ELM327::commandedSecAirStatus()
+{
+	if (queryPID(SERVICE_01, COMMANDED_SECONDARY_AIR_STATUS))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint8_t ELM327::oxygenSensorsPresent_2banks()
+
+ Description:
+ ------------
+  *  Find which oxygen sensors are present ([A0..A3] == Bank 1, Sensors 1-4. [A4..A7] == Bank 2...)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint8_t - Bit encoded
+*/
+uint8_t ELM327::oxygenSensorsPresent_2banks()
+{
+	if (queryPID(SERVICE_01, OXYGEN_SENSORS_PRESENT_2_BANKS))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint8_t ELM327::obdStandards()
+
+ Description:
+ ------------
+  *  Find the OBD standards this vehicle conforms to (https://en.wikipedia.org/wiki/OBD-II_PIDs#Service_01_PID_1C)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint8_t - Bit encoded (https://en.wikipedia.org/wiki/OBD-II_PIDs#Service_01_PID_1C)
+*/
+uint8_t ELM327::obdStandards()
+{
+	if (queryPID(SERVICE_01, OBD_STANDARDS))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint8_t ELM327::oxygenSensorsPresent_4banks()
+
+ Description:
+ ------------
+  *  Find which oxygen sensors are present (Similar to PID 13, but [A0..A7] == [B1S1, B1S2, B2S1, B2S2, B3S1, B3S2, B4S1, B4S2])
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint8_t - Bit encoded
+*/
+uint8_t ELM327::oxygenSensorsPresent_4banks()
+{
+	if (queryPID(SERVICE_01, OXYGEN_SENSORS_PRESENT_4_BANKS))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ bool ELM327::auxInputStatus()
+
+ Description:
+ ------------
+  *  Find Power Take Off (PTO) status
+  
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * bool - Power Take Off (PTO) status
+*/
+bool ELM327::auxInputStatus()
+{
+	if (queryPID(SERVICE_01, AUX_INPUT_STATUS))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint16_t ELM327::runTime()
+
+ Description:
+ ------------
+  *  Find run time since engine start in s
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint16_t - Run time since engine start in s
+*/
+uint16_t ELM327::runTime()
+{
+	if (queryPID(SERVICE_01, RUN_TIME_SINCE_ENGINE_START))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint32_t ELM327::supportedPIDs_21_40()
+
+ Description:
+ ------------
+  * Determine which of PIDs 0x1 through 0x20 are supported (bit encoded)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Bit encoded booleans of supported PIDs 0x21-0x20
+*/
+uint32_t ELM327::supportedPIDs_21_40()
+{
+	if (queryPID(SERVICE_01, SUPPORTED_PIDS_21_40))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint16_t ELM327::distTravelWithMIL()
+
+ Description:
+ ------------
+  *  Find distance traveled with malfunction indicator lamp (MIL) on in km
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint16_t - Distance traveled with malfunction indicator lamp (MIL) on in km
+*/
+uint16_t ELM327::distTravelWithMIL()
+{
+	if (queryPID(SERVICE_01, DISTANCE_TRAVELED_WITH_MIL_ON))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::fuelRailPressure()
+
+ Description:
+ ------------
+  *  Find fuel Rail Pressure (relative to manifold vacuum) in kPa
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Fuel Rail Pressure (relative to manifold vacuum) in kPa
+*/
+float ELM327::fuelRailPressure()
+{
+	if (queryPID(SERVICE_01, FUEL_RAIL_PRESSURE))
+		return (findResponse() * 0.079);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::fuelRailGuagePressure()
+
+ Description:
+ ------------
+  *  Find fuel Rail Gauge Pressure (diesel, or gasoline direct injection) in kPa
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Fuel Rail Gauge Pressure (diesel, or gasoline direct injection) in kPa
+*/
+float ELM327::fuelRailGuagePressure()
+{
+	if (queryPID(SERVICE_01, FUEL_RAIL_GUAGE_PRESSURE))
+		return (findResponse() * 10.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::commandedEGR()
+
+ Description:
+ ------------
+  *  Find commanded Exhaust Gas Recirculation (EGR) in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Commanded Exhaust Gas Recirculation (EGR) in %
+*/
+float ELM327::commandedEGR()
+{
+	if (queryPID(SERVICE_01, COMMANDED_EGR))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::egrError()
+
+ Description:
+ ------------
+  *  Find Exhaust Gas Recirculation (EGR) error in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Exhaust Gas Recirculation (EGR) error in %
+*/
+float ELM327::egrError()
+{
+	if (queryPID(SERVICE_01, EGR_ERROR))
+		return ((findResponse() / 2.28) - 100);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::commandedEvapPurge()
+
+ Description:
+ ------------
+  *  Find commanded evaporative purge in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Commanded evaporative purge in %
+*/
+float ELM327::commandedEvapPurge()
+{
+	if (queryPID(SERVICE_01, COMMANDED_EVAPORATIVE_PURGE))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::fuelLevel()
+
+ Description:
+ ------------
+  *  Find fuel tank level input in %
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Fuel tank level input in %
+*/
+float ELM327::fuelLevel()
+{
+	if (queryPID(SERVICE_01, FUEL_TANK_LEVEL_INPUT))
+		return (findResponse() / 2.55);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint8_t ELM327::warmUpsSinceCodesCleared()
+
+ Description:
+ ------------
+  *  Find num warm-ups since codes cleared
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint8_t - Num warm-ups since codes cleared
+*/
+uint8_t ELM327::warmUpsSinceCodesCleared()
+{
+	if (queryPID(SERVICE_01, WARM_UPS_SINCE_CODES_CLEARED))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint16_t ELM327::distSinceCodesCleared()
+
+ Description:
+ ------------
+  *  Find distance traveled since codes cleared in km
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint16_t - Distance traveled since codes cleared in km
+*/
+uint16_t ELM327::distSinceCodesCleared()
+{
+	if (queryPID(SERVICE_01, DIST_TRAV_SINCE_CODES_CLEARED))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::evapSysVapPressure()
+
+ Description:
+ ------------
+  *  Find evap. system vapor pressure in Pa
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Evap. system vapor pressure in Pa
+*/
+float ELM327::evapSysVapPressure()
+{
+	if (queryPID(SERVICE_01, EVAP_SYSTEM_VAPOR_PRESSURE))
+		return ((int16_t)findResponse() / 4.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint8_t ELM327::absBaroPressure()
+
+ Description:
+ ------------
+  *  Find absolute barometric pressure in kPa
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint8_t - Absolute barometric pressure in kPa
+*/
+uint8_t ELM327::absBaroPressure()
+{
+	if (queryPID(SERVICE_01, ABS_BAROMETRIC_PRESSURE))
+		return findResponse();
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::catTempB1S1()
+
+ Description:
+ ------------
+  *  Find catalyst temperature in C
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Catalyst temperature in C
+*/
+float ELM327::catTempB1S1()
+{
+	if (queryPID(SERVICE_01, CATALYST_TEMP_BANK_1_SENSOR_1))
+		return ((findResponse() / 10.0) - 40.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::catTempB2S1()
+
+ Description:
+ ------------
+  *  Find catalyst temperature in C
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Catalyst temperature in C
+*/
+float ELM327::catTempB2S1()
+{
+	if (queryPID(SERVICE_01, CATALYST_TEMP_BANK_2_SENSOR_1))
+		return ((findResponse() / 10.0) - 40.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::catTempB1S2()
+
+ Description:
+ ------------
+  *  Find catalyst temperature in C
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Catalyst temperature in C
+*/
+float ELM327::catTempB1S2()
+{
+	if (queryPID(SERVICE_01, CATALYST_TEMP_BANK_1_SENSOR_2))
+		return ((findResponse() / 10.0) - 40.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ float ELM327::catTempB2S2()
+
+ Description:
+ ------------
+  *  Find catalyst temperature in C
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * float - Catalyst temperature in C
+*/
+float ELM327::catTempB2S2()
+{
+	if (queryPID(SERVICE_01, CATALYST_TEMP_BANK_2_SENSOR_2))
+		return ((findResponse() / 10.0) - 40.0);
+
+	return ELM_GENERAL_ERROR;
+}
+
+
+
+
+/*
+ uint32_t ELM327::supportedPIDs_41_60()
+
+ Description:
+ ------------
+  * Determine which of PIDs 0x41 through 0x60 are supported (bit encoded)
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Bit encoded booleans of supported PIDs 0x41-0x60
+*/
+uint32_t ELM327::supportedPIDs_41_60()
+{
+	if (queryPID(SERVICE_01, SUPPORTED_PIDS_41_60))
+		return findResponse();
 
 	return ELM_GENERAL_ERROR;
 }
