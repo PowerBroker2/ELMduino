@@ -886,7 +886,7 @@ float ELM327::mafRate()
 float ELM327::throttle()
 {
 	if (queryPID(SERVICE_01, THROTTLE_POSITION))
-		return (findResponse() / 100.0);
+		return (findResponse() / 2.55);
 
 	return ELM_GENERAL_ERROR;
 }
