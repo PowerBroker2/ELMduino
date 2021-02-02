@@ -117,7 +117,7 @@ bool ELM327::initializeELM(char protocol)
         if (strstr(payload, "OK") != NULL)
             connected = true;
 
-	return connected;
+    return connected;
 }
 
 
