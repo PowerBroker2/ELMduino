@@ -4,7 +4,7 @@
 
 
 /*
- bool ELM327::begin(Stream &stream, char protocol, uint16_t payloadLen)
+ bool ELM327::begin(Stream &stream, const bool& debug, const uint16_t& timeout, const char& protocol, const uint16_t& payloadLen)
 
  Description:
  ------------
@@ -12,24 +12,25 @@
 
  Inputs:
  -------
-  * Stream &stream - Pointer to Serial port connected
-  to ELM327
-  * char protocol - Protocol ID to specify the
-  ELM327 to communicate with the ECU over
-  * uint16_t payloadLen - Maximum number of bytes expected
-  to be returned by the ELM327 after a query
+  * Stream &stream      - Pointer to Serial port connected to ELM327
+  * bool debug          - Specify whether or not to print debug statements to "Serial"
+  * uint16_t timeout    - Time in ms to wait for a query response
+  * char protocol       - Protocol ID to specify the ELM327 to communicate with the ECU over
+  * uint16_t payloadLen - Maximum number of bytes expected to be returned by the ELM327 after a query
 
  Return:
  -------
   * bool - Whether or not the ELM327 was propperly
   initialized
 */
-bool ELM327::begin(Stream &stream, char protocol, uint16_t payloadLen)
+bool ELM327::begin(Stream &stream, const bool& debug, const uint16_t& timeout, const char& protocol, const uint16_t& payloadLen)
 {
-	elm_port = &stream;
+	elm_port    = &stream;
 	PAYLOAD_LEN = payloadLen;
+	debugMode   = debug;
+	timeout_ms  = timeout;
 
-	payload = (char*)malloc(PAYLOAD_LEN+1); // allow for terminating '\0'
+	payload = (char*)malloc(PAYLOAD_LEN + 1); // allow for terminating '\0'
 
 	// test if serial port is connected
 	if (!elm_port)
@@ -46,7 +47,7 @@ bool ELM327::begin(Stream &stream, char protocol, uint16_t payloadLen)
 
 
 /*
- bool ELM327::initializeELM(char protocol)
+ bool ELM327::initializeELM(const char& protocol)
 
  Description:
  ------------
@@ -54,13 +55,11 @@ bool ELM327::begin(Stream &stream, char protocol, uint16_t payloadLen)
 
  Inputs:
  -------
-  * char protocol - Protocol ID to specify the
-  ELM327 to communicate with the ECU over
+  * char protocol - Protocol ID to specify the ELM327 to communicate with the ECU over
 
  Return:
  -------
-  * bool - Whether or not the ELM327 was propperly
-  initialized
+  * bool - Whether or not the ELM327 was propperly initialized
 
  Notes:
  ------
@@ -81,13 +80,13 @@ bool ELM327::begin(Stream &stream, char protocol, uint16_t payloadLen)
 
   * --> *user adjustable
 */
-bool ELM327::initializeELM(char protocol)
+bool ELM327::initializeELM(const char& protocol)
 {
 	char command[10] = { '\0' };
 	connected = false;
 	
 	sendCommand(RESET_ALL);
-        delay(100);
+    delay(100);
 
 	sendCommand(ECHO_OFF);
 	delay(100);
@@ -109,6 +108,14 @@ bool ELM327::initializeELM(char protocol)
 			return connected;
 		}
 	}
+
+	if (debugMode)
+	{
+		Serial.print("Setting protocol via ");
+		Serial.print(TRY_PROT_H_AUTO_SEARCH);
+		Serial.print(" did not work - trying via ");
+		Serial.println(SET_PROTOCOL_TO_H_SAVE);
+	}
 	
 	// Set protocol and save
 	sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
@@ -117,7 +124,14 @@ bool ELM327::initializeELM(char protocol)
         if (strstr(payload, "OK") != NULL)
             connected = true;
 
-    return connected;
+	if (debugMode)
+	{
+		Serial.print("Setting protocol via ");
+		Serial.print(SET_PROTOCOL_TO_H_SAVE);
+		Serial.println(" did not work");
+	}
+
+	return connected;
 }
 
 
@@ -141,6 +155,14 @@ bool ELM327::initializeELM(char protocol)
 */
 void ELM327::formatQueryArray(uint8_t service, uint16_t pid)
 {
+	if (debugMode)
+	{
+		Serial.print("Service: ");
+		Serial.println(service);
+		Serial.print("PID: ");
+		Serial.println(pid);
+	}
+
 	query[0] = ((service >> 4) & 0xF) + '0';
 	query[1] = (service & 0xF) + '0';
 
@@ -148,6 +170,9 @@ void ELM327::formatQueryArray(uint8_t service, uint16_t pid)
 	// but some custom queries have PIDs with 32-bit values)
 	if (pid & 0xFF00)
 	{
+		if (debugMode)
+			Serial.println("Long query detected");
+
 		longQuery = true;
 
 		query[2] = ((pid >> 12) & 0xF) + '0';
@@ -159,6 +184,9 @@ void ELM327::formatQueryArray(uint8_t service, uint16_t pid)
 	}
 	else
 	{
+		if (debugMode)
+			Serial.println("Normal length query detected");
+
 		longQuery = false;
 
 		query[2] = ((pid >> 4) & 0xF) + '0';
@@ -167,6 +195,12 @@ void ELM327::formatQueryArray(uint8_t service, uint16_t pid)
 		query[5] = '\0';
 
 		upper(query, 4);
+	}
+
+	if (debugMode)
+	{
+		Serial.print("Query string: ");
+		Serial.println(query);
 	}
 }
 
@@ -213,8 +247,7 @@ void ELM327::upper(char string[], uint8_t buflen)
 
  Inputs:
  -------
-  * uint8_t string[] - Char array
-  * uint8_t buflen   - Length of char array
+  * void
 
  Return:
  -------
@@ -269,12 +302,9 @@ uint8_t ELM327::ctoi(uint8_t value)
 
  Inputs:
  -------
-  * char const *str    - string to search target
-  within
-  * char const *target - String to search for in
-  str
-  * uint8_t numOccur   - Which instance of target
-  in str
+  * char const *str    - string to search target within
+  * char const *target - String to search for in str
+  * uint8_t numOccur   - Which instance of target in str
   
  Return:
  -------
@@ -329,6 +359,9 @@ int8_t ELM327::nextIndex(char const *str,
 */
 void ELM327::flushInputBuff()
 {
+	if (debugMode)
+		Serial.println("Clearing input serial buffer");
+
 	while (elm_port->available())
 		elm_port->read();
 }
@@ -2317,14 +2350,19 @@ int8_t ELM327::sendCommand(const char *cmd)
 {
 	uint8_t counter = 0;
 	connected = false;
-    // malloc is size PAYLOAD_LEN+1
-    // last valid idx is PAYLOAD_LEN
-	for (byte i = 0; i < (PAYLOAD_LEN+1); i++)
-		payload[i] = '\0';
+    
+	// clear payload buffer
+	memset(payload, '\0', PAYLOAD_LEN + 1);
 
-	// reset input buffer and number of received bytes
+	// reset input serial buffer and number of received bytes
 	recBytes = 0;
 	flushInputBuff();
+
+	if (debugMode)
+	{
+		Serial.print("Sending the following command/query: ");
+		Serial.println(cmd);
+	}
 
 	elm_port->print(cmd);
 	elm_port->print('\r');
@@ -2343,8 +2381,19 @@ int8_t ELM327::sendCommand(const char *cmd)
 		{
 			char recChar = elm_port->read();
 
+			if (debugMode)
+			{
+				Serial.print("Received char: ");
+				Serial.println(recChar);
+			}
+
 			if (recChar == '>')
+			{
+				if (debugMode)
+					Serial.print("Delimiter found");
+
 				break;
+			}
 			else if (isspace(recChar))
 				continue;
 			
@@ -2353,14 +2402,30 @@ int8_t ELM327::sendCommand(const char *cmd)
 		}
 	}
 
+	if (debugMode)
+	{
+		Serial.print("All chars received: ");
+		Serial.println(payload);
+	}
+
 	if (timeout())
 	{
+		if (debugMode)
+		{
+			Serial.print("Timeout detected with overflow of ");
+			Serial.print((currentTime - previousTime) - timeout_ms);
+			Serial.println("ms");
+		}
+
 		status = ELM_TIMEOUT;
 		return status;
 	}
 	
 	if (nextIndex(payload, "UNABLETOCONNECT") >= 0)
 	{
+		if (debugMode)
+			Serial.println("ELM responded with errror \"UNABLE TO CONNECT\"");
+
 		status = ELM_UNABLE_TO_CONNECT;
 		return status;
 	}
@@ -2369,18 +2434,27 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 	if (nextIndex(payload, "NODATA") >= 0)
 	{
+		if (debugMode)
+			Serial.println("ELM responded with errror \"NO DATA\"");
+
 		status = ELM_NO_DATA;
 		return status;
 	}
 
 	if (nextIndex(payload, "STOPPED") >= 0)
 	{
+		if (debugMode)
+			Serial.println("ELM responded with errror \"STOPPED\"");
+
 		status = ELM_STOPPED;
 		return status;
 	}
 
 	if (nextIndex(payload, "ERROR") >= 0)
 	{
+		if (debugMode)
+			Serial.println("ELM responded with \"ERROR\"");
+
 		status = ELM_GENERAL_ERROR;
 		return status;
 	}
@@ -2415,8 +2489,8 @@ int8_t ELM327::sendCommand(const char *cmd)
 uint64_t ELM327::findResponse()
 {
 	uint8_t firstDatum = 0;
-	uint8_t payBytes = 0;
-	char header[7] = { '\0' };
+	uint8_t payBytes   = 0;
+	char header[7]     = { '\0' };
 
 	if (longQuery)
 	{
@@ -2435,6 +2509,12 @@ uint64_t ELM327::findResponse()
 		header[3] = query[3];
 	}
 
+	if (debugMode)
+	{
+		Serial.print("Expected response header: ");
+		Serial.println(header);
+	}
+
 	int8_t firstHeadIndex  = nextIndex(payload, header);
 	int8_t secondHeadIndex = nextIndex(payload, header, 2);
 
@@ -2450,12 +2530,21 @@ uint64_t ELM327::findResponse()
 		// correct number of bytes returned by the ELM327
 		// regardless of how many "responses" were returned
 		if (secondHeadIndex >= 0)
+		{
+			if (debugMode)
+				Serial.println("Double response detected");
+
 			payBytes = secondHeadIndex - firstDatum;
+		}
 		else
+		{
+			if (debugMode)
+				Serial.println("Single response detected");
+
 			payBytes = recBytes - firstDatum;
+		}
 
-
-		uint64_t response = 0;
+		response = 0;
 		for(uint8_t i = 0; i < payBytes; i++)
 		{
 			uint8_t payloadIndex = firstDatum + i;
@@ -2475,9 +2564,79 @@ uint64_t ELM327::findResponse()
 		responseByte_5 = (response >> 40) & 0xFF;
 		responseByte_6 = (response >> 48) & 0xFF;
 		responseByte_7 = (response >> 56) & 0xFF;
+
+		if (debugMode)
+		{
+			Serial.print("64-bit response: ");
+			Serial.println(response);
+			Serial.print("responseByte_0: ");
+			Serial.println(responseByte_0);
+			Serial.print("responseByte_1: ");
+			Serial.println(responseByte_1);
+			Serial.print("responseByte_2: ");
+			Serial.println(responseByte_2);
+			Serial.print("responseByte_3: ");
+			Serial.println(responseByte_3);
+			Serial.print("responseByte_4: ");
+			Serial.println(responseByte_4);
+			Serial.print("responseByte_5: ");
+			Serial.println(responseByte_5);
+			Serial.print("responseByte_6: ");
+			Serial.println(responseByte_6);
+			Serial.print("responseByte_7: ");
+			Serial.println(responseByte_7);
+		}
 		
 		return response;
 	}
 
+	if (debugMode)
+		Serial.println("Response not detected");
+
 	return 0;
+}
+
+
+
+
+/*
+ void ELM327::printError()
+
+ Description:
+ ------------
+  * Prints appropriate error description if an error has occurred
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * void
+*/
+void ELM327::printError()
+{
+	Serial.print("Received: ");
+	Serial.println(payload);
+
+	if (status == ELM_SUCCESS)
+		Serial.println("ELM_SUCCESS");
+	else if (status == ELM_NO_RESPONSE)
+		Serial.println("ERROR: ELM_NO_RESPONSE");
+	else if (status == ELM_BUFFER_OVERFLOW)
+		Serial.println("ERROR: ELM_BUFFER_OVERFLOW");
+	else if (status == ELM_UNABLE_TO_CONNECT)
+		Serial.println("ERROR: ELM_UNABLE_TO_CONNECT");
+	else if (status == ELM_NO_DATA)
+		Serial.println("ERROR: ELM_NO_DATA");
+	else if (status == ELM_STOPPED)
+		Serial.println("ERROR: ELM_STOPPED");
+	else if (status == ELM_TIMEOUT)
+		Serial.println("ERROR: ELM_TIMEOUT");
+	else if (status == ELM_TIMEOUT)
+		Serial.println("ERROR: ELM_GENERAL_ERROR");
+	else
+		Serial.println("No error detected");
+
+	delay(100);
 }

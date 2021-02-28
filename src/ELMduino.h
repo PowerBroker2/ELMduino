@@ -280,11 +280,13 @@ public:
 	Stream* elm_port;
 
 	bool connected = false;
+	bool debugMode;
 	char* payload;
 	uint16_t PAYLOAD_LEN;
 	int8_t status = ELM_GENERAL_ERROR;
+	uint64_t response;
 	uint16_t recBytes;
-	uint16_t timeout_ms = 1000;
+	uint16_t timeout_ms;
 	byte responseByte_0;
 	byte responseByte_1;
 	byte responseByte_2;
@@ -297,8 +299,8 @@ public:
 	
 
 
-	bool begin(Stream& stream, char protocol='0', uint16_t payloadLen = 40);
-	bool initializeELM(char protocol='0');
+	bool begin(Stream& stream, const bool& debug = false, const uint16_t& timeout = 1000, const char& protocol = '0', const uint16_t& payloadLen = 40);
+	bool initializeELM(const char& protocol='0');
 	void flushInputBuff();
 	uint64_t findResponse();
 	bool queryPID(uint8_t service, uint16_t pid);
@@ -390,6 +392,7 @@ public:
 	float torque();
 	uint16_t referenceTorque();
 	uint16_t auxSupported();
+	void printError();
 	
 
 
