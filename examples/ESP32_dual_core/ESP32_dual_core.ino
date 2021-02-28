@@ -138,50 +138,7 @@ void read_rpm()
 
         if (obd.status != ELM_SUCCESS)
         {
-            print_error();
+            obd.printError();
         }
-    }
-}
-
-void print_error()
-{
-    Serial.print("Received: ");
-    for (byte i = 0; i < obd.recBytes; i++)
-    {
-        Serial.write(obd.payload[i]);
-    }
-    Serial.println();
-
-    if (obd.status == ELM_SUCCESS)
-    {
-        Serial.println(F("\tELM_SUCCESS"));
-    }
-    else if (obd.status == ELM_NO_RESPONSE)
-    {
-        Serial.println(F("\tERROR: ELM_NO_RESPONSE"));
-    }
-    else if (obd.status == ELM_BUFFER_OVERFLOW)
-    {
-        Serial.println(F("\tERROR: ELM_BUFFER_OVERFLOW"));
-    }
-    else if (obd.status == ELM_UNABLE_TO_CONNECT)
-    {
-        Serial.println(F("\tERROR: ELM_UNABLE_TO_CONNECT"));
-    }
-    else if (obd.status == ELM_NO_DATA)
-    {
-        Serial.println(F("\tERROR: ELM_NO_DATA"));
-    }
-    else if (obd.status == ELM_STOPPED)
-    {
-        Serial.println(F("\tERROR: ELM_STOPPED"));
-    }
-    else if (obd.status == ELM_TIMEOUT)
-    {
-        Serial.println(F("\tERROR: ELM_TIMEOUT"));
-    }
-    else if (obd.status == ELM_TIMEOUT)
-    {
-        Serial.println(F("\tERROR: ELM_GENERAL_ERROR"));
     }
 }
