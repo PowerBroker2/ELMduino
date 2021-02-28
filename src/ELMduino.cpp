@@ -2390,7 +2390,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 			if (recChar == '>')
 			{
 				if (debugMode)
-					Serial.print("Delimiter found");
+					Serial.println("Delimiter found");
 
 				break;
 			}
