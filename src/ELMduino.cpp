@@ -2568,7 +2568,6 @@ uint64_t ELM327::findResponse()
 		if (debugMode)
 		{
 			Serial.print("64-bit response: ");
-			Serial.println(response);
 			Serial.print("responseByte_0: ");
 			Serial.println(responseByte_0);
 			Serial.print("responseByte_1: ");
