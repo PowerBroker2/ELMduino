@@ -46,7 +46,7 @@ void setup()
     ESP.reset();
   }
 
-  myELM327.begin(client);
+  myELM327.begin(client, true, 2000);
 
   Serial.println("Connected to ELM327");
   Serial.println("Ensure your serial monitor line ending is set to 'Carriage Return'");

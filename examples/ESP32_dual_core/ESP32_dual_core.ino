@@ -114,7 +114,7 @@ void connect_to_obd()
         }
     }
 
-    while(!obd.begin(SerialBT))
+    while(!obd.begin(SerialBT, true, 2000))
     {
         Serial.println("Couldn't connect to OBD scanner");
     }

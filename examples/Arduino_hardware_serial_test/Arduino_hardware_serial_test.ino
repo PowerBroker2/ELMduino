@@ -22,7 +22,7 @@ void setup()
 
   Serial.println("Attempting to connect to ELM327...");
 
-  if (!myELM327.begin(ELM_PORT))
+  if (!myELM327.begin(ELM_PORT, true, 2000))
   {
     Serial.println("Couldn't connect to OBD scanner");
     while (1);

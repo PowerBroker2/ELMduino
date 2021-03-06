@@ -30,7 +30,7 @@ void setup()
     while(1);
   }
 
-  if (!myELM327.begin(ELM_PORT))
+  if (!myELM327.begin(ELM_PORT, true, 2000))
   {
     Serial.println("Couldn't connect to OBD scanner - Phase 2");
     while (1);

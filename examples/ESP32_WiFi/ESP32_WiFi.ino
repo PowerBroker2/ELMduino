@@ -46,7 +46,7 @@ void setup()
     while(1);
   }
 
-  myELM327.begin(client);
+  myELM327.begin(client, true, 2000);
 }
 
 

@@ -46,7 +46,7 @@ void setup()
     ESP.reset();
   }
 
-  myELM327.begin(client);
+  myELM327.begin(client, true, 2000);
 }
 
 
