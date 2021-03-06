@@ -2384,7 +2384,19 @@ int8_t ELM327::sendCommand(const char *cmd)
 			if (debugMode)
 			{
 				Serial.print("Received char: ");
-				Serial.println(recChar);
+
+				if (recChar == '\f')
+					Serial.println("\\f");
+				else if (recChar == '\n')
+					Serial.println("\\n");
+				else if (recChar == '\r')
+					Serial.println("\\r");
+				else if (recChar == '\t')
+					Serial.println("\\t");
+				else if (recChar == '\v')
+					Serial.println("\\v");
+				else
+					Serial.println(recChar);
 			}
 
 			if (recChar == '>')
@@ -2394,7 +2406,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 				break;
 			}
-			else if (isspace(recChar))
+			else if (isSpace(recChar))
 				continue;
 			
 			payload[counter] = recChar;
