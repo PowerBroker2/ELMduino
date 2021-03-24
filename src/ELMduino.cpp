@@ -84,16 +84,19 @@ bool ELM327::initializeELM(const char& protocol)
 {
 	char command[10] = { '\0' };
 	connected = false;
-	
+
+	sendCommand(SET_ALL_TO_DEFAULTS);
+	delay(100);
+
 	sendCommand(RESET_ALL);
-    delay(100);
+	delay(100);
 
 	sendCommand(ECHO_OFF);
 	delay(100);
 
 	sendCommand(PRINTING_SPACES_OFF);
 	delay(100);
-	
+
 	sendCommand(ALLOW_LONG_MESSAGES);
 	delay(100);
 
