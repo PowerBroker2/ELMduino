@@ -10,7 +10,7 @@ This is a simple yet powerful library to effortlessly interface your Arduino wit
 Install ELMduino using the Arduino IDE's Libraries Manager (search "ELMduino.h")
 
 # Note:
-If you're having difficulty in connecting/keeping connection to your ELM327, try using 38400 baud instead of 115200. If you still have trouble, try all other possible bauds. Lastly, if using BluetoothSerial on an ESP32, try using the ELM327's MAC address instead of the device name "OBDII".
+If you're having difficulty in connecting/keeping connection to your ELM327, try using 38400 baud instead of 115200. If you still have trouble, try all other possible bauds. Lastly, if using BluetoothSerial on an ESP32, try using the ELM327's MAC address instead of the device name "OBDII" and [remove paired devices using this sketch](https://github.com/espressif/arduino-esp32/blob/master/libraries/BluetoothSerial/examples/bt_remove_paired_devices/bt_remove_paired_devices.ino).
 
 # Example Code:
 ```C++
