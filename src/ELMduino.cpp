@@ -2386,7 +2386,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 			if (debugMode)
 			{
-				Serial.print(F("Received char: "));
+				Serial.print(F("\tReceived char: "));
 
 				if (recChar == '\f')
 					Serial.println(F("\\f"));
@@ -2409,7 +2409,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 				break;
 			}
-			else if (isSpace(recChar))
+			else if (isSpace(recChar) || isalnum(recChar))
 				continue;
 			
 			payload[counter] = recChar;
@@ -2582,22 +2582,22 @@ uint64_t ELM327::findResponse()
 
 		if (debugMode)
 		{
-			Serial.print(F("64-bit response: "));
-			Serial.print(F("responseByte_0: "));
+			Serial.println(F("64-bit response: "));
+			Serial.print(F("\tresponseByte_0: "));
 			Serial.println(responseByte_0);
-			Serial.print(F("responseByte_1: "));
+			Serial.print(F("\tresponseByte_1: "));
 			Serial.println(responseByte_1);
-			Serial.print(F("responseByte_2: "));
+			Serial.print(F("\tresponseByte_2: "));
 			Serial.println(responseByte_2);
-			Serial.print(F("responseByte_3: "));
+			Serial.print(F("\tresponseByte_3: "));
 			Serial.println(responseByte_3);
-			Serial.print(F("responseByte_4: "));
+			Serial.print(F("\tresponseByte_4: "));
 			Serial.println(responseByte_4);
-			Serial.print(F("responseByte_5: "));
+			Serial.print(F("\tresponseByte_5: "));
 			Serial.println(responseByte_5);
-			Serial.print(F("responseByte_6: "));
+			Serial.print(F("\tresponseByte_6: "));
 			Serial.println(responseByte_6);
-			Serial.print(F("responseByte_7: "));
+			Serial.print(F("\tresponseByte_7: "));
 			Serial.println(responseByte_7);
 		}
 		
