@@ -2409,7 +2409,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 				break;
 			}
-			else if (isSpace(recChar) || isalnum(recChar))
+			else if (!isalnum(recChar))
 				continue;
 			
 			payload[counter] = recChar;
