@@ -271,6 +271,12 @@ const int8_t ELM_STOPPED           = 6;
 const int8_t ELM_TIMEOUT           = 7;
 const int8_t ELM_GENERAL_ERROR     = -1;
 
+/*Query information for OBD-II*/
+typedef struct
+{
+	uint8_t svc;
+	uint16_t pid;
+}QUERY_T;
 
 
 
@@ -307,6 +313,7 @@ public:
 	bool queryPID(char queryStr[]);
 	int8_t sendCommand(const char *cmd);
 	bool timeout();
+	void enable_pidLUT(bool enable);
 
 
 	uint32_t supportedPIDs_1_20();
@@ -402,7 +409,9 @@ private:
 	bool longQuery = false;
 	uint32_t currentTime;
 	uint32_t previousTime;
-
+	QUERY_T current_query;
+	bool lut_en=false;
+	uint8_t get_pid_rsplen(void);
 
 
 

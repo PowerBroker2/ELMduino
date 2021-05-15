@@ -1,5 +1,34 @@
 #include "ELMduino.h"
+#include "pid_table.h"
 
+
+#define HEX_STR_SIZE 2 /* size of string for representation of one hexadecimal byte
+/*
+uint8_t ELM327:: get_pid_rsplen(void)
+  Description:
+ ------------
+  * Linear search that gets the expected response length for
+	PIDS of SVC 01 through a LUT
+
+ Return:
+ -------
+  uint8_t expected_len The expected length for the specified PID of SVC 01
+						if pid was not found it returns 0xFF
+  initialized
+*/
+uint8_t ELM327:: get_pid_rsplen(void)
+{
+	uint8_t expected_rsp=0xFF;
+	for(int entry=0;entry<PID_MAX_ENTRIES;entry++)
+	{
+		if( pid_table[entry].pid==current_query.pid && current_query.svc==0x01)
+		{
+			expected_rsp= pid_table[entry].rsp_len;
+			break;
+		}
+	}
+	return expected_rsp;
+}
 
 
 
@@ -394,6 +423,8 @@ bool ELM327::queryPID(uint8_t service,
                       uint16_t pid)
 {
 	formatQueryArray(service, pid);
+	current_query.svc=service;
+	current_query.pid=pid;
 	sendCommand(query);
 	
 	return connected;
@@ -763,6 +794,7 @@ uint8_t ELM327::manifoldPressure()
 */
 float ELM327::rpm()
 {
+		debugMode=false;
 	if (queryPID(SERVICE_01, ENGINE_RPM))
 		return (findResponse() / 4.0);
 
@@ -2483,7 +2515,19 @@ int8_t ELM327::sendCommand(const char *cmd)
 	return status;
 }
 
+/*
+ void int8_t ELM327::enable_pidLUT(bool enable)
 
+ Description:
+ ------------
+  * Enables/Disables use of pid lut for expected repsonse lenght
+	Use in case ELM327 or car transmits more bytes thatn those expected for a OBD-II query
+
+*/
+void int8_t ELM327::enable_pidLUT(bool enable)
+{
+	lut_en=enable;
+}
 
 
 /*
@@ -2555,8 +2599,17 @@ uint64_t ELM327::findResponse()
 		{
 			if (debugMode)
 				Serial.println(F("Single response detected"));
-
-			payBytes = recBytes - firstDatum;
+			uint8_t total_payload = recBytes - firstDatum;
+			if(lut_en)
+			{
+				uint8_t expected_size=(get_pid_rsplen()*HEX_STR_SIZE);
+				/* if recieved at least the same qty of bytes */
+				if(expected_size<=total_payload)
+				{
+					total_payload=expected_size;
+				}
+			}	
+			payBytes=total_payload;
 		}
 
 		response = 0;
