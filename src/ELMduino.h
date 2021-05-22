@@ -286,6 +286,7 @@ public:
 	int8_t status = ELM_GENERAL_ERROR;
 	uint64_t response;
 	uint16_t recBytes;
+	uint8_t numPayChars;
 	uint16_t timeout_ms;
 	byte responseByte_0;
 	byte responseByte_1;
@@ -412,4 +413,5 @@ private:
 	int8_t nextIndex(char const *str,
 	                 char const *target,
 	                 uint8_t numOccur);
+	float conditionResponse(const uint64_t& response, const uint8_t& numExpectedBytes, const float& scaleFactor = 1, const float& bias = 0);
 };

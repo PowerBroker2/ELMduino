@@ -345,6 +345,14 @@ int8_t ELM327::nextIndex(char const *str,
 
 
 
+float ELM327::conditionResponse(const uint64_t& response, const uint8_t& numExpectedBytes, const float& scaleFactor, const float& bias)
+{
+	return ((response >> (((numPayChars / 2) - numExpectedBytes) * 8)) * scaleFactor) + bias;
+}
+
+
+
+
 /*
  void ELM327::flushInputBuff()
 
@@ -450,7 +458,7 @@ bool ELM327::queryPID(char queryStr[])
 uint32_t ELM327::supportedPIDs_1_20()
 {
 	if (queryPID(SERVICE_01, SUPPORTED_PIDS_1_20))
-		return findResponse();
+		return conditionResponse(findResponse(), 4);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -478,7 +486,7 @@ uint32_t ELM327::supportedPIDs_1_20()
 uint32_t ELM327::monitorStatus()
 {
 	if (queryPID(SERVICE_01, MONITOR_STATUS_SINCE_DTC_CLEARED))
-		return findResponse();
+		return conditionResponse(findResponse(), 4);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -504,7 +512,7 @@ uint32_t ELM327::monitorStatus()
 uint16_t ELM327::freezeDTC()
 {
 	if (queryPID(SERVICE_01, FREEZE_DTC))
-		return findResponse();
+		return conditionResponse(findResponse(), 2);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -530,7 +538,7 @@ uint16_t ELM327::freezeDTC()
 uint16_t ELM327::fuelSystemStatus()
 {
 	if (queryPID(SERVICE_01, FUEL_SYSTEM_STATUS))
-		return findResponse();
+		return conditionResponse(findResponse(), 2);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -556,7 +564,7 @@ uint16_t ELM327::fuelSystemStatus()
 float ELM327::engineLoad()
 {
 	if (queryPID(SERVICE_01, ENGINE_LOAD))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -582,7 +590,7 @@ float ELM327::engineLoad()
 float ELM327::engineCoolantTemp()
 {
 	if (queryPID(SERVICE_01, ENGINE_COOLANT_TEMP))
-		return (findResponse() - 40.0);
+		return conditionResponse(findResponse(), 1, 1, -40.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -608,7 +616,7 @@ float ELM327::engineCoolantTemp()
 float ELM327::shortTermFuelTrimBank_1()
 {
 	if (queryPID(SERVICE_01, SHORT_TERM_FUEL_TRIM_BANK_1))
-		return ((findResponse() / 2.55) - 100.0);
+		return conditionResponse(findResponse(), 1, 100.0 / 128.0, -100.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -634,7 +642,7 @@ float ELM327::shortTermFuelTrimBank_1()
 float ELM327::longTermFuelTrimBank_1()
 {
 	if (queryPID(SERVICE_01, LONG_TERM_FUEL_TRIM_BANK_1))
-		return ((findResponse() / 2.55) - 100.0);
+		return conditionResponse(findResponse(), 1, 100.0 / 128.0, -100.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -660,7 +668,7 @@ float ELM327::longTermFuelTrimBank_1()
 float ELM327::shortTermFuelTrimBank_2()
 {
 	if (queryPID(SERVICE_01, SHORT_TERM_FUEL_TRIM_BANK_2))
-		return ((findResponse() / 2.55) - 100.0);
+		return conditionResponse(findResponse(), 1, 100.0 / 128.0, -100.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -686,7 +694,7 @@ float ELM327::shortTermFuelTrimBank_2()
 float ELM327::longTermFuelTrimBank_2()
 {
 	if (queryPID(SERVICE_01, LONG_TERM_FUEL_TRIM_BANK_2))
-		return ((findResponse() / 2.55) - 100.0);
+		return conditionResponse(findResponse(), 1, 100.0 / 128.0, -100.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -712,7 +720,7 @@ float ELM327::longTermFuelTrimBank_2()
 float ELM327::fuelPressure()
 {
 	if (queryPID(SERVICE_01, FUEL_PRESSURE))
-		return (findResponse() * 3.0);
+		return conditionResponse(findResponse(), 1, 3.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -738,7 +746,7 @@ float ELM327::fuelPressure()
 uint8_t ELM327::manifoldPressure()
 {
 	if (queryPID(SERVICE_01, INTAKE_MANIFOLD_ABS_PRESSURE))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -764,7 +772,7 @@ uint8_t ELM327::manifoldPressure()
 float ELM327::rpm()
 {
 	if (queryPID(SERVICE_01, ENGINE_RPM))
-		return (findResponse() / 4.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 4.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -790,7 +798,7 @@ float ELM327::rpm()
 int32_t ELM327::kph()
 {
 	if (queryPID(SERVICE_01, VEHICLE_SPEED))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -844,7 +852,7 @@ float ELM327::mph()
 float ELM327::timingAdvance()
 {
 	if (queryPID(SERVICE_01, TIMING_ADVANCE))
-		return ((findResponse() / 2.0) - 64.0);
+		return conditionResponse(findResponse(), 1, 1.0 / 2.0, -64.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -870,7 +878,7 @@ float ELM327::timingAdvance()
 float ELM327::intakeAirTemp()
 {
 	if (queryPID(SERVICE_01, INTAKE_AIR_TEMP))
-		return (findResponse() - 40.0);
+		return conditionResponse(findResponse(), 1, 1, -40.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -896,7 +904,7 @@ float ELM327::intakeAirTemp()
 float ELM327::mafRate()
 {
 	if (queryPID(SERVICE_01, MAF_FLOW_RATE))
-		return (findResponse() / 100.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 100.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -922,7 +930,7 @@ float ELM327::mafRate()
 float ELM327::throttle()
 {
 	if (queryPID(SERVICE_01, THROTTLE_POSITION))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -948,7 +956,7 @@ float ELM327::throttle()
 uint8_t ELM327::commandedSecAirStatus()
 {
 	if (queryPID(SERVICE_01, COMMANDED_SECONDARY_AIR_STATUS))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -974,7 +982,7 @@ uint8_t ELM327::commandedSecAirStatus()
 uint8_t ELM327::oxygenSensorsPresent_2banks()
 {
 	if (queryPID(SERVICE_01, OXYGEN_SENSORS_PRESENT_2_BANKS))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1000,7 +1008,7 @@ uint8_t ELM327::oxygenSensorsPresent_2banks()
 uint8_t ELM327::obdStandards()
 {
 	if (queryPID(SERVICE_01, OBD_STANDARDS))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1026,7 +1034,7 @@ uint8_t ELM327::obdStandards()
 uint8_t ELM327::oxygenSensorsPresent_4banks()
 {
 	if (queryPID(SERVICE_01, OXYGEN_SENSORS_PRESENT_4_BANKS))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1052,7 +1060,7 @@ uint8_t ELM327::oxygenSensorsPresent_4banks()
 bool ELM327::auxInputStatus()
 {
 	if (queryPID(SERVICE_01, AUX_INPUT_STATUS))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1078,7 +1086,7 @@ bool ELM327::auxInputStatus()
 uint16_t ELM327::runTime()
 {
 	if (queryPID(SERVICE_01, RUN_TIME_SINCE_ENGINE_START))
-		return findResponse();
+		return conditionResponse(findResponse(), 2);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1104,7 +1112,7 @@ uint16_t ELM327::runTime()
 uint32_t ELM327::supportedPIDs_21_40()
 {
 	if (queryPID(SERVICE_01, SUPPORTED_PIDS_21_40))
-		return findResponse();
+		return conditionResponse(findResponse(), 4);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1130,7 +1138,7 @@ uint32_t ELM327::supportedPIDs_21_40()
 uint16_t ELM327::distTravelWithMIL()
 {
 	if (queryPID(SERVICE_01, DISTANCE_TRAVELED_WITH_MIL_ON))
-		return findResponse();
+		return conditionResponse(findResponse(), 2);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1156,7 +1164,7 @@ uint16_t ELM327::distTravelWithMIL()
 float ELM327::fuelRailPressure()
 {
 	if (queryPID(SERVICE_01, FUEL_RAIL_PRESSURE))
-		return (findResponse() * 0.079);
+		return conditionResponse(findResponse(), 2, 0.079);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1182,7 +1190,7 @@ float ELM327::fuelRailPressure()
 float ELM327::fuelRailGuagePressure()
 {
 	if (queryPID(SERVICE_01, FUEL_RAIL_GUAGE_PRESSURE))
-		return (findResponse() * 10.0);
+		return conditionResponse(findResponse(), 2, 10.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1208,7 +1216,7 @@ float ELM327::fuelRailGuagePressure()
 float ELM327::commandedEGR()
 {
 	if (queryPID(SERVICE_01, COMMANDED_EGR))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1234,7 +1242,7 @@ float ELM327::commandedEGR()
 float ELM327::egrError()
 {
 	if (queryPID(SERVICE_01, EGR_ERROR))
-		return ((findResponse() / 2.28) - 100);
+		return conditionResponse(findResponse(), 1, 100.0 / 128.0, -100);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1260,7 +1268,7 @@ float ELM327::egrError()
 float ELM327::commandedEvapPurge()
 {
 	if (queryPID(SERVICE_01, COMMANDED_EVAPORATIVE_PURGE))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1286,7 +1294,7 @@ float ELM327::commandedEvapPurge()
 float ELM327::fuelLevel()
 {
 	if (queryPID(SERVICE_01, FUEL_TANK_LEVEL_INPUT))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1312,7 +1320,7 @@ float ELM327::fuelLevel()
 uint8_t ELM327::warmUpsSinceCodesCleared()
 {
 	if (queryPID(SERVICE_01, WARM_UPS_SINCE_CODES_CLEARED))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1338,7 +1346,7 @@ uint8_t ELM327::warmUpsSinceCodesCleared()
 uint16_t ELM327::distSinceCodesCleared()
 {
 	if (queryPID(SERVICE_01, DIST_TRAV_SINCE_CODES_CLEARED))
-		return findResponse();
+		return conditionResponse(findResponse(), 2);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1364,7 +1372,7 @@ uint16_t ELM327::distSinceCodesCleared()
 float ELM327::evapSysVapPressure()
 {
 	if (queryPID(SERVICE_01, EVAP_SYSTEM_VAPOR_PRESSURE))
-		return ((int16_t)findResponse() / 4.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 4.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1390,7 +1398,7 @@ float ELM327::evapSysVapPressure()
 uint8_t ELM327::absBaroPressure()
 {
 	if (queryPID(SERVICE_01, ABS_BAROMETRIC_PRESSURE))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1416,7 +1424,7 @@ uint8_t ELM327::absBaroPressure()
 float ELM327::catTempB1S1()
 {
 	if (queryPID(SERVICE_01, CATALYST_TEMP_BANK_1_SENSOR_1))
-		return ((findResponse() / 10.0) - 40.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 10.0, -40.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1442,7 +1450,7 @@ float ELM327::catTempB1S1()
 float ELM327::catTempB2S1()
 {
 	if (queryPID(SERVICE_01, CATALYST_TEMP_BANK_2_SENSOR_1))
-		return ((findResponse() / 10.0) - 40.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 10.0, -40.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1468,7 +1476,7 @@ float ELM327::catTempB2S1()
 float ELM327::catTempB1S2()
 {
 	if (queryPID(SERVICE_01, CATALYST_TEMP_BANK_1_SENSOR_2))
-		return ((findResponse() / 10.0) - 40.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 10.0, -40.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1494,7 +1502,7 @@ float ELM327::catTempB1S2()
 float ELM327::catTempB2S2()
 {
 	if (queryPID(SERVICE_01, CATALYST_TEMP_BANK_2_SENSOR_2))
-		return ((findResponse() / 10.0) - 40.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 10.0, -40.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1520,7 +1528,7 @@ float ELM327::catTempB2S2()
 uint32_t ELM327::supportedPIDs_41_60()
 {
 	if (queryPID(SERVICE_01, SUPPORTED_PIDS_41_60))
-		return findResponse();
+		return conditionResponse(findResponse(), 4);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1546,7 +1554,7 @@ uint32_t ELM327::supportedPIDs_41_60()
 uint32_t ELM327::monitorDriveCycleStatus()
 {
 	if (queryPID(SERVICE_01, MONITOR_STATUS_THIS_DRIVE_CYCLE))
-		return findResponse();
+		return conditionResponse(findResponse(), 4);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1572,7 +1580,7 @@ uint32_t ELM327::monitorDriveCycleStatus()
 float ELM327::ctrlModVoltage()
 {
 	if (queryPID(SERVICE_01, CONTROL_MODULE_VOLTAGE))
-		return (findResponse() / 1000.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 1000.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1598,7 +1606,7 @@ float ELM327::ctrlModVoltage()
 float ELM327::absLoad()
 {
 	if (queryPID(SERVICE_01, ABS_LOAD_VALUE))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 2, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1624,7 +1632,7 @@ float ELM327::absLoad()
 float ELM327::commandedAirFuelRatio()
 {
 	if (queryPID(SERVICE_01, FUEL_AIR_COMMANDED_EQUIV_RATIO))
-		return (findResponse() / 32768.0);
+		return conditionResponse(findResponse(), 2, 2.0 / 65536.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1650,7 +1658,7 @@ float ELM327::commandedAirFuelRatio()
 float ELM327::relativeThrottle()
 {
 	if (queryPID(SERVICE_01, RELATIVE_THROTTLE_POSITION))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1676,7 +1684,7 @@ float ELM327::relativeThrottle()
 float ELM327::ambientAirTemp()
 {
 	if (queryPID(SERVICE_01, AMBIENT_AIR_TEMP))
-		return (findResponse() - 40.0);
+		return conditionResponse(findResponse(), 1, 1, -40);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1702,7 +1710,7 @@ float ELM327::ambientAirTemp()
 float ELM327::absThrottlePosB()
 {
 	if (queryPID(SERVICE_01, ABS_THROTTLE_POSITION_B))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1728,7 +1736,7 @@ float ELM327::absThrottlePosB()
 float ELM327::absThrottlePosC()
 {
 	if (queryPID(SERVICE_01, ABS_THROTTLE_POSITION_C))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1754,7 +1762,7 @@ float ELM327::absThrottlePosC()
 float ELM327::absThrottlePosD()
 {
 	if (queryPID(SERVICE_01, ABS_THROTTLE_POSITION_D))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1780,7 +1788,7 @@ float ELM327::absThrottlePosD()
 float ELM327::absThrottlePosE()
 {
 	if (queryPID(SERVICE_01, ABS_THROTTLE_POSITION_E))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1806,7 +1814,7 @@ float ELM327::absThrottlePosE()
 float ELM327::absThrottlePosF()
 {
 	if (queryPID(SERVICE_01, ABS_THROTTLE_POSITION_F))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1832,7 +1840,7 @@ float ELM327::absThrottlePosF()
 float ELM327::commandedThrottleActuator()
 {
 	if (queryPID(SERVICE_01, COMMANDED_THROTTLE_ACTUATOR))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1858,7 +1866,7 @@ float ELM327::commandedThrottleActuator()
 uint16_t ELM327::timeRunWithMIL()
 {
 	if (queryPID(SERVICE_01, TIME_RUN_WITH_MIL_ON))
-		return findResponse();
+		return conditionResponse(findResponse(), 2);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1884,7 +1892,7 @@ uint16_t ELM327::timeRunWithMIL()
 uint16_t ELM327::timeSinceCodesCleared()
 {
 	if (queryPID(SERVICE_01, TIME_SINCE_CODES_CLEARED))
-		return findResponse();
+		return conditionResponse(findResponse(), 2);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1910,7 +1918,7 @@ uint16_t ELM327::timeSinceCodesCleared()
 float ELM327::maxMafRate()
 {
 	if (queryPID(SERVICE_01, MAX_MAF_RATE))
-		return (findResponse() * 10.0);
+		return conditionResponse(findResponse(), 1, 10.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1936,7 +1944,7 @@ float ELM327::maxMafRate()
 uint8_t ELM327::fuelType()
 {
 	if (queryPID(SERVICE_01, FUEL_TYPE))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1962,7 +1970,7 @@ uint8_t ELM327::fuelType()
 float ELM327::ethonolPercent()
 {
 	if (queryPID(SERVICE_01, ETHONOL_FUEL_PERCENT))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -1988,7 +1996,7 @@ float ELM327::ethonolPercent()
 float ELM327::absEvapSysVapPressure()
 {
 	if (queryPID(SERVICE_01, ABS_EVAP_SYS_VAPOR_PRESSURE))
-		return (findResponse() / 200.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 200.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2014,7 +2022,7 @@ float ELM327::absEvapSysVapPressure()
 float ELM327::evapSysVapPressure2()
 {
 	if (queryPID(SERVICE_01, EVAP_SYS_VAPOR_PRESSURE))
-		return (findResponse() - 32767.0);
+		return conditionResponse(findResponse(), 2, 1, -32767);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2040,7 +2048,7 @@ float ELM327::evapSysVapPressure2()
 float ELM327::absFuelRailPressure()
 {
 	if (queryPID(SERVICE_01, FUEL_RAIL_ABS_PRESSURE))
-		return (findResponse() * 10.0);
+		return conditionResponse(findResponse(), 2, 10.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2066,7 +2074,7 @@ float ELM327::absFuelRailPressure()
 float ELM327::relativePedalPos()
 {
 	if (queryPID(SERVICE_01, RELATIVE_ACCELERATOR_PEDAL_POS))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2092,7 +2100,7 @@ float ELM327::relativePedalPos()
 float ELM327::hybridBatLife()
 {
 	if (queryPID(SERVICE_01, HYBRID_BATTERY_REMAINING_LIFE))
-		return (findResponse() / 2.55);
+		return conditionResponse(findResponse(), 1, 100.0 / 255.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2118,7 +2126,7 @@ float ELM327::hybridBatLife()
 float ELM327::oilTemp()
 {
 	if (queryPID(SERVICE_01, ENGINE_OIL_TEMP))
-		return (findResponse() - 40.0);
+		return conditionResponse(findResponse(), 1, 1, -40.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2144,7 +2152,7 @@ float ELM327::oilTemp()
 float ELM327::fuelInjectTiming()
 {
 	if (queryPID(SERVICE_01, FUEL_INJECTION_TIMING))
-		return ((findResponse() / 128.0) - 210.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 128.0, -210.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2170,7 +2178,7 @@ float ELM327::fuelInjectTiming()
 float ELM327::fuelRate()
 {
 	if (queryPID(SERVICE_01, ENGINE_FUEL_RATE))
-		return (findResponse() / 20.0);
+		return conditionResponse(findResponse(), 2, 1.0 / 20.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2196,7 +2204,7 @@ float ELM327::fuelRate()
 uint8_t ELM327::emissionRqmts()
 {
 	if (queryPID(SERVICE_01, EMISSION_REQUIREMENTS))
-		return findResponse();
+		return conditionResponse(findResponse(), 1);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2222,7 +2230,7 @@ uint8_t ELM327::emissionRqmts()
 uint32_t ELM327::supportedPIDs_61_80()
 {
 	if (queryPID(SERVICE_01, SUPPORTED_PIDS_61_80))
-		return findResponse();
+		return conditionResponse(findResponse(), 4);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2248,7 +2256,7 @@ uint32_t ELM327::supportedPIDs_61_80()
 float ELM327::demandedTorque()
 {
 	if (queryPID(SERVICE_01, DEMANDED_ENGINE_PERCENT_TORQUE))
-		return (findResponse() - 125.0);
+		return conditionResponse(findResponse(), 1, 1, -125.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2274,7 +2282,7 @@ float ELM327::demandedTorque()
 float ELM327::torque()
 {
 	if (queryPID(SERVICE_01, ACTUAL_ENGINE_TORQUE))
-		return (findResponse() - 125.0);
+		return conditionResponse(findResponse(), 1, 1, -125.0);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2300,7 +2308,7 @@ float ELM327::torque()
 uint16_t ELM327::referenceTorque()
 {
 	if (queryPID(SERVICE_01, ENGINE_REFERENCE_TORQUE))
-		return findResponse();
+		return conditionResponse(findResponse(), 2);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2326,7 +2334,7 @@ uint16_t ELM327::referenceTorque()
 uint16_t ELM327::auxSupported()
 {
 	if (queryPID(SERVICE_01, AUX_INPUT_OUTPUT_SUPPORTED))
-		return findResponse();
+		return conditionResponse(findResponse(), 2);
 
 	return ELM_GENERAL_ERROR;
 }
@@ -2504,7 +2512,6 @@ int8_t ELM327::sendCommand(const char *cmd)
 uint64_t ELM327::findResponse()
 {
 	uint8_t firstDatum = 0;
-	uint8_t payBytes   = 0;
 	char header[7]     = { '\0' };
 
 	if (longQuery)
@@ -2541,7 +2548,7 @@ uint64_t ELM327::findResponse()
 			firstDatum = firstHeadIndex + 4;
 
 		// Some ELM327s (such as my own) respond with two
-		// "responses" per query. "payBytes" represents the
+		// "responses" per query. "numPayChars" represents the
 		// correct number of bytes returned by the ELM327
 		// regardless of how many "responses" were returned
 		if (secondHeadIndex >= 0)
@@ -2549,21 +2556,21 @@ uint64_t ELM327::findResponse()
 			if (debugMode)
 				Serial.println(F("Double response detected"));
 
-			payBytes = secondHeadIndex - firstDatum;
+			numPayChars = secondHeadIndex - firstDatum;
 		}
 		else
 		{
 			if (debugMode)
 				Serial.println(F("Single response detected"));
 
-			payBytes = recBytes - firstDatum;
+			numPayChars = recBytes - firstDatum;
 		}
 
 		response = 0;
-		for(uint8_t i = 0; i < payBytes; i++)
+		for(uint8_t i = 0; i < numPayChars; i++)
 		{
 			uint8_t payloadIndex = firstDatum + i;
-			uint8_t bitsOffset = 4 * (payBytes - i - 1);
+			uint8_t bitsOffset = 4 * (numPayChars - i - 1);
 			response = response | (ctoi(payload[payloadIndex]) << bitsOffset);
 		}
 
