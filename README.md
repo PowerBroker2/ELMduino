@@ -42,8 +42,6 @@ void loop()
     rpm = (uint32_t)tempRPM;
     Serial.print("RPM: "); Serial.println(rpm);
   }
-  else
-    myELM327.printError();
 }
 ```
 
