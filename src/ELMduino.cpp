@@ -4,7 +4,7 @@
 
 
 /*
- bool ELM327::begin(Stream &stream, const bool& debug, const uint16_t& timeout, const char& protocol, const uint16_t& payloadLen)
+ bool ELM327::begin(Stream &stream, const bool& debug, const uint16_t& timeout, const char& protocol, const uint16_t& payloadLen, const byte& dataTimeout)
 
  Description:
  ------------
@@ -12,18 +12,19 @@
 
  Inputs:
  -------
-  * Stream &stream      - Pointer to Serial port connected to ELM327
+  * Stream &stream      - Reference to Serial port connected to ELM327
   * bool debug          - Specify whether or not to print debug statements to "Serial"
   * uint16_t timeout    - Time in ms to wait for a query response
   * char protocol       - Protocol ID to specify the ELM327 to communicate with the ECU over
   * uint16_t payloadLen - Maximum number of bytes expected to be returned by the ELM327 after a query
-
+  * byte dataTimeout    - Number of ms to wait after receiving data before the ELM327 will
+						  return the data - see https://www.elmelectronics.com/help/obd/tips/#UnderstandingOBD
  Return:
  -------
   * bool - Whether or not the ELM327 was propperly
   initialized
 */
-bool ELM327::begin(Stream &stream, const bool& debug, const uint16_t& timeout, const char& protocol, const uint16_t& payloadLen)
+bool ELM327::begin(Stream &stream, const bool& debug, const uint16_t& timeout, const char& protocol, const uint16_t& payloadLen, const byte& dataTimeout)
 {
 	elm_port    = &stream;
 	PAYLOAD_LEN = payloadLen;
@@ -37,7 +38,7 @@ bool ELM327::begin(Stream &stream, const bool& debug, const uint16_t& timeout, c
 		return false;
 
 	// try to connect
-	if (!initializeELM(protocol))
+	if (!initializeELM(protocol, dataTimeout))
 		return false;
   
 	return true;
@@ -47,7 +48,7 @@ bool ELM327::begin(Stream &stream, const bool& debug, const uint16_t& timeout, c
 
 
 /*
- bool ELM327::initializeELM(const char& protocol)
+ bool ELM327::initializeELM(const char& protocol, const byte& dataTimeout)
 
  Description:
  ------------
@@ -55,7 +56,9 @@ bool ELM327::begin(Stream &stream, const bool& debug, const uint16_t& timeout, c
 
  Inputs:
  -------
-  * char protocol - Protocol ID to specify the ELM327 to communicate with the ECU over
+  * char protocol    - Protocol ID to specify the ELM327 to communicate with the ECU over
+  * byte dataTimeout - Number of ms to wait after receiving data before the ELM327 will
+                       return the data - see https://www.elmelectronics.com/help/obd/tips/#UnderstandingOBD
 
  Return:
  -------
@@ -80,7 +83,7 @@ bool ELM327::begin(Stream &stream, const bool& debug, const uint16_t& timeout, c
 
   * --> *user adjustable
 */
-bool ELM327::initializeELM(const char& protocol)
+bool ELM327::initializeELM(const char& protocol, const byte& dataTimeout)
 {
 	char command[10] = { '\0' };
 	connected = false;
@@ -98,6 +101,11 @@ bool ELM327::initializeELM(const char& protocol)
 	delay(100);
 
 	sendCommand(ALLOW_LONG_MESSAGES);
+	delay(100);
+
+	// Set data timeout
+	sprintf(command, SET_TIMEOUT_TO_H_X_4MS, dataTimeout / 4);
+	sendCommand(command);
 	delay(100);
 
 	// Set protocol
@@ -123,9 +131,9 @@ bool ELM327::initializeELM(const char& protocol)
 	// Set protocol and save
 	sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
 
-    if (sendCommand(command) == ELM_SUCCESS)
-        if (strstr(payload, "OK") != NULL)
-            connected = true;
+	if (sendCommand(command) == ELM_SUCCESS)
+		if (strstr(payload, "OK") != NULL)
+			connected = true;
 
 	if (debugMode)
 	{
