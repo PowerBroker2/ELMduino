@@ -2425,7 +2425,7 @@ int8_t ELM327::sendCommand(const char *cmd)
 
 				break;
 			}
-			else if (!isalnum(recChar))
+			else if (!isalnum(recChar) && (recChar != ':'))
 				continue;
 			
 			payload[counter] = recChar;
