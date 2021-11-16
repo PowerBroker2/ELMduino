@@ -2367,7 +2367,7 @@ uint16_t ELM327::auxSupported()
 */
 int8_t ELM327::sendCommand(const char *cmd)
 {
-	uint8_t counter = 0;
+	uint16_t counter = 0;
 	connected = false;
     
 	// clear payload buffer
