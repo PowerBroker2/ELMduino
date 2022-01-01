@@ -259,8 +259,7 @@ const char * const RESET_ALL                  = "AT Z";        // General
 // Class constants
 //-------------------------------------------------------------------------------------//
 const float  KPH_MPH_CONVERT       = 0.6213711922;
-const float  RPM_CONVERT           = 0.25;
-const int8_t QUERY_LEN	           = 7;
+const int8_t QUERY_LEN	           = 8;
 const int8_t ELM_SUCCESS           = 0;
 const int8_t ELM_NO_RESPONSE       = 1;
 const int8_t ELM_BUFFER_OVERFLOW   = 2;
@@ -269,9 +268,17 @@ const int8_t ELM_UNABLE_TO_CONNECT = 4;
 const int8_t ELM_NO_DATA           = 5;
 const int8_t ELM_STOPPED           = 6;
 const int8_t ELM_TIMEOUT           = 7;
+const int8_t ELM_GETTING_MSG       = 8;
+const int8_t ELM_MSG_RXD           = 9;
 const int8_t ELM_GENERAL_ERROR     = -1;
 
 
+// Non-blocking (NB) command states
+typedef enum { SEND_COMMAND,
+               WAITING_RESP,
+               RESPONSE_RECEIVED,
+               DECODED_OK,
+               ERROR } obd_cmd_states;
 
 
 class ELM327
@@ -283,7 +290,7 @@ public:
 	bool debugMode;
 	char* payload;
 	uint16_t PAYLOAD_LEN;
-	int8_t status = ELM_GENERAL_ERROR;
+	int8_t nb_rx_state = ELM_GETTING_MSG;
 	uint64_t response;
 	uint16_t recBytes;
 	uint8_t numPayChars;
@@ -297,19 +304,22 @@ public:
 	byte responseByte_6;
 	byte responseByte_7;
 
-	
+
 
 
 	bool begin(Stream& stream, const bool& debug = false, const uint16_t& timeout = 1000, const char& protocol = '0', const uint16_t& payloadLen = 40, const byte& dataTimeout = 0);
 	bool initializeELM(const char& protocol = '0', const byte& dataTimeout = 0);
 	void flushInputBuff();
 	uint64_t findResponse();
-	bool queryPID(uint8_t service, uint16_t pid);
+	bool queryPID(uint8_t service, uint16_t pid, uint8_t num_responses);
 	bool queryPID(char queryStr[]);
-	int8_t sendCommand(const char *cmd);
+	void sendCommand(const char *cmd);
+	int8_t sendCommand_Blocking(const char *cmd);
+	int8_t get_response();
 	bool timeout();
 	float conditionResponse(const uint64_t& response, const uint8_t& numExpectedBytes, const float& scaleFactor = 1, const float& bias = 0);
 
+	float batteryVoltage(void);
 
 	uint32_t supportedPIDs_1_20();
 
@@ -395,7 +405,7 @@ public:
 	uint16_t referenceTorque();
 	uint16_t auxSupported();
 	void printError();
-	
+
 
 
 
@@ -405,11 +415,10 @@ private:
 	uint32_t currentTime;
 	uint32_t previousTime;
 
-
-
+	obd_cmd_states nb_query_state = SEND_COMMAND; // Non-blocking query state
 
 	void upper(char string[], uint8_t buflen);
-	void formatQueryArray(uint8_t service, uint16_t pid);
+	void formatQueryArray(uint8_t service, uint16_t pid, uint8_t num_responses);
 	uint8_t ctoi(uint8_t value);
 	int8_t nextIndex(char const *str,
 	                 char const *target,
