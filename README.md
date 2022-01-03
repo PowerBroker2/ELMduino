@@ -12,6 +12,9 @@ Install ELMduino using the Arduino IDE's Libraries Manager (search "ELMduino.h")
 # Note:
 If you're having difficulty in connecting/keeping connection to your ELM327, try using 38400 baud instead of 115200. If you still have trouble, try all other possible bauds. Lastly, if using BluetoothSerial on an ESP32, try using the ELM327's MAC address instead of the device name "OBDII" and [remove paired devices using this sketch](https://github.com/espressif/arduino-esp32/blob/master/libraries/BluetoothSerial/examples/bt_remove_paired_devices/bt_remove_paired_devices.ino).
 
+# Concept of Execution
+The library is non-blocking. This means when you query a PID e.g. `myELM327.rpm()`, the code does not wait around for the response, which would block your other code in the main loop from executing. With ELMDuino, your main loop can do other tasks. To make this work, you need to repeatedly call the PID query funtion and check the non-blocking receive state (`myELM327.nb_rx_state`) until it is equal to `ELM_SUCCESS`. If the status is not ELM_SUCCESS, the library could still be waiting for a response to be received. This is indicated by `myELM327.nb_rx_state` being equal to `ELM_GETTING_MSG`. If the status is not equal to either of these values (ELM_SUCCESS or ELM_GETTING_MSG), it indicates an error has occurred. You can call `.printError()` to check what the problem was. See the simple example below which queries the engine speed in RPM.
+
 # Example Code:
 ```C++
 #include <SoftwareSerial.h>
@@ -19,7 +22,7 @@ If you're having difficulty in connecting/keeping connection to your ELM327, try
 
 
 SoftwareSerial mySerial(2, 3); // RX, TX
-ELM327 myELM327;
+ELM327 myELM327; // Create the ELMDuino object. You change myELM327 to anything else you like
 
 
 uint32_t rpm = 0;
@@ -37,11 +40,13 @@ void loop()
 {
   float tempRPM = myELM327.rpm();
 
-  if (myELM327.status == ELM_SUCCESS)
+  if (myELM327.nb_rx_state == ELM_SUCCESS)
   {
     rpm = (uint32_t)tempRPM;
     Serial.print("RPM: "); Serial.println(rpm);
   }
+  else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
+    myELM327.printError();
 }
 ```
 
@@ -130,6 +135,12 @@ float demandedTorque();
 float torque();
 uint16_t referenceTorque();
 uint16_t auxSupported();
+```
+
+# Other commands
+```C++
+float batteryVoltage(void); // Get's vehicle battery voltage
+int8_t get_vin_blocking(char vin[]); // Get's Vehicle Identification Number (VIN)
 ```
 
 # List of OBD Protocols:
