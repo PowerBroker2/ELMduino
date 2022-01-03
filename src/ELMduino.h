@@ -321,6 +321,7 @@ public:
 	float conditionResponse(const uint64_t& response, const uint8_t& numExpectedBytes, const float& scaleFactor = 1, const float& bias = 0);
 
 	float batteryVoltage(void);
+	int8_t get_vin_blocking(char vin[]);
 
 	uint32_t supportedPIDs_1_20();
 
