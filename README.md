@@ -15,6 +15,8 @@ If you're having difficulty in connecting/keeping connection to your ELM327, try
 # Concept of Execution
 The library is non-blocking. This means when you query a PID e.g. `myELM327.rpm()`, the code does not wait around for the response, which would block your other code in the main loop from executing. With ELMDuino, your main loop can continue do other tasks. To make this work, you need to repeatedly call the PID query function and check the non-blocking receive state (`myELM327.nb_rx_state`) until it is equal to `ELM_SUCCESS`. If the status is not `ELM_SUCCESS`, the library could still be waiting for a response to be received. This is indicated by `myELM327.nb_rx_state` being equal to `ELM_GETTING_MSG`. If the status is not equal to either of these values (ELM_SUCCESS or ELM_GETTING_MSG), it indicates an error has occurred. You can call `myELM327.printError()` to check what the problem was. See the simple example below which queries the engine speed in RPM.
 
+Just to be clear, do not try to query more than one PID at a time. You must wait for the current PID query to complete before starting the next one.
+
 # Example Code:
 ```C++
 #include <SoftwareSerial.h>
@@ -22,7 +24,7 @@ The library is non-blocking. This means when you query a PID e.g. `myELM327.rpm(
 
 
 SoftwareSerial mySerial(2, 3); // RX, TX
-ELM327 myELM327; // Create the ELMDuino object. You change myELM327 to anything else you like
+ELM327 myELM327;
 
 
 uint32_t rpm = 0;

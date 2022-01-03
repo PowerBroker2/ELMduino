@@ -2665,47 +2665,52 @@ int8_t ELM327::get_vin_blocking(char vin[])
 	char *idx;
 	uint8_t vin_counter = 0;
 	uint8_t ascii_val;
-	uint8_t num_vin_chars;
 
-	Serial.println("Getting VIN...");
+	if (debugMode)
+		Serial.println("Getting VIN...");
 	sendCommand("0902");  // VIN is command 0902
-	while (get_response() == ELM_GETTING_MSG) {}
+	while (get_response() == ELM_GETTING_MSG);
 
 	// strcpy(payload, "0140:4902013144341:475030305235352:42313233343536");
 	if (nb_rx_state == ELM_SUCCESS)
 	{
 		memset(vin, 0, 18);
-		if (debugMode)
-			Serial.printf("VIN response: %s, bytes received=%d\n", payload, recBytes);
-
 		// **** Decoding ****
 		if (strstr(payload, "490201"))
 		{
-			// payload = "0140:4902013144341:475030305235352:42313233343536" ==> VIN="1D4GP00R55B123456" (17-chars)
+			// OBD scanner provides this multiline response:
 			// 014                        ==> 0x14 = 20 bytes following
-			// 0: 49 02 01 31 44 34       ==> 49 02 = Header. 01 = 1 VIN number in message. 31, 44, 34 = First 3 VIN bytes
-			// 1: 47 50 30 30 52 35 35    ==> 47->35 next 7 VIN bytes
-			// 2: 42 31 32 33 34 35 36    ==> 42->36 next 7 VIN bytes
-			idx = strstr(payload, "490201") + 6;  // Pointer to first VIN digit
-			// Adjust recBytes == 49 for multiline row headers (line_no + semicolon) and 2 chars/digit
-			// i.e. 2 * (49 - 30) = 2 * 19 = 38
-			num_vin_chars = 2 * (recBytes - 30);
-			for (int i = 0; i < num_vin_chars; i += 2) {
+			// 0: 49 02 01 31 44 34       ==> 49 02 = Header. 01 = 1 VIN number in message. 31, 44, 34 = First 3 VIN digits
+			// 1: 47 50 30 30 52 35 35    ==> 47->35 next 7 VIN digits
+			// 2: 42 31 32 33 34 35 36    ==> 42->36 next 7 VIN digits
+			//
+			// The resulitng payload buffer is:
+			// "0140:4902013144341:475030305235352:42313233343536" ==> VIN="1D4GP00R55B123456" (17-digits)
+			idx = strstr(payload, "490201") + 6;  // Pointer to first ASCII code digit of first VIN digit
+			// Loop over each pair of ASCII code digits. 17 VIN digits + 2 skipped line numbers = 19 loops
+			for (int i = 0; i < (19 * 2); i += 2) {
 				temp[0] = *(idx + i);      // Get first digit of ASCII code
 				temp[1] = *(idx + i + 1);  // Get second digit of ASCII code
-																	 // No need to add string termination, temp[3] always == 0
-				if (strstr(temp, ":")) continue;
+				// No need to add string termination, temp[3] always == 0
+				if (strstr(temp, ":")) continue; // Skip the second "1:" and third "2:" line numbers
 				ascii_val = strtol(temp, 0, 16);                // Convert ASCII code to integer
 				sprintf(vin + vin_counter++, "%c", ascii_val);  // Convert ASCII code integer back to character
-																												// Serial.printf("Chars %s, ascii_val=%d[dec] 0x%02hhx[hex] ==> VIN=%s\n", temp, ascii_val, ascii_val, vin);
+				// Serial.printf("Chars %s, ascii_val=%d[dec] 0x%02hhx[hex] ==> VIN=%s\n", temp, ascii_val, ascii_val, vin);
 			}
 		}
-		Serial.printf("VIN=%s\n", vin);
+		if (debugMode)
+		{
+			Serial.print("VIN: ");
+			Serial.println(vin);
+		}
 	}
 	else
 	{
-		Serial.println("No VIN response");
-		printError();
+		if (debugMode)
+		{
+			Serial.println("No VIN response");
+			printError();
+		}
 	}
 	return nb_rx_state;
 }
