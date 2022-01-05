@@ -136,7 +136,7 @@ void read_rpm()
         Serial.print("RPM: "); Serial.println(rpm);
         previous_rpm_time = current_time;
 
-        if (obd.status != ELM_SUCCESS)
+        if ((obd.nb_rx_state != ELM_GETTING_MSG && obd.nb_rx_state != ELM_SUCCESS)
         {
             obd.printError();
         }

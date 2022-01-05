@@ -38,11 +38,11 @@ void loop()
 {
   float tempRPM = myELM327.rpm();
 
-  if (myELM327.status == ELM_SUCCESS)
+  if (myELM327.nb_rx_state == ELM_SUCCESS)
   {
     rpm = (uint32_t)tempRPM;
     Serial.print("RPM: "); Serial.println(rpm);
   }
-  else
+  else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
     myELM327.printError();
 }

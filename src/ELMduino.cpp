@@ -490,7 +490,7 @@ bool ELM327::queryPID(char queryStr[])
 
  Return:
  -------
-  * bool - Whether or not the query was submitted successfully
+  * float - The PID value if successfully received, else 0.0
 */
 float ELM327::processPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses, const uint8_t& numExpectedBytes, const float& scaleFactor, const float& bias)
 {
@@ -2247,8 +2247,8 @@ void ELM327::sendCommand(const char *cmd)
 
  Description:
  ------------
-  * Sends a command/query for Non-Blocking PID queries.
-    Sometimes it's ok to use a blocking command, e.g when sending an AT command.
+	* Sends a command/query and waits for a respoonse (blocking function)
+    Sometimes it's desirable to use a blocking command, e.g when sending an AT command.
     This function removes the need for the caller to set up a loop waiting for the command to finish.
     Caller is free to parse the payload string if they need to use the response.
 
@@ -2258,17 +2258,13 @@ void ELM327::sendCommand(const char *cmd)
 
  Return:
  -------
-  * obd_rx_states - the status of the command
+  * int8_t - the ELM_XXX status of getting the OBD response
 */
 int8_t ELM327::sendCommand_Blocking(const char *cmd)
 {
-	int8_t receive_status;
 	sendCommand(cmd);
-	do
-	{
-		receive_status = get_response();
-	} while (receive_status == ELM_GETTING_MSG);
-	return receive_status;
+	while (get_response() == ELM_GETTING_MSG);
+	return nb_rx_state;
 }
 
 
@@ -2279,7 +2275,7 @@ int8_t ELM327::sendCommand_Blocking(const char *cmd)
 
  Description:
  ------------
-  * Non Blocking (NB) receive OBD scanner response. Must be called in repeatedly until
+  * Non Blocking (NB) receive OBD scanner response. Must be called repeatedly until
     the status progresses past ELM_GETTING_MSG.
 
  Inputs:
@@ -2288,7 +2284,7 @@ int8_t ELM327::sendCommand_Blocking(const char *cmd)
 
  Return:
  -------
-  * obd_rx_states - the status of getting the response
+  * int8_t - the ELM_XXX status of getting the OBD response
 */
 int8_t ELM327::get_response(void)
 {
@@ -2320,9 +2316,6 @@ int8_t ELM327::get_response(void)
 				Serial.println(F("\\t"));
 			else if (recChar == '\v')
 				Serial.println(F("\\v"));
-			// display the hex code for non-alpha numeric characters
-			else if (recChar < 32 || recChar > 123)
-				Serial.printf("0x%02hhX\n", recChar);
 			// convert spaces to underscore, easier to see in debug output
 			else if (recChar == ' ')
 				Serial.println("_");
@@ -2642,4 +2635,79 @@ float ELM327::batteryVoltage(void)
 			nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
 	}
 	return 0.0;
+}
+
+
+
+
+/*
+ int8_t ELM327::get_vin_blocking(char *vin)
+
+ Description:
+ ------------
+	* Read Vehicle Identification Number (VIN). This is a blocking function.
+
+ Inputs:
+ -------
+	* char vin[] - pointer to c-string in which to store VIN
+		Note: (allocate memory for 18 character c-string in calling function)
+
+ Return:
+ -------
+  * int8_t - the ELM_XXX status of getting the VIN
+*/
+int8_t ELM327::get_vin_blocking(char vin[])
+{
+	char temp[3] = {0};
+	char *idx;
+	uint8_t vin_counter = 0;
+	uint8_t ascii_val;
+
+	if (debugMode)
+		Serial.println("Getting VIN...");
+	sendCommand("0902");  // VIN is command 0902
+	while (get_response() == ELM_GETTING_MSG);
+
+	// strcpy(payload, "0140:4902013144341:475030305235352:42313233343536");
+	if (nb_rx_state == ELM_SUCCESS)
+	{
+		memset(vin, 0, 18);
+		// **** Decoding ****
+		if (strstr(payload, "490201"))
+		{
+			// OBD scanner provides this multiline response:
+			// 014                        ==> 0x14 = 20 bytes following
+			// 0: 49 02 01 31 44 34       ==> 49 02 = Header. 01 = 1 VIN number in message. 31, 44, 34 = First 3 VIN digits
+			// 1: 47 50 30 30 52 35 35    ==> 47->35 next 7 VIN digits
+			// 2: 42 31 32 33 34 35 36    ==> 42->36 next 7 VIN digits
+			//
+			// The resulitng payload buffer is:
+			// "0140:4902013144341:475030305235352:42313233343536" ==> VIN="1D4GP00R55B123456" (17-digits)
+			idx = strstr(payload, "490201") + 6;  // Pointer to first ASCII code digit of first VIN digit
+			// Loop over each pair of ASCII code digits. 17 VIN digits + 2 skipped line numbers = 19 loops
+			for (int i = 0; i < (19 * 2); i += 2) {
+				temp[0] = *(idx + i);      // Get first digit of ASCII code
+				temp[1] = *(idx + i + 1);  // Get second digit of ASCII code
+				// No need to add string termination, temp[3] always == 0
+				if (strstr(temp, ":")) continue; // Skip the second "1:" and third "2:" line numbers
+				ascii_val = strtol(temp, 0, 16);                // Convert ASCII code to integer
+				sprintf(vin + vin_counter++, "%c", ascii_val);  // Convert ASCII code integer back to character
+				// Serial.printf("Chars %s, ascii_val=%d[dec] 0x%02hhx[hex] ==> VIN=%s\n", temp, ascii_val, ascii_val, vin);
+			}
+		}
+		if (debugMode)
+		{
+			Serial.print("VIN: ");
+			Serial.println(vin);
+		}
+	}
+	else
+	{
+		if (debugMode)
+		{
+			Serial.println("No VIN response");
+			printError();
+		}
+	}
+	return nb_rx_state;
 }
