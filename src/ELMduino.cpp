@@ -2316,7 +2316,7 @@ int8_t ELM327::get_response(void)
 				Serial.println(F("\\t"));
 			else if (recChar == '\v')
 				Serial.println(F("\\v"));
-			// display the hex code for non-alpha numeric characters
+			// convert spaces to underscore, easier to see in debug output
 			else if (recChar == ' ')
 				Serial.println("_");
 			// display regular printable
