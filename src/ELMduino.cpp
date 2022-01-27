@@ -2629,7 +2629,7 @@ float ELM327::batteryVoltage(void)
 		if (nb_rx_state == ELM_SUCCESS)
 		{
 			nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
-			return strtof(payload, NULL);
+			return (float)strtod(payload, NULL);
 		}
 		else if (nb_rx_state != ELM_GETTING_MSG)
 			nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
