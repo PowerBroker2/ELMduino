@@ -903,7 +903,7 @@ float ELM327::timingAdvance()
 */
 float ELM327::intakeAirTemp()
 {
-	return processPID(SERVICE_01, INTAKE_AIR_TEMP, 1, 1, -40.0);
+	return processPID(SERVICE_01, INTAKE_AIR_TEMP, 1, 1, 1, -40.0);
 }
 
 
