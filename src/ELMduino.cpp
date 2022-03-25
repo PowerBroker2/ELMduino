@@ -107,6 +107,17 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
 	sendCommand_Blocking(command);
 	delay(100);
 
+	// Try "resume protocol" first (for Sparkfun OBDII board)
+	sprintf(command, "STPO");
+	if (sendCommand_Blocking(command) == ELM_SUCCESS)
+	{
+		if (strstr(payload, "OK") != NULL)
+		{
+			connected = true;
+			return connected;
+		}
+	}
+
 	// Set protocol
 	sprintf(command, TRY_PROT_H_AUTO_SEARCH, protocol);
 
