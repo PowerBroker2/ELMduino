@@ -360,7 +360,7 @@ int8_t ELM327::nextIndex(char const *str,
 
  Description:
  ------------
-  * Converts the ELM327's response into it's correct, numerical value
+  * Converts the ELM327's response into it's correct, numerical value. Returns 0 if numExpectedBytes > numPayChars
 
  Inputs:
  -------
@@ -375,7 +375,34 @@ int8_t ELM327::nextIndex(char const *str,
 */
 float ELM327::conditionResponse(const uint64_t &response, const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 {
-	return ((response >> (((numPayChars / 2) - numExpectedBytes) * 8)) * scaleFactor) + bias;
+	if (numExpectedBytes > numPayChars)
+	{
+		if (debugMode)
+			Serial.println(F("WARNING: Number of expected response bytes is greater than the number of payload chars returned by ELM327 - returning 0"));
+		
+		return 0;
+	}
+	else if (numExpectedBytes == numPayChars)
+	{
+		return (response * scaleFactor) + bias;
+	}
+
+	// If there were more payload bytes returned than we expected, test the first and last bytes in the
+	// returned payload and see which gives us a higher value. Sometimes ELM327's return leading zeros
+	// and others return trailing zeros. The following approach gives us the best chance at determining
+	// where the real data is. Note that if the payload returns BOTH leading and trailing zeros, this
+	// will not give accurate results!
+	uint64_t mask = 0;
+
+	for (int i = 0; i < (numExpectedBytes * 8); i++)
+		mask |= (1 << i);
+
+	float leadingResponse = ((response >> ((numPayChars - numExpectedBytes) * 8)) * scaleFactor) + bias;
+	float laggingResponse = ((response & mask) * scaleFactor) + bias;
+
+	if (leadingResponse > laggingResponse)
+		return leadingResponse;
+	return laggingResponse;
 }
 
 
