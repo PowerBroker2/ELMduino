@@ -356,7 +356,7 @@ int8_t ELM327::nextIndex(char const *str,
 
 
 /*
- void ELM327::conditionResponse(const uint64_t &response, const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
+ void ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 
  Description:
  ------------
@@ -373,8 +373,16 @@ int8_t ELM327::nextIndex(char const *str,
  -------
   * float - Converted numerical value
 */
-float ELM327::conditionResponse(const uint64_t &response, const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
+float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 {
+	if (numExpectedBytes > 8)
+	{
+		if (debugMode)
+			Serial.println(F("WARNING: Number of expected response bytes is greater than 8 - returning 0"));
+		
+		return 0;
+	}
+
 	if (numExpectedBytes > numPayChars)
 	{
 		if (debugMode)
@@ -383,26 +391,35 @@ float ELM327::conditionResponse(const uint64_t &response, const uint8_t &numExpe
 		return 0;
 	}
 	else if (numExpectedBytes == numPayChars)
-	{
 		return (response * scaleFactor) + bias;
-	}
 
 	// If there were more payload bytes returned than we expected, test the first and last bytes in the
 	// returned payload and see which gives us a higher value. Sometimes ELM327's return leading zeros
 	// and others return trailing zeros. The following approach gives us the best chance at determining
 	// where the real data is. Note that if the payload returns BOTH leading and trailing zeros, this
 	// will not give accurate results!
-	uint64_t mask = 0;
 
-	for (int i = 0; i < (numExpectedBytes * 8); i++)
-		mask |= (1 << i);
+	uint64_t leadingResponse = 0;
+	for (uint8_t i = 0; i < numExpectedBytes; i++)
+	{
+		uint8_t payloadIndex = PAYLOAD_LEN - numPayChars + i;
+		uint8_t bitsOffset   = 4 * (numExpectedBytes - i - 1);
 
-	float leadingResponse = ((response >> ((numPayChars - numExpectedBytes) * 8)) * scaleFactor) + bias;
-	float laggingResponse = ((response & mask) * scaleFactor) + bias;
+		leadingResponse |= (ctoi(payload[payloadIndex]) << bitsOffset);
+	}
+
+	uint64_t laggingResponse = 0;
+	for (uint8_t i = 0; i < numExpectedBytes; i++)
+	{
+		uint8_t payloadIndex = PAYLOAD_LEN - numExpectedBytes + i;
+		uint8_t bitsOffset   = 4 * (numExpectedBytes - i - 1);
+
+		laggingResponse |= (ctoi(payload[payloadIndex]) << bitsOffset);
+	}
 
 	if (leadingResponse > laggingResponse)
-		return leadingResponse;
-	return laggingResponse;
+		return ((float)leadingResponse * scaleFactor) + bias;
+	return ((float)laggingResponse * scaleFactor) + bias;
 }
 
 
@@ -532,7 +549,10 @@ float ELM327::processPID(const uint8_t& service, const uint16_t& pid, const uint
 		if (nb_rx_state == ELM_SUCCESS)
 		{
 			nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
-			return conditionResponse(findResponse(), numExpectedBytes, scaleFactor, bias);
+			
+			findResponse();
+
+			return conditionResponse(numExpectedBytes, scaleFactor, bias);
 		}
 		else if (nb_rx_state != ELM_GETTING_MSG)
 			nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
@@ -2498,7 +2518,7 @@ uint64_t ELM327::findResponse()
 		Serial.println(header);
 	}
 
-	int8_t firstHeadIndex = nextIndex(payload, header);
+	int8_t firstHeadIndex  = nextIndex(payload, header);
 	int8_t secondHeadIndex = nextIndex(payload, header, 2);
 
 	if (firstHeadIndex >= 0)
