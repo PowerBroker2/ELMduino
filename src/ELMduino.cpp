@@ -1900,7 +1900,7 @@ uint8_t ELM327::fuelType()
 
 
 /*
- float ELM327::ethonolPercent()
+ float ELM327::ethanolPercent()
 
  Description:
  ------------
@@ -1914,9 +1914,9 @@ uint8_t ELM327::fuelType()
  -------
   * float - Ethanol fuel in %
 */
-float ELM327::ethonolPercent()
+float ELM327::ethanolPercent()
 {
-	return processPID(SERVICE_01, ETHONOL_FUEL_PERCENT, 1, 1, 100.0 / 255.0);
+	return processPID(SERVICE_01, ETHANOL_FUEL_PERCENT, 1, 1, 100.0 / 255.0);
 }
 
 
