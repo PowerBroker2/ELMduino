@@ -119,7 +119,7 @@ uint16_t timeRunWithMIL();
 uint16_t timeSinceCodesCleared();
 float maxMafRate();
 uint8_t fuelType();
-float ethonolPercent();
+float ethanolPercent();
 float absEvapSysVapPressure();
 float evapSysVapPressure2();
 float absFuelRailPressure();
@@ -248,7 +248,7 @@ const uint8_t TIME_SINCE_CODES_CLEARED         = 78;  // 0x4E - min
 const uint8_t MAX_VALUES_EQUIV_V_I_PRESSURE    = 79;  // 0x4F - ratio V mA kPa
 const uint8_t MAX_MAF_RATE                     = 80;  // 0x50 - g/s
 const uint8_t FUEL_TYPE                        = 81;  // 0x51 - ref table
-const uint8_t ETHONOL_FUEL_PERCENT             = 82;  // 0x52 - %
+const uint8_t ETHANOL_FUEL_PERCENT             = 82;  // 0x52 - %
 const uint8_t ABS_EVAP_SYS_VAPOR_PRESSURE      = 83;  // 0x53 - kPa
 const uint8_t EVAP_SYS_VAPOR_PRESSURE          = 84;  // 0x54 - Pa
 const uint8_t SHORT_TERM_SEC_OXY_SENS_TRIM_1_3 = 85;  // 0x55 - %
