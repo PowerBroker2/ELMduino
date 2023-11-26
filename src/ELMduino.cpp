@@ -2433,7 +2433,7 @@ int8_t ELM327::get_response(void)
 	if (nextIndex(payload, "UNABLETOCONNECT") >= 0)
 	{
 		if (debugMode)
-			Serial.println(F("ELM responded with errror \"UNABLE TO CONNECT\""));
+			Serial.println(F("ELM responded with error \"UNABLE TO CONNECT\""));
 
 		nb_rx_state = ELM_UNABLE_TO_CONNECT;
 		return nb_rx_state;
@@ -2444,7 +2444,7 @@ int8_t ELM327::get_response(void)
 	if (nextIndex(payload, "NODATA") >= 0)
 	{
 		if (debugMode)
-			Serial.println(F("ELM responded with errror \"NO DATA\""));
+			Serial.println(F("ELM responded with error \"NO DATA\""));
 
 		nb_rx_state = ELM_NO_DATA;
 		return nb_rx_state;
@@ -2453,7 +2453,7 @@ int8_t ELM327::get_response(void)
 	if (nextIndex(payload, "STOPPED") >= 0)
 	{
 		if (debugMode)
-			Serial.println(F("ELM responded with errror \"STOPPED\""));
+			Serial.println(F("ELM responded with error \"STOPPED\""));
 
 		nb_rx_state = ELM_STOPPED;
 		return nb_rx_state;
