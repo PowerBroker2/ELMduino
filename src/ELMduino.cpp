@@ -119,16 +119,16 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
 		{ 
 			if (strstr(payload, "OK") != NULL)
 			{
-				// Protocol search can take a comparatively long time. Temporarily set 
+			    // Protocol search can take a comparatively long time. Temporarily set 
                 // the timeout value to 30 seconds, then restore the previous value. 
                 uint16_t prevTimeout = timeout_ms;
-				timeout_ms = 30000;
+			    timeout_ms = 30000;
 				
                 if (sendCommand_Blocking("0100") == ELM_SUCCESS) 
 				{	
                     timeout_ms = prevTimeout;
-					connected = true;
-					return connected;
+				    connected = true;
+				    return connected;
 				}
 
                 timeout_ms = prevTimeout;              
