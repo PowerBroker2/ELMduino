@@ -112,7 +112,7 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
 	// requests a list of supported PIDs 0x00 - 0x20 and is guaranteed to work
 	if ((String)protocol == "0")
 	{	
-		// Tell the ELM327 to do an auto protocol search. If a valid protocol is found, it will be saved to memory.
+        // Tell the ELM327 to do an auto protocol search. If a valid protocol is found, it will be saved to memory.
         // Some ELM clones may not have memory enabled and thus will perform the search every time.
         sprintf(command, SET_PROTOCOL_TO_AUTO_H_SAVE, protocol); 
 		if (sendCommand_Blocking(command) == ELM_SUCCESS)
@@ -125,11 +125,11 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
 			    timeout_ms = 30000;
 				
                 if (sendCommand_Blocking("0100") == ELM_SUCCESS) 
-				{	
+                {	
                     timeout_ms = prevTimeout;
-				    connected = true;
-				    return connected;
-				}
+                    connected = true;
+                    return connected;
+                }
 
                 timeout_ms = prevTimeout;              
 			}
