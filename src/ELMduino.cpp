@@ -2103,141 +2103,141 @@ int8_t ELM327::sendCommand_Blocking(const char *cmd)
 */
 int8_t ELM327::get_response(void)
 {
-    // buffer the response of the ELM327 until either the
-    // end marker is read or a timeout has occurred
-    // last valid idx is PAYLOAD_LEN but want to keep one free for terminating '\0'
-    // so limit counter to < PAYLOAD_LEN
-    if (!elm_port->available())
-    {
-        nb_rx_state = ELM_GETTING_MSG;
-        if (timeout())
-            nb_rx_state = ELM_TIMEOUT;
-    }
-    else
-    {
-        char recChar = elm_port->read();
+	// buffer the response of the ELM327 until either the
+	// end marker is read or a timeout has occurred
+	// last valid idx is PAYLOAD_LEN but want to keep one free for terminating '\0'
+	// so limit counter to < PAYLOAD_LEN
+	if (!elm_port->available())
+	{
+		nb_rx_state = ELM_GETTING_MSG;
+		if (timeout())
+			nb_rx_state = ELM_TIMEOUT;
+	}
+	else
+	{
+		char recChar = elm_port->read();
 
-        if (debugMode)
-        {
-            Serial.print(F("\tReceived char: "));
-            // display each received character, make non-printables printable
-            if (recChar == '\f')
-                Serial.println(F("\\f"));
-            else if (recChar == '\n')
-                Serial.println(F("\\n"));
-            else if (recChar == '\r')
-                Serial.println(F("\\r"));
-            else if (recChar == '\t')
-                Serial.println(F("\\t"));
-            else if (recChar == '\v')
-                Serial.println(F("\\v"));
-            // convert spaces to underscore, easier to see in debug output
-            else if (recChar == ' ')
-                Serial.println("_");
-            // display regular printable
-            else
-                Serial.println(recChar);
-        }
+		if (debugMode)
+		{
+			Serial.print(F("\tReceived char: "));
+			// display each received character, make non-printables printable
+			if (recChar == '\f')
+				Serial.println(F("\\f"));
+			else if (recChar == '\n')
+				Serial.println(F("\\n"));
+			else if (recChar == '\r')
+				Serial.println(F("\\r"));
+			else if (recChar == '\t')
+				Serial.println(F("\\t"));
+			else if (recChar == '\v')
+				Serial.println(F("\\v"));
+			// convert spaces to underscore, easier to see in debug output
+			else if (recChar == ' ')
+				Serial.println("_");
+			// display regular printable
+			else
+				Serial.println(recChar);
+		}
 
-        // this is the end of the OBD response
-        if (recChar == '>')
-        {
-            if (debugMode)
-                Serial.println(F("Delimiter found."));
+		// this is the end of the OBD response
+		if (recChar == '>')
+		{
+			if (debugMode)
+				Serial.println(F("Delimiter found."));
 
-            nb_rx_state = ELM_MSG_RXD;
-        }
-        else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.'))
-            // discard all characters except for alphanumeric and decimal places.
-            // decimal places needed to extract floating point numbers, e.g. battery voltage
-            nb_rx_state = ELM_GETTING_MSG; // Discard this character
-        else
-        {
-            if (recBytes < PAYLOAD_LEN)
-            {
-                payload[recBytes] = recChar;
-                recBytes++;
-                nb_rx_state = ELM_GETTING_MSG;
-            }
-            else
-                nb_rx_state = ELM_BUFFER_OVERFLOW;
-        }
-    }
+			nb_rx_state = ELM_MSG_RXD;
+		}
+		else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.'))
+			// discard all characters except for alphanumeric and decimal places.
+			// decimal places needed to extract floating point numbers, e.g. battery voltage
+			nb_rx_state = ELM_GETTING_MSG; // Discard this character
+		else
+		{
+			if (recBytes < PAYLOAD_LEN)
+			{
+				payload[recBytes] = recChar;
+				recBytes++;
+				nb_rx_state = ELM_GETTING_MSG;
+			}
+			else
+				nb_rx_state = ELM_BUFFER_OVERFLOW;
+		}
+	}
 
-    // Message is still being received (or is timing out), so exit early without doing all the other checks
-    if (nb_rx_state == ELM_GETTING_MSG)
-        return nb_rx_state;
+	// Message is still being received (or is timing out), so exit early without doing all the other checks
+	if (nb_rx_state == ELM_GETTING_MSG)
+		return nb_rx_state;
 
-    // End of response delimiter was found
-    if (debugMode && nb_rx_state == ELM_MSG_RXD)
-    {
-        Serial.print(F("All chars received: "));
-        Serial.println(payload);
-    }
+	// End of response delimiter was found
+	if (debugMode && nb_rx_state == ELM_MSG_RXD)
+	{
+		Serial.print(F("All chars received: "));
+		Serial.println(payload);
+	}
 
-    if (nb_rx_state == ELM_TIMEOUT)
-    {
-        if (debugMode)
-        {
-            Serial.print(F("Timeout detected with overflow of "));
-            Serial.print((currentTime - previousTime) - timeout_ms);
-            Serial.println(F("ms"));
-        }
-        return nb_rx_state;
-    }
+	if (nb_rx_state == ELM_TIMEOUT)
+	{
+		if (debugMode)
+		{
+			Serial.print(F("Timeout detected with overflow of "));
+			Serial.print((currentTime - previousTime) - timeout_ms);
+			Serial.println(F("ms"));
+		}
+		return nb_rx_state;
+	}
 
-    if (nb_rx_state == ELM_BUFFER_OVERFLOW)
-    {
-        if (debugMode)
-        {
-            Serial.print(F("OBD receive buffer overflow (> "));
-            Serial.print(PAYLOAD_LEN);
-            Serial.println(F(" bytes)"));
-        }
-        return nb_rx_state;
-    }
+	if (nb_rx_state == ELM_BUFFER_OVERFLOW)
+	{
+		if (debugMode)
+		{
+			Serial.print(F("OBD receive buffer overflow (> "));
+			Serial.print(PAYLOAD_LEN);
+			Serial.println(F(" bytes)"));
+		}
+		return nb_rx_state;
+	}
 
-    // Now we have successfully received OBD response, check if the payload indicates any OBD errors
-    if (nextIndex(payload, "UNABLETOCONNECT") >= 0)
-    {
-        if (debugMode)
-            Serial.println(F("ELM responded with errror \"UNABLE TO CONNECT\""));
+	// Now we have successfully received OBD response, check if the payload indicates any OBD errors
+	if (nextIndex(payload, "UNABLETOCONNECT") >= 0)
+	{
+		if (debugMode)
+			Serial.println(F("ELM responded with error \"UNABLE TO CONNECT\""));
 
-        nb_rx_state = ELM_UNABLE_TO_CONNECT;
-        return nb_rx_state;
-    }
+		nb_rx_state = ELM_UNABLE_TO_CONNECT;
+		return nb_rx_state;
+	}
 
-    connected = true;
+	connected = true;
 
-    if (nextIndex(payload, "NODATA") >= 0)
-    {
-        if (debugMode)
-            Serial.println(F("ELM responded with errror \"NO DATA\""));
+	if (nextIndex(payload, "NODATA") >= 0)
+	{
+		if (debugMode)
+			Serial.println(F("ELM responded with error \"NO DATA\""));
 
-        nb_rx_state = ELM_NO_DATA;
-        return nb_rx_state;
-    }
+		nb_rx_state = ELM_NO_DATA;
+		return nb_rx_state;
+	}
 
-    if (nextIndex(payload, "STOPPED") >= 0)
-    {
-        if (debugMode)
-            Serial.println(F("ELM responded with errror \"STOPPED\""));
+	if (nextIndex(payload, "STOPPED") >= 0)
+	{
+		if (debugMode)
+			Serial.println(F("ELM responded with error \"STOPPED\""));
 
-        nb_rx_state = ELM_STOPPED;
-        return nb_rx_state;
-    }
+		nb_rx_state = ELM_STOPPED;
+		return nb_rx_state;
+	}
 
-    if (nextIndex(payload, "ERROR") >= 0)
-    {
-        if (debugMode)
-            Serial.println(F("ELM responded with \"ERROR\""));
+	if (nextIndex(payload, "ERROR") >= 0)
+	{
+		if (debugMode)
+			Serial.println(F("ELM responded with \"ERROR\""));
 
-        nb_rx_state = ELM_GENERAL_ERROR;
-        return nb_rx_state;
-    }
+		nb_rx_state = ELM_GENERAL_ERROR;
+		return nb_rx_state;
+	}
 
-    nb_rx_state = ELM_SUCCESS;
-    return nb_rx_state;
+	nb_rx_state = ELM_SUCCESS;
+	return nb_rx_state;
 }
 
 /*
