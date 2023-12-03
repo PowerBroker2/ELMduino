@@ -138,7 +138,7 @@ const uint8_t AUX_INPUT_OUTPUT_SUPPORTED       = 101; // 0x65 - bit encoded
 
 
 const uint8_t SERVICE_02                       = 2;
-
+const uint8_t SERVICE_03                       = 3;
 
 
 
@@ -369,6 +369,7 @@ public:
 	float catTempB1S2();
 	float catTempB2S2();
 
+	uint32_t currentDTCCodes();
 
 	uint32_t supportedPIDs_41_60();
 

@@ -96,7 +96,7 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
     sendCommand_Blocking(ALLOW_LONG_MESSAGES);
     delay(100);
 
-    // Set data timeout
+    // // Set data timeout
     sprintf(command, SET_TIMEOUT_TO_H_X_4MS, dataTimeout / 4);
     sendCommand_Blocking(command);
     delay(100);
@@ -1375,6 +1375,43 @@ float ELM327::catTempB1S2()
 float ELM327::catTempB2S2()
 {
     return processPID(SERVICE_01, CATALYST_TEMP_BANK_2_SENSOR_2, 1, 2, 1.0 / 10.0, -40.0);
+}
+
+/*
+ uint32_t ELM327::currentDTCCodes()
+
+ Description:
+ ------------
+  * Get the (bit encoded) list of current DTC codes
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * uint32_t - Bit encoded booleans of current DTC codes
+*/
+uint32_t ELM327::currentDTCCodes()
+{
+    if (nb_query_state == SEND_COMMAND)
+    {
+        sendCommand("03");  //Check DTC is always Service 03 with no PID
+        nb_query_state = WAITING_RESP;
+    }
+    else if (nb_query_state == WAITING_RESP)
+    {
+        get_response();
+        if (nb_rx_state == ELM_SUCCESS)
+        {
+            nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
+            // payload = (payload & 0x00FFFFFF);
+            return (uint32_t)atoi(payload); //only the last 6 bytes contain codes 
+        }
+        else if (nb_rx_state != ELM_GETTING_MSG)
+            nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
+    }
+    return 0;
+
 }
 
 /*
