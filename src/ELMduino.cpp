@@ -382,6 +382,9 @@ int8_t ELM327::nextIndex(char const *str,
 */
 float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 {
+    uint8_t numExpectedPayChars = numExpectedBytes * 2;
+    uint8_t payCharDiff         = numPayChars - numExpectedPayChars;
+
     if (numExpectedBytes > 8)
     {
         if (debugMode)
@@ -390,14 +393,21 @@ float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &sc
         return 0;
     }
 
-    if (numExpectedBytes > numPayChars)
+    if (numPayChars < numExpectedPayChars)
     {
         if (debugMode)
-            Serial.println(F("WARNING: Number of expected response bytes is greater than the number of payload chars returned by ELM327 - returning 0"));
+            Serial.println(F("WARNING: Number of payload chars is less than the number of expected response chars returned by ELM327 - returning 0"));
 
         return 0;
     }
-    else if (numExpectedBytes == numPayChars)
+    else if (numPayChars & 0x1)
+    {
+        if (debugMode)
+            Serial.println(F("WARNING: Number of payload chars returned by ELM327 is an odd value - returning 0"));
+
+        return 0;
+    }
+    else if (numExpectedPayChars == numPayChars)
         return (response * scaleFactor) + bias;
 
     // If there were more payload bytes returned than we expected, test the first and last bytes in the
@@ -406,27 +416,29 @@ float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &sc
     // where the real data is. Note that if the payload returns BOTH leading and trailing zeros, this
     // will not give accurate results!
 
-    uint64_t leadingResponse = 0;
-    for (uint8_t i = 0; i < numExpectedBytes; i++)
+    if (debugMode)
+        Serial.println("Looking for lagging zeros");
+
+    uint16_t numExpectedBits  = numExpectedBytes * 8;
+    uint64_t laggingZerosMask = 0;
+
+    for (uint16_t i=0; i<numExpectedBits; i++)
+        laggingZerosMask |= (1 << i);
+
+    if (!(laggingZerosMask & response)) // Detect all lagging zeros in `response`
     {
-        uint8_t payloadIndex = PAYLOAD_LEN - numPayChars + i;
-        uint8_t bitsOffset = 4 * (numExpectedBytes - i - 1);
+        if (debugMode)
+            Serial.println("Lagging zeros found");
 
-        leadingResponse |= (ctoi(payload[payloadIndex]) << bitsOffset);
+        return ((float)(response >> (4 * payCharDiff)) * scaleFactor) + bias;
     }
-
-    uint64_t laggingResponse = 0;
-    for (uint8_t i = 0; i < numExpectedBytes; i++)
+    else
     {
-        uint8_t payloadIndex = PAYLOAD_LEN - numExpectedBytes + i;
-        uint8_t bitsOffset = 4 * (numExpectedBytes - i - 1);
+        if (debugMode)
+            Serial.println("Lagging zeros not found - assuming leading zeros");
 
-        laggingResponse |= (ctoi(payload[payloadIndex]) << bitsOffset);
+        return (response * scaleFactor) + bias;
     }
-
-    if (leadingResponse > laggingResponse)
-        return ((float)leadingResponse * scaleFactor) + bias;
-    return ((float)laggingResponse * scaleFactor) + bias;
 }
 
 /*
