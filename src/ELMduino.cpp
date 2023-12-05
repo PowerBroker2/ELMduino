@@ -382,6 +382,9 @@ int8_t ELM327::nextIndex(char const *str,
 */
 float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 {
+    uint8_t numExpectedPayChars = numExpectedBytes * 2;
+    uint8_t payCharDiff         = numPayChars - numExpectedPayChars;
+
     if (numExpectedBytes > 8)
     {
         if (debugMode)
@@ -390,14 +393,21 @@ float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &sc
         return 0;
     }
 
-    if (numExpectedBytes > numPayChars)
+    if (numPayChars < numExpectedPayChars)
     {
         if (debugMode)
-            Serial.println(F("WARNING: Number of expected response bytes is greater than the number of payload chars returned by ELM327 - returning 0"));
+            Serial.println(F("WARNING: Number of payload chars is less than the number of expected response chars returned by ELM327 - returning 0"));
 
         return 0;
     }
-    else if (numExpectedBytes == numPayChars)
+    else if (numPayChars & 0x1)
+    {
+        if (debugMode)
+            Serial.println(F("WARNING: Number of payload chars returned by ELM327 is an odd value - returning 0"));
+
+        return 0;
+    }
+    else if (numExpectedPayChars == numPayChars)
         return (response * scaleFactor) + bias;
 
     // If there were more payload bytes returned than we expected, test the first and last bytes in the
@@ -406,27 +416,29 @@ float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &sc
     // where the real data is. Note that if the payload returns BOTH leading and trailing zeros, this
     // will not give accurate results!
 
-    uint64_t leadingResponse = 0;
-    for (uint8_t i = 0; i < numExpectedBytes; i++)
+    if (debugMode)
+        Serial.println("Looking for lagging zeros");
+
+    uint16_t numExpectedBits  = numExpectedBytes * 8;
+    uint64_t laggingZerosMask = 0;
+
+    for (uint16_t i=0; i<numExpectedBits; i++)
+        laggingZerosMask |= (1 << i);
+
+    if (!(laggingZerosMask & response)) // Detect all lagging zeros in `response`
     {
-        uint8_t payloadIndex = PAYLOAD_LEN - numPayChars + i;
-        uint8_t bitsOffset = 4 * (numExpectedBytes - i - 1);
+        if (debugMode)
+            Serial.println("Lagging zeros found");
 
-        leadingResponse |= (ctoi(payload[payloadIndex]) << bitsOffset);
+        return ((float)(response >> (4 * payCharDiff)) * scaleFactor) + bias;
     }
-
-    uint64_t laggingResponse = 0;
-    for (uint8_t i = 0; i < numExpectedBytes; i++)
+    else
     {
-        uint8_t payloadIndex = PAYLOAD_LEN - numExpectedBytes + i;
-        uint8_t bitsOffset = 4 * (numExpectedBytes - i - 1);
+        if (debugMode)
+            Serial.println("Lagging zeros not found - assuming leading zeros");
 
-        laggingResponse |= (ctoi(payload[payloadIndex]) << bitsOffset);
+        return (response * scaleFactor) + bias;
     }
-
-    if (leadingResponse > laggingResponse)
-        return ((float)leadingResponse * scaleFactor) + bias;
-    return ((float)laggingResponse * scaleFactor) + bias;
 }
 
 /*
@@ -2140,99 +2152,99 @@ int8_t ELM327::sendCommand_Blocking(const char *cmd)
 */
 int8_t ELM327::get_response(void)
 {
-    // buffer the response of the ELM327 until either the
-    // end marker is read or a timeout has occurred
-    // last valid idx is PAYLOAD_LEN but want to keep one free for terminating '\0'
-    // so limit counter to < PAYLOAD_LEN
-    if (!elm_port->available())
-    {
-        nb_rx_state = ELM_GETTING_MSG;
-        if (timeout())
-            nb_rx_state = ELM_TIMEOUT;
-    }
-    else
-    {
-        char recChar = elm_port->read();
+	// buffer the response of the ELM327 until either the
+	// end marker is read or a timeout has occurred
+	// last valid idx is PAYLOAD_LEN but want to keep one free for terminating '\0'
+	// so limit counter to < PAYLOAD_LEN
+	if (!elm_port->available())
+	{
+		nb_rx_state = ELM_GETTING_MSG;
+		if (timeout())
+			nb_rx_state = ELM_TIMEOUT;
+	}
+	else
+	{
+		char recChar = elm_port->read();
 
-        if (debugMode)
-        {
-            Serial.print(F("\tReceived char: "));
-            // display each received character, make non-printables printable
-            if (recChar == '\f')
-                Serial.println(F("\\f"));
-            else if (recChar == '\n')
-                Serial.println(F("\\n"));
-            else if (recChar == '\r')
-                Serial.println(F("\\r"));
-            else if (recChar == '\t')
-                Serial.println(F("\\t"));
-            else if (recChar == '\v')
-                Serial.println(F("\\v"));
-            // convert spaces to underscore, easier to see in debug output
-            else if (recChar == ' ')
-                Serial.println("_");
-            // display regular printable
-            else
-                Serial.println(recChar);
-        }
+		if (debugMode)
+		{
+			Serial.print(F("\tReceived char: "));
+			// display each received character, make non-printables printable
+			if (recChar == '\f')
+				Serial.println(F("\\f"));
+			else if (recChar == '\n')
+				Serial.println(F("\\n"));
+			else if (recChar == '\r')
+				Serial.println(F("\\r"));
+			else if (recChar == '\t')
+				Serial.println(F("\\t"));
+			else if (recChar == '\v')
+				Serial.println(F("\\v"));
+			// convert spaces to underscore, easier to see in debug output
+			else if (recChar == ' ')
+				Serial.println("_");
+			// display regular printable
+			else
+				Serial.println(recChar);
+		}
 
-        // this is the end of the OBD response
-        if (recChar == '>')
-        {
-            if (debugMode)
-                Serial.println(F("Delimiter found."));
+		// this is the end of the OBD response
+		if (recChar == '>')
+		{
+			if (debugMode)
+				Serial.println(F("Delimiter found."));
 
-            nb_rx_state = ELM_MSG_RXD;
-        }
-        else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.'))
-            // discard all characters except for alphanumeric and decimal places.
-            // decimal places needed to extract floating point numbers, e.g. battery voltage
-            nb_rx_state = ELM_GETTING_MSG; // Discard this character
-        else
-        {
-            if (recBytes < PAYLOAD_LEN)
-            {
-                payload[recBytes] = recChar;
-                recBytes++;
-                nb_rx_state = ELM_GETTING_MSG;
-            }
-            else
-                nb_rx_state = ELM_BUFFER_OVERFLOW;
-        }
-    }
+			nb_rx_state = ELM_MSG_RXD;
+		}
+		else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.'))
+			// discard all characters except for alphanumeric and decimal places.
+			// decimal places needed to extract floating point numbers, e.g. battery voltage
+			nb_rx_state = ELM_GETTING_MSG; // Discard this character
+		else
+		{
+			if (recBytes < PAYLOAD_LEN)
+			{
+				payload[recBytes] = recChar;
+				recBytes++;
+				nb_rx_state = ELM_GETTING_MSG;
+			}
+			else
+				nb_rx_state = ELM_BUFFER_OVERFLOW;
+		}
+	}
 
-    // Message is still being received (or is timing out), so exit early without doing all the other checks
-    if (nb_rx_state == ELM_GETTING_MSG)
-        return nb_rx_state;
+	// Message is still being received (or is timing out), so exit early without doing all the other checks
+	if (nb_rx_state == ELM_GETTING_MSG)
+		return nb_rx_state;
 
-    // End of response delimiter was found
-    if (debugMode && nb_rx_state == ELM_MSG_RXD)
-    {
-        Serial.print(F("All chars received: "));
-        Serial.println(payload);
-    }
+	// End of response delimiter was found
+	if (debugMode && nb_rx_state == ELM_MSG_RXD)
+	{
+		Serial.print(F("All chars received: "));
+		Serial.println(payload);
+	}
 
-    if (nb_rx_state == ELM_TIMEOUT)
-    {
-        if (debugMode)
-        {
-            Serial.print(F("Timeout detected with overflow of "));
-            Serial.print((currentTime - previousTime) - timeout_ms);
-            Serial.println(F("ms"));
-        }
-        return nb_rx_state;
-    }
+	if (nb_rx_state == ELM_TIMEOUT)
+	{
+		if (debugMode)
+		{
+			Serial.print(F("Timeout detected with overflow of "));
+			Serial.print((currentTime - previousTime) - timeout_ms);
+			Serial.println(F("ms"));
+		}
+		return nb_rx_state;
+	}
 
-    if (nb_rx_state == ELM_BUFFER_OVERFLOW)
-    {
-        if (debugMode)
-        {
-            Serial.print(F("OBD receive buffer overflow (> "));
-            Serial.print(PAYLOAD_LEN);
-            Serial.println(F(" bytes)"));
-        }
-        return nb_rx_state;
-    }
+	if (nb_rx_state == ELM_BUFFER_OVERFLOW)
+	{
+		if (debugMode)
+		{
+			Serial.print(F("OBD receive buffer overflow (> "));
+			Serial.print(PAYLOAD_LEN);
+			Serial.println(F(" bytes)"));
+		}
+		return nb_rx_state;
+	}
 
 	// Now we have successfully received OBD response, check if the payload indicates any OBD errors
 	if (nextIndex(payload, "UNABLETOCONNECT") >= 0)
@@ -2240,41 +2252,41 @@ int8_t ELM327::get_response(void)
 		if (debugMode)
 			Serial.println(F("ELM responded with error \"UNABLE TO CONNECT\""));
 
-        nb_rx_state = ELM_UNABLE_TO_CONNECT;
-        return nb_rx_state;
-    }
+		nb_rx_state = ELM_UNABLE_TO_CONNECT;
+		return nb_rx_state;
+	}
 
-    connected = true;
+	connected = true;
 
 	if (nextIndex(payload, "NODATA") >= 0)
 	{
 		if (debugMode)
 			Serial.println(F("ELM responded with error \"NO DATA\""));
 
-        nb_rx_state = ELM_NO_DATA;
-        return nb_rx_state;
-    }
+		nb_rx_state = ELM_NO_DATA;
+		return nb_rx_state;
+	}
 
 	if (nextIndex(payload, "STOPPED") >= 0)
 	{
 		if (debugMode)
 			Serial.println(F("ELM responded with error \"STOPPED\""));
 
-        nb_rx_state = ELM_STOPPED;
-        return nb_rx_state;
-    }
+		nb_rx_state = ELM_STOPPED;
+		return nb_rx_state;
+	}
 
-    if (nextIndex(payload, "ERROR") >= 0)
-    {
-        if (debugMode)
-            Serial.println(F("ELM responded with \"ERROR\""));
+	if (nextIndex(payload, "ERROR") >= 0)
+	{
+		if (debugMode)
+			Serial.println(F("ELM responded with \"ERROR\""));
 
-        nb_rx_state = ELM_GENERAL_ERROR;
-        return nb_rx_state;
-    }
+		nb_rx_state = ELM_GENERAL_ERROR;
+		return nb_rx_state;
+	}
 
-    nb_rx_state = ELM_SUCCESS;
-    return nb_rx_state;
+	nb_rx_state = ELM_SUCCESS;
+	return nb_rx_state;
 }
 
 /*
