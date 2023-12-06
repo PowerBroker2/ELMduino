@@ -1417,7 +1417,7 @@ uint32_t ELM327::currentDTCCodes()
         {
             nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
             // payload = (payload & 0x00FFFFFF);
-            return (uint32_t)atoi(payload); //only the last 6 bytes contain codes 
+            return (uint32_t) findResponse(); 
         }
         else if (nb_rx_state != ELM_GETTING_MSG)
             nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
