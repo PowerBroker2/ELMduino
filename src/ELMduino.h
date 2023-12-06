@@ -322,6 +322,7 @@ public:
 
 	float batteryVoltage(void);
 	int8_t get_vin_blocking(char vin[]);
+	bool resetDTC();
 
 	uint32_t supportedPIDs_1_20();
 
