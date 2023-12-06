@@ -370,7 +370,7 @@ public:
 	float catTempB1S2();
 	float catTempB2S2();
 
-	uint32_t currentDTCCodes(const uint8_t& num_codes = 1);
+	void currentDTCCodes(char **, uint8_t = 1);
 
 	uint32_t supportedPIDs_41_60();
 
