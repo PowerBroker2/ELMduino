@@ -2574,18 +2574,22 @@ bool ELM327::resetDTC()
 }
 
 /*
- uint64_t ELM327::currentDTCCodes()
+ void ELM327::currentDTCCodes()
 
  Description:
  ------------
-  * Get the (bit encoded) list of current DTC codes
+  * Get the (bit encoded) list of current DTC codes. 
+    Typically, you would not call this in a loop; rather it would be called once to
+    the current codes present in the ECU.
+
  Inputs:
  -------
-  * void
+  * **foundCodes - char array to populate with code valuess
+  * uint8_t numCodes - the number of codes expected to be found
 
  Return:
  -------
-  * uint64_t - Bit encoded booleans of current DTC codes
+  * void
 */
 void ELM327::currentDTCCodes(char **foundCodes, uint8_t numCodes)
 {
@@ -2596,128 +2600,147 @@ void ELM327::currentDTCCodes(char **foundCodes, uint8_t numCodes)
 
     String response = "";
 
-    if (nb_query_state == SEND_COMMAND)
+    sendCommand("03"); // Check DTC is always Service 03 with no PID
+    
+    if (get_response() == ELM_SUCCESS) 
     {
-        sendCommand("03"); // Check DTC is always Service 03 with no PID
-        nb_query_state = WAITING_RESP;
-    }
-    else if (nb_query_state == WAITING_RESP)
-    {
-        get_response();
-        if (nb_rx_state == ELM_SUCCESS)
+        if (strstr(payload, "43") != NULL) // Successful response to Mode 03 request
         {
-            nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
-            if (strstr(payload, "43"))     // Successful response to Mode 03 request
+            // OBD scanner will provide a response that contains one or more lines indicating the codes present.
+            // Each 7-byte response line will start with "43" indicating it is a response to a Mode 03 request.
+            // See p. 31 of ELM327 datasheet for details and lookup table of code types.
+            // Example multi line response and interpretation:
+            // 43 01 33 00 00 00 00
+            // 43 04 30 00 00 00 00
+            // 43                    ==> Succesful response to Mode 03 request.
+            //    0                  ==> First digit of second byte is used to indicate the type of code (Powertrain, Body, etc)
+            //     1 33              ==> Second digit of first byte and the third byte are combined to indicate code 133.
+            //          00 00 00 00  ==> Remaining bytes are padding and not used
+            //                           Code type "0" of first DTC is replaced with "P0" and combined with the code number ==> "P0133"
+            // 43 04 30 00 00 00 00
+            // 43                    ==> Succesful response to Mode 03 request.
+            //    0                  ==> First digit of second byte is used to indicate the type of code (Powertrain, Body, etc)
+            //     4 30              ==> Second digit of first byte and the third byte are combined to indicate code 430.
+            //          00 00 00 00  ==> Remaining bytes are padding and not used
+            //                           Code type "0" of first DTC is replaced with "P0" and combined with the code number ==> "P0430"
+            //
+            // The resulitng payload buffer is:
+            // "4301330000000043043000000000" ==> Two DTC codes that need to be parsed out
+
+            idx = strstr(payload, "43") + 2;        // Pointer to first DTC code digit of second byte
+            uint codesFound = strlen(payload) / 14; // Each code found returns 14 chars starting with "43"
+
+            if (codesFound != numCodes) // Not fatal, but issue warning.
             {
-                // OBD scanner will provide a response that contains one or more lines indicating the codes present.
-                // Each 7-byte response line will start with "43" indicating it is a response to a Mode 03 request.
-                // See p. 31 of ELM327 datasheet for details and lookup table of code types.
-                // Example multi line response and interpretation:
-                // 43 01 33 00 00 00 00
-                // 43 04 30 00 00 00 00
-                // 43                    ==> Succesful response to Mode 03 request.
-                //    0                  ==> First digit of second byte is used to indicate the type of code (Powertrain, Body, etc)
-                //     1 33              ==> Second digit of first byte and the third byte are combined to indicate code 133.
-                //          00 00 00 00  ==> Remaining bytes are padding and not used
-                //                           Code type "0" of first DTC is replaced with "P0" and combined with the code number ==> "P0133"
-                // 43 04 30 00 00 00 00
-                // 43                    ==> Succesful response to Mode 03 request.
-                //    0                  ==> First digit of second byte is used to indicate the type of code (Powertrain, Body, etc)
-                //     4 30              ==> Second digit of first byte and the third byte are combined to indicate code 430.
-                //          00 00 00 00  ==> Remaining bytes are padding and not used
-                //                           Code type "0" of first DTC is replaced with "P0" and combined with the code number ==> "P0430"
-                //
-                // The resulitng payload buffer is:
-                // "4301330000000043043000000000" ==> Two DTC codes that need to be parsed out
+                Serial.println("Mismatch between expected and returned number of codes.");
+                Serial.print("Expected: ");
+                Serial.println(numCodes);
+                Serial.print("Returned: ");
+                Serial.println(codesFound);
+            }
 
-                idx = strstr(payload, "43") + 2; // Pointer to first DTC code digit of second byte
+            for (int i = 0; i < codesFound; i++)
+            {
+                codeType[0] = *(idx + 1);   // Get first digit of second byte
+                codeNumber[0] = *(idx + 2); // Get second digit of second byte
+                codeNumber[1] = *(idx + 3); // Get first digit of third byte
+                codeNumber[2] = *(idx + 4); // Get second digit of third byte
 
-                for (int i = 0; i < numCodes; i++)
+                switch ((int)codeType) // Set the correct type prefix for the code
                 {
-                    codeType[0] = *(idx + 1);   // Get first digit of second byte
-                    codeNumber[0] = *(idx + 2); // Get second digit of second byte
-                    codeNumber[1] = *(idx + 3); // Get first digit of third byte
-                    codeNumber[2] = *(idx + 4); // Get second digit of third byte
+                case 0x0:
+                    strcat(temp, "P0");
+                    break;
 
-                    switch ((int)codeType)  // Set the correct type prefix for the code 
-                    {   
-                        case 0x0:
-                            strcat(temp, "P0");
-                            break;
+                case 0x1:
+                    strcat(temp, "P1");
+                    break;
 
-                        case 0x1:
-                            strcat(temp, "P1");
-                            break;
+                case 0x2:
+                    strcat(temp, "P2");
+                    break;
+                case 0x3:
+                    strcat(temp, "P3");
+                    break;
 
-                        case 0x2:
-                            strcat(temp, "P2");
-                            break;
-                        case 0x3:
-                            strcat(temp, "P3");
-                            break;
+                case 0x4:
+                    strcat(temp, "C0");
+                    break;
 
-                        case 0x4:
-                            strcat(temp, "C0");
-                            break;
+                case 0x5:
+                    strcat(temp, "C1");
+                    break;
 
-                        case 0x5:
-                            strcat(temp, "C1");
-                            break;
+                case 0x6:
+                    strcat(temp, "C2");
+                    break;
 
-                        case 0x6:
-                            strcat(temp, "C2");
-                            break;
+                case 0x7:
+                    strcat(temp, "C3");
+                    break;
 
-                        case 0x7:
-                            strcat(temp, "C3");
-                            break;
+                case 0x8:
+                    strcat(temp, "B0");
+                    break;
 
-                        case 0x8:
-                            strcat(temp, "B0");
-                            break;
+                case 0x9:
+                    strcat(temp, "B1");
+                    break;
 
-                        case 0x9:
-                            strcat(temp, "B1");
-                            break;
+                case 0xA:
+                    strcat(temp, "B2");
+                    break;
 
-                        case 0xA:
-                            strcat(temp, "B2");
-                            break;
+                case 0xB:
+                    strcat(temp, "B3");
+                    break;
 
-                        case 0xB:
-                            strcat(temp, "B3");
-                            break;
+                case 0xC:
+                    strcat(temp, "U0");
+                    break;
 
-                        case 0xC:
-                            strcat(temp, "U0");
-                            break;
+                case 0xD:
+                    strcat(temp, "U1");
+                    break;
 
-                        case 0xD:
-                            strcat(temp, "U1");
-                            break;
+                case 0xE:
+                    strcat(temp, "U2");
+                    break;
 
-                        case 0xE:
-                            strcat(temp, "U2");
-                            break;
+                case 0xF:
+                    strcat(temp, "U3");
+                    break;
 
-                        case 0xF:
-                            strcat(temp, "U3");
-                            break;
+                default:
+                    break;
+                }
 
-                        default:
-                            break;
-                    }
+                strcat(temp, codeNumber); // Append the code number to the prefix
+                foundCodes[i] = temp;     // Add the fully parsed code to the list (array)
+                idx = idx + 14;           // reset idx to start of next code
 
-                    strcat(temp, codeNumber);   // Append the code number to the prefix
-                    foundCodes[i] = temp;       // Add the fully parsed code to the list (array)
-                    idx = idx + 14;             // reset idx to start of next code
-
-                    if (debugMode)
-                    {
-                        Serial.print("Found code: "); Serial.println(temp);
-                    }
+                if (debugMode)
+                {
+                    Serial.print("Found code: ");
+                    Serial.println(temp);
                 }
             }
+        }
+        else 
+        {
+            if (debugMode)
+            {
+                Serial.println("ELMduino: DTC response received with no valid data.");
+            }
+        }
+        return;
+    }
+     else if (nb_rx_state != ELM_GETTING_MSG)
+    {
+        if (debugMode)
+        {
+            Serial.println("ELMduino: Getting current DTC codes failed.");
+            printError();
         }
     }
 }
