@@ -2529,3 +2529,46 @@ int8_t ELM327::get_vin_blocking(char vin[])
     }
     return nb_rx_state;
 }
+
+/*
+ bool ELM327::resetDTC()
+
+ Description:
+ ------------
+    * Resets the stored DTCs in the ECU. This is a blocking function.
+      Note: The SAE spec requires that scan tools verify that a reset
+            is intended ("Are you sure?") before sending the mode 04
+            reset command to the vehicle. See p.32 of ELM327 datasheet.
+
+ Inputs:
+ -------
+    * void
+
+ Return:
+ -------
+  * bool - Indicates the success (or not) of the reset command.
+*/
+bool ELM327::resetDTC()
+{
+    if (sendCommand_Blocking("04") == ELM_SUCCESS)
+    {
+        if (strstr(payload, "44") != NULL)
+        {
+            if(debugMode)
+            {
+                Serial.println("ELMduino: DTC successfully reset."); 
+            }
+                
+            return true;
+        }
+    }
+    else 
+    {
+        if(debugMode) 
+        {
+            Serial.println("ELMduino: Resetting DTC codes failed.");
+        }
+    }
+
+    return false; 
+}
