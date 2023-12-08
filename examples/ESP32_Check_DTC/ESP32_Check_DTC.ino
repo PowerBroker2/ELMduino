@@ -19,7 +19,6 @@ uint32_t dtcStatus = 0;
 
 void setup()
 {
-
     DEBUG_PORT.begin(115200);
     // SerialBT.setPin("1234");
     ELM_PORT.begin("ArduHUD", true);
@@ -46,8 +45,8 @@ void loop()
 {
     switch (dtc_state)
     {
-    case CHECKONE:    // Force checking for a single code without first getting a code count
-        numCodes = 1; // Runs once after startup to test getDTCCodes(). Enable by setting initial dtc_state.
+    case CHECKONE:    // Runs once after startup to test getDTCCodes(). Enable by setting initial dtc_states
+        numCodes = 1; // Force checking for a single code without first getting a code count
         dtc_state = DTCCODES;
         break;
 
@@ -59,12 +58,10 @@ void loop()
         {
             DEBUG_PORT.print("monitorStatus() response: ");
             DEBUG_PORT.println(dtcStatus);
-            // DEBUG_PORT.println((dtcStatus >> 24) & 0x80);
-
+            
             // We are only interested in the first byte of the response that
             // encodes the MIL status and number of codes present
-            // milStatusOn = ((dtcStatus >> 24) & 0x80) > 0;        // If MSB of the first byte is set (0x80 hex) then the light is on
-            numCodes = (uint8_t)((dtcStatus >> 24) - 0x80); // The number of codes present is stored in the last 7 bits
+            numCodes = ((dtcStatus >> 24) & 0x80) - 0x80; // The number of codes present is stored in the last 7 bits
             DEBUG_PORT.print("Number of Codes: ");
             DEBUG_PORT.println(numCodes);
             dtc_state = DTCCODES;
@@ -80,8 +77,9 @@ void loop()
         if (numCodes > 0)
         {
             char *foundCodes[numCodes];
+            memset(foundCodes, 0, sizeof(foundCodes));
 
-            myELM327.currentDTCCodes(foundCodes, numCodes);
+            myELM327.currentDTCCodes(foundCodes, numCodes, false); // use non-blocking mode
             if (myELM327.nb_rx_state == ELM_SUCCESS)
             {
                 DEBUG_PORT.print("Response to DTC request: ");

@@ -323,6 +323,7 @@ public:
 	float batteryVoltage(void);
 	int8_t get_vin_blocking(char vin[]);
 	bool resetDTC();
+	void currentDTCCodes(char **foundCodes, const uint8_t& numCodes, const bool& isBlocking = true);
 
 	uint32_t supportedPIDs_1_20();
 
@@ -369,8 +370,6 @@ public:
 	float catTempB2S1();
 	float catTempB1S2();
 	float catTempB2S2();
-
-	void currentDTCCodes(char **, uint8_t = 1);
 
 	uint32_t supportedPIDs_41_60();
 

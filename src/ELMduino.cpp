@@ -2578,20 +2578,23 @@ bool ELM327::resetDTC()
 
  Description:
  ------------
-  * Get the (bit encoded) list of current DTC codes. 
-    Typically, you would not call this in a loop; rather it would be called once to
-    the current codes present in the ECU.
+  * Get the list of current DTC codes. This method is blocking by default, but can be run
+    in non-blocking mode if desired with optional boolean argument. Typical use involves
+    calling the monitorStatus() function first to get the number of DTC current codes stored,
+    then calling this function with the number of codes expected to be found. This would
+    not typically be done in NB mode in a loop, but optional NB mode is supported. 
 
  Inputs:
  -------
-  * **foundCodes - char array to populate with code valuess
+  * **foundCodes - char array to populate with code values 
   * uint8_t numCodes - the number of codes expected to be found
+  * bool isBlocking - optional arg to set (non)blocking mode - defaults to true / blocking mode
 
  Return:
  -------
   * void
 */
-void ELM327::currentDTCCodes(char **foundCodes, uint8_t numCodes)
+void ELM327::currentDTCCodes(char **foundCodes, const uint8_t &numCodes, const bool &isBlocking)
 {
     char *idx;
     char codeType[2] = {0};
@@ -2600,9 +2603,28 @@ void ELM327::currentDTCCodes(char **foundCodes, uint8_t numCodes)
 
     String response = "";
 
-    sendCommand("03"); // Check DTC is always Service 03 with no PID
+    if (nb_query_state == SEND_COMMAND)
+    {
+        sendCommand("03"); // Check DTC is always Service 03 with no PID
+        nb_query_state = WAITING_RESP;
+        
+        if (isBlocking) // In blocking mode, we loop here until get_response() is past ELM_GETTING_MSG state
+        { 
+             while (get_response() == ELM_GETTING_MSG)
+                ;
+        }
+        else 
+        {
+            return;
+        }
+    }
     
-    if (get_response() == ELM_SUCCESS) 
+    else if (nb_query_state == WAITING_RESP)
+    {
+        get_response();
+    }
+
+    if (nb_query_state == ELM_SUCCESS)
     {
         if (strstr(payload, "43") != NULL) // Successful response to Mode 03 request
         {
@@ -2627,8 +2649,18 @@ void ELM327::currentDTCCodes(char **foundCodes, uint8_t numCodes)
             // The resulitng payload buffer is:
             // "4301330000000043043000000000" ==> Two DTC codes that need to be parsed out
 
-            idx = strstr(payload, "43") + 2;        // Pointer to first DTC code digit of second byte
-            uint codesFound = strlen(payload) / 14; // Each code found returns 14 chars starting with "43"
+            // 43010341
+
+            idx = strstr(payload, "43") + 2;       // Pointer to first DTC code digit of second byte
+            uint codesFound = strlen(payload) / 8; // Each code found returns 8 chars starting with "43"
+
+            if (debugMode)
+            {
+                Serial.print("Payload length: ");
+                Serial.println(strlen(payload));
+                Serial.print("Payload = ");
+                Serial.println(payload);
+            }
 
             if (codesFound != numCodes) // Not fatal, but issue warning.
             {
@@ -2717,7 +2749,7 @@ void ELM327::currentDTCCodes(char **foundCodes, uint8_t numCodes)
 
                 strcat(temp, codeNumber); // Append the code number to the prefix
                 foundCodes[i] = temp;     // Add the fully parsed code to the list (array)
-                idx = idx + 14;           // reset idx to start of next code
+                idx = idx + 8;            // reset idx to start of next code
 
                 if (debugMode)
                 {
@@ -2725,8 +2757,10 @@ void ELM327::currentDTCCodes(char **foundCodes, uint8_t numCodes)
                     Serial.println(temp);
                 }
             }
+            nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
+            return;
         }
-        else 
+        else
         {
             if (debugMode)
             {
@@ -2735,8 +2769,9 @@ void ELM327::currentDTCCodes(char **foundCodes, uint8_t numCodes)
         }
         return;
     }
-     else if (nb_rx_state != ELM_GETTING_MSG)
+    else if (nb_rx_state != ELM_GETTING_MSG)
     {
+        nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
         if (debugMode)
         {
             Serial.println("ELMduino: Getting current DTC codes failed.");
@@ -2744,3 +2779,4 @@ void ELM327::currentDTCCodes(char **foundCodes, uint8_t numCodes)
         }
     }
 }
+
