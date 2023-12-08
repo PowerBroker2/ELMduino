@@ -13,7 +13,7 @@ typedef enum
 
 BluetoothSerial SerialBT;
 ELM327 myELM327;
-dtc_states dtc_state = MILSTATUS;
+dtc_states dtc_state = CHECKONE;
 uint8_t numCodes = 0;
 uint32_t dtcStatus = 0;
 
@@ -50,19 +50,19 @@ void loop()
         dtc_state = DTCCODES;
         break;
 
+    // This is the typical use case: First check if any codes are present, and then make a request to get them.
+    // No need to fetch the codes if none are present and we need know how many codes to expect back.
     case MILSTATUS: // Gets the number of current DTC codes present
 
         dtcStatus = myELM327.monitorStatus();
 
         if (myELM327.nb_rx_state == ELM_SUCCESS)
-        {
-            DEBUG_PORT.print("monitorStatus() response: ");
-            DEBUG_PORT.println(dtcStatus);
-            
-            // We are only interested in the first byte of the response that
+        {            
+            // We are only interested in the third byte of the response that
             // encodes the MIL status and number of codes present
-            numCodes = ((dtcStatus >> 24) & 0x80) - 0x80; // The number of codes present is stored in the last 7 bits
-            DEBUG_PORT.print("Number of Codes: ");
+            numCodes = myELM327.responseByte_3 - 0x80;
+
+            DEBUG_PORT.print("Number of codes present: ");
             DEBUG_PORT.println(numCodes);
             dtc_state = DTCCODES;
         }
