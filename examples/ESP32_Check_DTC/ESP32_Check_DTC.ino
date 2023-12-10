@@ -24,7 +24,7 @@ void setup()
     ELM_PORT.setPin("1234");
 
     DEBUG_PORT.println("Starting connection...");
-    if (!ELM_PORT.connect("OBDII"))
+    if (!ELM_PORT.connect("ELMULATOR"))
     {
         DEBUG_PORT.println("Couldn't connect to OBD scanner - Phase 1");
         while (1)
@@ -46,7 +46,7 @@ void loop()
     switch (dtc_state)
     {
     case CHECKONE:    // Runs once after startup to test getDTCCodes(). Enable by setting initial dtc_states
-        numCodes = 1; // Force checking for a single code without first getting a code count
+        numCodes = 3; // Force checking for a single code without first getting a code count
         dtc_state = DTCCODES;
         break;
 
@@ -76,7 +76,7 @@ void loop()
     case DTCCODES: // If current DTC codes were found in previous request, thrn get the codes
         if (numCodes > 0)
         {
-            char *foundCodes[numCodes];
+            char foundCodes[numCodes][6] ={0};
             memset(foundCodes, 0, sizeof(foundCodes));
 
             myELM327.currentDTCCodes(foundCodes, numCodes, false); // use non-blocking mode
@@ -92,7 +92,7 @@ void loop()
 
                 for (int i = 0; i < n; i++)
                 {
-                    DEBUG_PORT.println(foundCodes[i]);
+                    //DEBUG_PORT.println(foundCodes[i]);
                 }
                 dtc_state = MILSTATUS;
                 delay(10000); // Pause for 10 sec after successful fetch of DTC codes.

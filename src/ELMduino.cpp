@@ -2594,21 +2594,20 @@ bool ELM327::resetDTC()
  -------
   * void
 */
-void ELM327::currentDTCCodes(char* foundCodes[], const uint8_t &numCodes, const bool &isBlocking)
+void ELM327::currentDTCCodes(char foundCodes[][6], const uint8_t &numCodes, const bool &isBlocking)
 {
     char *idx;
     char codeType = '\0';
     char codeNumber[5] = {0};
     char temp[6] = {0};
 
-   
-     if (isBlocking) // In blocking mode, we loop here until get_response() is past ELM_GETTING_MSG state
-    { 
+    if (isBlocking) // In blocking mode, we loop here until get_response() is past ELM_GETTING_MSG state
+    {
         sendCommand("03"); // Check DTC is always Service 03 with no PID
         while (get_response() == ELM_GETTING_MSG)
             ;
     }
-    else 
+    else
     {
         if (nb_query_state == SEND_COMMAND)
         {
@@ -2625,7 +2624,7 @@ void ELM327::currentDTCCodes(char* foundCodes[], const uint8_t &numCodes, const 
     if (nb_rx_state == ELM_SUCCESS)
     {
         nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
-        
+
         if (strstr(payload, "43") != NULL) // Successful response to Mode 03 request
         {
             // OBD scanner will provide a response that contains one or more lines indicating the codes present.
@@ -2651,7 +2650,7 @@ void ELM327::currentDTCCodes(char* foundCodes[], const uint8_t &numCodes, const 
 
             // 43010341
 
-            idx = strstr(payload, "43") + 2;       // Pointer to first DTC code digit of second byte
+            idx = strstr(payload, "43") + 4;       // Pointer to first DTC code digit of second byte
             uint codesFound = strlen(payload) / 8; // Each code found returns 8 chars starting with "43"
 
             if (debugMode)
@@ -2673,17 +2672,19 @@ void ELM327::currentDTCCodes(char* foundCodes[], const uint8_t &numCodes, const 
 
             for (int i = 0; i < codesFound; i++)
             {
+                memset(temp, 0, sizeof(temp));
+                memset(codeNumber, 0, sizeof(codeNumber));
                 codeType = *idx; // Get first digit of second byte
 
-                idx = idx + 2;
-                if (*idx == '0')
-                {
-                    idx = idx + 3; // skip leading zero in code
-                }
+                // idx = idx + 2;
+                //  if (*idx == '0')
+                //  {
+                //      idx = idx + 3; // skip leading zero in code
+                //  }
 
-                codeNumber[0] = *idx;       // Get second digit of second byte
-                codeNumber[1] = *(idx + 1); // Get first digit of third byte
-                codeNumber[2] = *(idx + 2); // Get second digit of third byte
+                codeNumber[0] = *(idx + 1); // Get second digit of second byte
+                codeNumber[1] = *(idx + 2); // Get first digit of third byte
+                codeNumber[2] = *(idx + 3); // Get second digit of third byte
 
                 switch (codeType) // Set the correct type prefix for the code
                 {
@@ -2756,7 +2757,7 @@ void ELM327::currentDTCCodes(char* foundCodes[], const uint8_t &numCodes, const 
 
                 strcat(temp, codeNumber);     // Append the code number to the prefix
                 strcpy(foundCodes[i], temp); // Add the fully parsed code to the list (array)
-                idx = idx + 6;                // reset idx to start of next code
+                idx = idx + 5;                // reset idx to start of next code
 
                 if (debugMode)
                 {
@@ -2777,7 +2778,7 @@ void ELM327::currentDTCCodes(char* foundCodes[], const uint8_t &numCodes, const 
     else if (nb_rx_state != ELM_GETTING_MSG)
     {
         nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
-        
+
         if (debugMode)
         {
             Serial.println("ELMduino: Getting current DTC codes failed.");
