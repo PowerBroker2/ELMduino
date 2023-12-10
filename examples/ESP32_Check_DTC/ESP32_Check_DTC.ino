@@ -76,7 +76,7 @@ void loop()
     case DTCCODES: // If current DTC codes were found in previous request, thrn get the codes
         if (numCodes > 0)
         {
-            char foundCodes[numCodes][6] ={0};
+            char foundCodes[numCodes][6] = {0};
             memset(foundCodes, 0, sizeof(foundCodes));
 
             myELM327.currentDTCCodes(foundCodes, numCodes, false); // use non-blocking mode

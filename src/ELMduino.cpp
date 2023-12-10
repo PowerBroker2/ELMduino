@@ -2757,7 +2757,7 @@ void ELM327::currentDTCCodes(char foundCodes[][6], const uint8_t &numCodes, cons
 
                 strcat(temp, codeNumber);     // Append the code number to the prefix
                 strcpy(foundCodes[i], temp); // Add the fully parsed code to the list (array)
-                idx = idx + 5;                // reset idx to start of next code
+                idx = idx + 8;                // reset idx to start of next code
 
                 if (debugMode)
                 {
