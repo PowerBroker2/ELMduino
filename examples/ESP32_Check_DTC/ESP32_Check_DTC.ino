@@ -20,8 +20,8 @@ uint32_t dtcStatus = 0;
 void setup()
 {
     DEBUG_PORT.begin(115200);
-    // SerialBT.setPin("1234");
     ELM_PORT.begin("ArduHUD", true);
+    ELM_PORT.setPin("1234");
 
     DEBUG_PORT.println("Starting connection...");
     if (!ELM_PORT.connect("OBDII"))
@@ -80,6 +80,7 @@ void loop()
             memset(foundCodes, 0, sizeof(foundCodes));
 
             myELM327.currentDTCCodes(foundCodes, numCodes, false); // use non-blocking mode
+
             if (myELM327.nb_rx_state == ELM_SUCCESS)
             {
                 DEBUG_PORT.print("Response to DTC request: ");
