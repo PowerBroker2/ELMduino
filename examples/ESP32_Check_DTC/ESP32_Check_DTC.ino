@@ -58,7 +58,7 @@ void loop()
         {            
             // We are only interested in the third byte of the response that
             // encodes the MIL status and number of codes present
-            numCodes = myELM327.responseByte_3 - 0x80;
+            numCodes = (myELM327.responseByte_2 - 0x80);
 
             DEBUG_PORT.print("Number of codes present: ");
             DEBUG_PORT.println(numCodes);
