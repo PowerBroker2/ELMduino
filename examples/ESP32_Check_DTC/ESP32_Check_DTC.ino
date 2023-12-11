@@ -41,6 +41,8 @@ void setup()
     delay(1000);
 
     // Demonstration of calling currentDTCCodes in blocking (default) mode
+    // This is the simplest use case. Just scan for codes without first
+    // checking if MIL is on or how many codes are present.
     
     DEBUG_PORT.println("Performing DTC check in blocking mode...");
 
@@ -66,7 +68,6 @@ void loop()
 {
      // This is the typical use case: First check if any codes are present, and then make a request to get them.
      // monitorStatus() is a non-blocking call and must be called repeatedly until a response is found.
-
     switch (dtc_state)
     {
     case MILSTATUS: 
@@ -101,7 +102,7 @@ void loop()
         }
         break;
 
-    case DTCCODES: // If current DTC codes were found in previous request, then get the codes
+    case DTCCODES: // If current DTC codes were found in previous request, then retrieve the codes
         if (numCodes > 0)
         {            
             myELM327.currentDTCCodes(false); // Call in NB mode
