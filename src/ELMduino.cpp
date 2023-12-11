@@ -2653,14 +2653,6 @@ void ELM327::currentDTCCodes(char foundCodes[][6], const uint8_t &numCodes, cons
             idx = strstr(payload, "43") + 4;       // Pointer to first DTC code digit of second byte
             uint codesFound = strlen(payload) / 8; // Each code found returns 8 chars starting with "43"
 
-            if (debugMode)
-            {
-                Serial.print("ELMduino: Payload length: ");
-                Serial.println(strlen(payload));
-                Serial.print("ELMduino: Payload = ");
-                Serial.println(payload);
-            }
-
             if (codesFound != numCodes) // Not fatal, but issue warning.
             {
                 Serial.println("ELMduino: Mismatch between expected and returned number of codes.");
