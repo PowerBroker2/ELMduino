@@ -5,15 +5,13 @@
 #define DEBUG_PORT Serial
 
 typedef enum
-{
-    CHECKONE,
-    MILSTATUS,
+{   MILSTATUS,
     DTCCODES
 } dtc_states;
 
 BluetoothSerial SerialBT;
 ELM327 myELM327;
-dtc_states dtc_state = CHECKONE;
+dtc_states dtc_state = MILSTATUS;
 uint8_t numCodes = 0;
 uint8_t milStatus =0;
 
@@ -31,7 +29,7 @@ void setup()
             ;
     }
 
-    if (!myELM327.begin(ELM_PORT, false, 2000))
+    if (!myELM327.begin(ELM_PORT))
     {
         DEBUG_PORT.println("ELM327 Couldn't connect to ECU - Phase 2");
         while (1)
@@ -39,20 +37,39 @@ void setup()
     }
 
     DEBUG_PORT.println("Connected to ELM327");
+
+    delay(1000);
+
+    // Demonstration of calling currentDTCCodes in blocking (default) mode
+    
+    DEBUG_PORT.println("Performing DTC check in blocking mode...");
+
+    myELM327.currentDTCCodes(); 
+    if (myELM327.nb_rx_state == ELM_SUCCESS)
+    {
+        DEBUG_PORT.println("Current DTCs found: ");
+        
+        for (int i = 0; i < myELM327.DTC_Response.codesFound; i++)
+        {
+            DEBUG_PORT.println(myELM327.DTC_Response.codes[i]);
+        }
+        delay(10000); // Pause for 10 sec after successful fetch of DTC codes.
+    }
+
+    else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
+    {
+        myELM327.printError();
+    }
 }
 
 void loop()
 {
+     // This is the typical use case: First check if any codes are present, and then make a request to get them.
+     // monitorStatus() is a non-blocking call and must be called repeatedly until a response is found.
+
     switch (dtc_state)
     {
-    case CHECKONE:    // Runs once after startup to test getDTCCodes(). Enable by setting initial dtc_states
-        numCodes = 3; // Force checking for a single code without first getting a code count
-        dtc_state = DTCCODES;
-        break;
-
-    // This is the typical use case: First check if any codes are present, and then make a request to get them.
     case MILSTATUS: 
-
         myELM327.monitorStatus(); // Gets the number of current DTC codes present
 
         if (myELM327.nb_rx_state == ELM_SUCCESS)
