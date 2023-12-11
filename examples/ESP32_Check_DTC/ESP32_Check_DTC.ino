@@ -77,9 +77,8 @@ void loop()
         if (numCodes > 0)
         {
             char foundCodes[numCodes][6] = {0};
-            memset(foundCodes, 0, sizeof(foundCodes));
-
-            myELM327.currentDTCCodes(foundCodes, numCodes, false); // use non-blocking mode
+          
+            myELM327.currentDTCCodes(foundCodes, numCodes, true); 
 
             if (myELM327.nb_rx_state == ELM_SUCCESS)
             {
@@ -92,7 +91,7 @@ void loop()
 
                 for (int i = 0; i < n; i++)
                 {
-                    //DEBUG_PORT.println(foundCodes[i]);
+                    DEBUG_PORT.println(foundCodes[i]);
                 }
                 dtc_state = MILSTATUS;
                 delay(10000); // Pause for 10 sec after successful fetch of DTC codes.
