@@ -31,7 +31,7 @@ void setup()
             ;
     }
 
-    if (!myELM327.begin(ELM_PORT, true, 2000))
+    if (!myELM327.begin(ELM_PORT, false, 2000))
     {
         DEBUG_PORT.println("ELM327 Couldn't connect to ECU - Phase 2");
         while (1)
@@ -73,18 +73,16 @@ void loop()
         }
         break;
 
-    case DTCCODES: // If current DTC codes were found in previous request, thrn get the codes
+    case DTCCODES: // If current DTC codes were found in previous request, then get the codes
         if (numCodes > 0)
         {
             char foundCodes[numCodes][6] = {0};
           
-            myELM327.currentDTCCodes(foundCodes, numCodes, true); 
+            myELM327.currentDTCCodes(foundCodes, numCodes, false); 
 
             if (myELM327.nb_rx_state == ELM_SUCCESS)
             {
-                DEBUG_PORT.print("Response to DTC request: ");
-                DEBUG_PORT.println(myELM327.response);
-                DEBUG_PORT.println("Codes found: ");
+                DEBUG_PORT.println("Current DTCs found: ");
 
                 // Get the actual number of codes returned in case it is different than expected (numCodes)
                 size_t n = sizeof(foundCodes) / sizeof(foundCodes[0]);
