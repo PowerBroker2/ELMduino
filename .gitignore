@@ -1,3 +1,10 @@
+
+.pio
+.vscode/.browse.c_cpp.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch
+
 # Prerequisites
 *.d
 
@@ -30,3 +37,9 @@
 *.exe
 *.out
 *.app
+include/README
+lib/README
+test/README
+.vscode/extensions.json
+platformio.ini
+.gitignore
