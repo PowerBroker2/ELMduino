@@ -15,7 +15,6 @@ BluetoothSerial SerialBT;
 ELM327 myELM327;
 dtc_states dtc_state = CHECKONE;
 uint8_t numCodes = 0;
-uint32_t dtcStatus = 0;
 
 void setup()
 {
@@ -51,10 +50,9 @@ void loop()
         break;
 
     // This is the typical use case: First check if any codes are present, and then make a request to get them.
-    // No need to fetch the codes if none are present and we need know how many codes to expect back.
-    case MILSTATUS: // Gets the number of current DTC codes present
+    case MILSTATUS: 
 
-        dtcStatus = myELM327.monitorStatus();
+        myELM327.monitorStatus(); // Gets the number of current DTC codes present
 
         if (myELM327.nb_rx_state == ELM_SUCCESS)
         {            
@@ -75,21 +73,16 @@ void loop()
 
     case DTCCODES: // If current DTC codes were found in previous request, then get the codes
         if (numCodes > 0)
-        {
-            char foundCodes[numCodes][6] = {0};
+        {            
+            myELM327.currentDTCCodes(numCodes, false); 
           
-            myELM327.currentDTCCodes(foundCodes, numCodes, false); 
-
             if (myELM327.nb_rx_state == ELM_SUCCESS)
             {
                 DEBUG_PORT.println("Current DTCs found: ");
-
-                // Get the actual number of codes returned in case it is different than expected (numCodes)
-                size_t n = sizeof(foundCodes) / sizeof(foundCodes[0]);
-
-                for (int i = 0; i < n; i++)
+                
+                for (int i = 0; i < myELM327.DTC_Response.codesFound; i++)
                 {
-                    DEBUG_PORT.println(foundCodes[i]);
+                    DEBUG_PORT.println(myELM327.DTC_Response.codes[i]);
                 }
                 dtc_state = MILSTATUS;
                 delay(10000); // Pause for 10 sec after successful fetch of DTC codes.

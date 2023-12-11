@@ -2594,7 +2594,7 @@ bool ELM327::resetDTC()
  -------
   * void
 */
-void ELM327::currentDTCCodes(char foundCodes[][6], const uint8_t &numCodes, const bool &isBlocking)
+void ELM327::currentDTCCodes(const uint8_t &numCodes, const bool &isBlocking)
 {
     char *idx;
     char codeType = '\0';
@@ -2645,15 +2645,11 @@ void ELM327::currentDTCCodes(char foundCodes[][6], const uint8_t &numCodes, cons
             //          00 00 00 00  ==> Remaining bytes are padding and not used
             //                           Code type "0" of first DTC is replaced with "P0" and combined with the code number ==> "P0430"
             //
-            // The resulitng payload buffer is:
-            // "4301330000000043043000000000" ==> Two DTC codes that need to be parsed out
-
-            // 43010341
 
             idx = strstr(payload, "43") + 4;       // Pointer to first DTC code digit of second byte
             uint codesFound = strlen(payload) / 8; // Each code found returns 8 chars starting with "43"
 
-            if (codesFound != numCodes) // Not fatal, but issue warning.
+            if (codesFound != numCodes)
             {
                 Serial.println("ELMduino: Mismatch between expected and returned number of codes.");
                 Serial.print("ELMduino: Expected: ");
@@ -2662,18 +2658,20 @@ void ELM327::currentDTCCodes(char foundCodes[][6], const uint8_t &numCodes, cons
                 Serial.println(codesFound);
             }
 
+            if (codesFound > DTC_MAX_CODES)
+            {
+                codesFound = DTC_MAX_CODES;
+                Serial.print("DTC response truncated at "); Serial.print(DTC_MAX_CODES); Serial.println(" codes.");
+            }
+
+            DTC_Response.codesFound = codesFound;
+            
             for (int i = 0; i < codesFound; i++)
             {
                 memset(temp, 0, sizeof(temp));
                 memset(codeNumber, 0, sizeof(codeNumber));
-                codeType = *idx; // Get first digit of second byte
-
-                // idx = idx + 2;
-                //  if (*idx == '0')
-                //  {
-                //      idx = idx + 3; // skip leading zero in code
-                //  }
-
+                
+                codeType = *idx;            // Get first digit of second byte
                 codeNumber[0] = *(idx + 1); // Get second digit of second byte
                 codeNumber[1] = *(idx + 2); // Get first digit of third byte
                 codeNumber[2] = *(idx + 3); // Get second digit of third byte
@@ -2747,9 +2745,9 @@ void ELM327::currentDTCCodes(char foundCodes[][6], const uint8_t &numCodes, cons
                     break;
                 }
 
-                strcat(temp, codeNumber);     // Append the code number to the prefix
-                strcpy(foundCodes[i], temp); // Add the fully parsed code to the list (array)
-                idx = idx + 8;                // reset idx to start of next code
+                strcat(temp, codeNumber);            // Append the code number to the prefix
+                strcpy(DTC_Response.codes[i], temp); // Add the fully parsed code to the list (array)
+                idx = idx + 8;                       // reset idx to start of next code
 
                 if (debugMode)
                 {
