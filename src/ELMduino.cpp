@@ -2581,20 +2581,22 @@ bool ELM327::resetDTC()
   * Get the list of current DTC codes. This method is blocking by default, but can be run
     in non-blocking mode if desired with optional boolean argument. Typical use involves
     calling the monitorStatus() function first to get the number of DTC current codes stored,
-    then calling this function with the number of codes expected to be found. This would
-    not typically be done in NB mode in a loop, but optional NB mode is supported.
+    then calling this function to retrieve those codes. This would  not typically
+    be done in NB mode in a loop, but optional NB mode is supported.
+    
+  * To check the results of this query, inspect the DTC_Response struct: DTC_Response.codesFound
+    will contain the number of codes present and DTC_Response.codes is an array
+    of 5 char codes that were retrieved. 
 
  Inputs:
  -------
-  * **foundCodes - char array to populate with code values
-  * uint8_t numCodes - the number of codes expected to be found
   * bool isBlocking - optional arg to set (non)blocking mode - defaults to true / blocking mode
 
  Return:
  -------
   * void
 */
-void ELM327::currentDTCCodes(const uint8_t &numCodes, const bool &isBlocking)
+void ELM327::currentDTCCodes(const bool &isBlocking)
 {
     char *idx;
     char codeType = '\0';
@@ -2624,53 +2626,32 @@ void ELM327::currentDTCCodes(const uint8_t &numCodes, const bool &isBlocking)
     if (nb_rx_state == ELM_SUCCESS)
     {
         nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
+        memset(DTC_Response.codes, 0, DTC_CODE_LEN * DTC_MAX_CODES);
 
         if (strstr(payload, "43") != NULL) // Successful response to Mode 03 request
         {
             // OBD scanner will provide a response that contains one or more lines indicating the codes present.
-            // Each 7-byte response line will start with "43" indicating it is a response to a Mode 03 request.
+            // Each response line will start with "43" indicating it is a response to a Mode 03 request.
             // See p. 31 of ELM327 datasheet for details and lookup table of code types.
-            // Example multi line response and interpretation:
-            // 43 01 33 00 00 00 00
-            // 43 04 30 00 00 00 00
-            // 43                    ==> Succesful response to Mode 03 request.
-            //    0                  ==> First digit of second byte is used to indicate the type of code (Powertrain, Body, etc)
-            //     1 33              ==> Second digit of first byte and the third byte are combined to indicate code 133.
-            //          00 00 00 00  ==> Remaining bytes are padding and not used
-            //                           Code type "0" of first DTC is replaced with "P0" and combined with the code number ==> "P0133"
-            // 43 04 30 00 00 00 00
-            // 43                    ==> Succesful response to Mode 03 request.
-            //    0                  ==> First digit of second byte is used to indicate the type of code (Powertrain, Body, etc)
-            //     4 30              ==> Second digit of first byte and the third byte are combined to indicate code 430.
-            //          00 00 00 00  ==> Remaining bytes are padding and not used
-            //                           Code type "0" of first DTC is replaced with "P0" and combined with the code number ==> "P0430"
-            //
-
-            idx = strstr(payload, "43") + 4;       // Pointer to first DTC code digit of second byte
+            
             uint codesFound = strlen(payload) / 8; // Each code found returns 8 chars starting with "43"
+            idx = strstr(payload, "43") + 4;       // Pointer to first DTC code digit (third char in the response)
 
-            if (codesFound != numCodes)
-            {
-                Serial.println("ELMduino: Mismatch between expected and returned number of codes.");
-                Serial.print("ELMduino: Expected: ");
-                Serial.println(numCodes);
-                Serial.print("ELMduino: Returned: ");
-                Serial.println(codesFound);
-            }
-
-            if (codesFound > DTC_MAX_CODES)
-            {
+            if (codesFound > DTC_MAX_CODES)        // I don't think the ELM is capable of returning 
+            {                                      // more than 0xF (16) codes, but just in case...
                 codesFound = DTC_MAX_CODES;
-                Serial.print("DTC response truncated at "); Serial.print(DTC_MAX_CODES); Serial.println(" codes.");
+                Serial.print("DTC response truncated at ");
+                Serial.print(DTC_MAX_CODES);
+                Serial.println(" codes.");
             }
 
             DTC_Response.codesFound = codesFound;
-            
+
             for (int i = 0; i < codesFound; i++)
             {
                 memset(temp, 0, sizeof(temp));
                 memset(codeNumber, 0, sizeof(codeNumber));
-                
+
                 codeType = *idx;            // Get first digit of second byte
                 codeNumber[0] = *(idx + 1); // Get second digit of second byte
                 codeNumber[1] = *(idx + 2); // Get first digit of third byte

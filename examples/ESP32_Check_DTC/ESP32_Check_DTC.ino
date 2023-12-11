@@ -87,7 +87,7 @@ void loop()
     case DTCCODES: // If current DTC codes were found in previous request, then get the codes
         if (numCodes > 0)
         {            
-            myELM327.currentDTCCodes(numCodes, false); 
+            myELM327.currentDTCCodes(false); // Call in NB mode
           
             if (myELM327.nb_rx_state == ELM_SUCCESS)
             {
