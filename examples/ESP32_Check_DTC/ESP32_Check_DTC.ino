@@ -15,6 +15,7 @@ BluetoothSerial SerialBT;
 ELM327 myELM327;
 dtc_states dtc_state = CHECKONE;
 uint8_t numCodes = 0;
+uint8_t milStatus =0;
 
 void setup()
 {
@@ -58,11 +59,23 @@ void loop()
         {            
             // We are only interested in the third byte of the response that
             // encodes the MIL status and number of codes present
+            milStatus = (myELM327.responseByte_2 & 0x80);
             numCodes = (myELM327.responseByte_2 - 0x80);
 
+            DEBUG_PORT.print("MIL (Check Engine Light) is: ");
+            if (milStatus)
+            {
+                DEBUG_PORT.println("ON.");
+            }
+            else
+            {
+                DEBUG_PORT.println("OFF.");
+            }
+            
             DEBUG_PORT.print("Number of codes present: ");
             DEBUG_PORT.println(numCodes);
             dtc_state = DTCCODES;
+            break;
         }
         else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
         {
