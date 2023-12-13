@@ -96,7 +96,7 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
     sendCommand_Blocking(ALLOW_LONG_MESSAGES);
     delay(100);
 
-    // Set data timeout
+    // // Set data timeout
     sprintf(command, SET_TIMEOUT_TO_H_X_4MS, dataTimeout / 4);
     sendCommand_Blocking(command);
     delay(100);
@@ -413,7 +413,7 @@ int8_t ELM327::nextIndex(char const *str,
 float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 {
     uint8_t numExpectedPayChars = numExpectedBytes * 2;
-    uint8_t payCharDiff         = numPayChars - numExpectedPayChars;
+    uint8_t payCharDiff = numPayChars - numExpectedPayChars;
 
     if (numExpectedBytes > 8)
     {
@@ -449,10 +449,10 @@ float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &sc
     if (debugMode)
         Serial.println("Looking for lagging zeros");
 
-    uint16_t numExpectedBits  = numExpectedBytes * 8;
+    uint16_t numExpectedBits = numExpectedBytes * 8;
     uint64_t laggingZerosMask = 0;
 
-    for (uint16_t i=0; i<numExpectedBits; i++)
+    for (uint16_t i = 0; i < numExpectedBits; i++)
         laggingZerosMask |= (1 << i);
 
     if (!(laggingZerosMask & response)) // Detect all lagging zeros in `response`
@@ -2145,141 +2145,141 @@ int8_t ELM327::sendCommand_Blocking(const char *cmd)
 */
 int8_t ELM327::get_response(void)
 {
-	// buffer the response of the ELM327 until either the
-	// end marker is read or a timeout has occurred
-	// last valid idx is PAYLOAD_LEN but want to keep one free for terminating '\0'
-	// so limit counter to < PAYLOAD_LEN
-	if (!elm_port->available())
-	{
-		nb_rx_state = ELM_GETTING_MSG;
-		if (timeout())
-			nb_rx_state = ELM_TIMEOUT;
-	}
-	else
-	{
-		char recChar = elm_port->read();
+    // buffer the response of the ELM327 until either the
+    // end marker is read or a timeout has occurred
+    // last valid idx is PAYLOAD_LEN but want to keep one free for terminating '\0'
+    // so limit counter to < PAYLOAD_LEN
+    if (!elm_port->available())
+    {
+        nb_rx_state = ELM_GETTING_MSG;
+        if (timeout())
+            nb_rx_state = ELM_TIMEOUT;
+    }
+    else
+    {
+        char recChar = elm_port->read();
 
-		if (debugMode)
-		{
-			Serial.print(F("\tReceived char: "));
-			// display each received character, make non-printables printable
-			if (recChar == '\f')
-				Serial.println(F("\\f"));
-			else if (recChar == '\n')
-				Serial.println(F("\\n"));
-			else if (recChar == '\r')
-				Serial.println(F("\\r"));
-			else if (recChar == '\t')
-				Serial.println(F("\\t"));
-			else if (recChar == '\v')
-				Serial.println(F("\\v"));
-			// convert spaces to underscore, easier to see in debug output
-			else if (recChar == ' ')
-				Serial.println("_");
-			// display regular printable
-			else
-				Serial.println(recChar);
-		}
+        if (debugMode)
+        {
+            Serial.print(F("\tReceived char: "));
+            // display each received character, make non-printables printable
+            if (recChar == '\f')
+                Serial.println(F("\\f"));
+            else if (recChar == '\n')
+                Serial.println(F("\\n"));
+            else if (recChar == '\r')
+                Serial.println(F("\\r"));
+            else if (recChar == '\t')
+                Serial.println(F("\\t"));
+            else if (recChar == '\v')
+                Serial.println(F("\\v"));
+            // convert spaces to underscore, easier to see in debug output
+            else if (recChar == ' ')
+                Serial.println("_");
+            // display regular printable
+            else
+                Serial.println(recChar);
+        }
 
-		// this is the end of the OBD response
-		if (recChar == '>')
-		{
-			if (debugMode)
-				Serial.println(F("Delimiter found."));
+        // this is the end of the OBD response
+        if (recChar == '>')
+        {
+            if (debugMode)
+                Serial.println(F("Delimiter found."));
 
-			nb_rx_state = ELM_MSG_RXD;
-		}
-		else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.'))
-			// discard all characters except for alphanumeric and decimal places.
-			// decimal places needed to extract floating point numbers, e.g. battery voltage
-			nb_rx_state = ELM_GETTING_MSG; // Discard this character
-		else
-		{
-			if (recBytes < PAYLOAD_LEN)
-			{
-				payload[recBytes] = recChar;
-				recBytes++;
-				nb_rx_state = ELM_GETTING_MSG;
-			}
-			else
-				nb_rx_state = ELM_BUFFER_OVERFLOW;
-		}
-	}
+            nb_rx_state = ELM_MSG_RXD;
+        }
+        else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.'))
+            // discard all characters except for alphanumeric and decimal places.
+            // decimal places needed to extract floating point numbers, e.g. battery voltage
+            nb_rx_state = ELM_GETTING_MSG; // Discard this character
+        else
+        {
+            if (recBytes < PAYLOAD_LEN)
+            {
+                payload[recBytes] = recChar;
+                recBytes++;
+                nb_rx_state = ELM_GETTING_MSG;
+            }
+            else
+                nb_rx_state = ELM_BUFFER_OVERFLOW;
+        }
+    }
 
-	// Message is still being received (or is timing out), so exit early without doing all the other checks
-	if (nb_rx_state == ELM_GETTING_MSG)
-		return nb_rx_state;
+    // Message is still being received (or is timing out), so exit early without doing all the other checks
+    if (nb_rx_state == ELM_GETTING_MSG)
+        return nb_rx_state;
 
-	// End of response delimiter was found
-	if (debugMode && nb_rx_state == ELM_MSG_RXD)
-	{
-		Serial.print(F("All chars received: "));
-		Serial.println(payload);
-	}
+    // End of response delimiter was found
+    if (debugMode && nb_rx_state == ELM_MSG_RXD)
+    {
+        Serial.print(F("All chars received: "));
+        Serial.println(payload);
+    }
 
-	if (nb_rx_state == ELM_TIMEOUT)
-	{
-		if (debugMode)
-		{
-			Serial.print(F("Timeout detected with overflow of "));
-			Serial.print((currentTime - previousTime) - timeout_ms);
-			Serial.println(F("ms"));
-		}
-		return nb_rx_state;
-	}
+    if (nb_rx_state == ELM_TIMEOUT)
+    {
+        if (debugMode)
+        {
+            Serial.print(F("Timeout detected with overflow of "));
+            Serial.print((currentTime - previousTime) - timeout_ms);
+            Serial.println(F("ms"));
+        }
+        return nb_rx_state;
+    }
 
-	if (nb_rx_state == ELM_BUFFER_OVERFLOW)
-	{
-		if (debugMode)
-		{
-			Serial.print(F("OBD receive buffer overflow (> "));
-			Serial.print(PAYLOAD_LEN);
-			Serial.println(F(" bytes)"));
-		}
-		return nb_rx_state;
-	}
+    if (nb_rx_state == ELM_BUFFER_OVERFLOW)
+    {
+        if (debugMode)
+        {
+            Serial.print(F("OBD receive buffer overflow (> "));
+            Serial.print(PAYLOAD_LEN);
+            Serial.println(F(" bytes)"));
+        }
+        return nb_rx_state;
+    }
 
-	// Now we have successfully received OBD response, check if the payload indicates any OBD errors
-	if (nextIndex(payload, "UNABLETOCONNECT") >= 0)
-	{
-		if (debugMode)
-			Serial.println(F("ELM responded with error \"UNABLE TO CONNECT\""));
+    // Now we have successfully received OBD response, check if the payload indicates any OBD errors
+    if (nextIndex(payload, "UNABLETOCONNECT") >= 0)
+    {
+        if (debugMode)
+            Serial.println(F("ELM responded with error \"UNABLE TO CONNECT\""));
 
-		nb_rx_state = ELM_UNABLE_TO_CONNECT;
-		return nb_rx_state;
-	}
+        nb_rx_state = ELM_UNABLE_TO_CONNECT;
+        return nb_rx_state;
+    }
 
-	connected = true;
+    connected = true;
 
-	if (nextIndex(payload, "NODATA") >= 0)
-	{
-		if (debugMode)
-			Serial.println(F("ELM responded with error \"NO DATA\""));
+    if (nextIndex(payload, "NODATA") >= 0)
+    {
+        if (debugMode)
+            Serial.println(F("ELM responded with error \"NO DATA\""));
 
-		nb_rx_state = ELM_NO_DATA;
-		return nb_rx_state;
-	}
+        nb_rx_state = ELM_NO_DATA;
+        return nb_rx_state;
+    }
 
-	if (nextIndex(payload, "STOPPED") >= 0)
-	{
-		if (debugMode)
-			Serial.println(F("ELM responded with error \"STOPPED\""));
+    if (nextIndex(payload, "STOPPED") >= 0)
+    {
+        if (debugMode)
+            Serial.println(F("ELM responded with error \"STOPPED\""));
 
-		nb_rx_state = ELM_STOPPED;
-		return nb_rx_state;
-	}
+        nb_rx_state = ELM_STOPPED;
+        return nb_rx_state;
+    }
 
-	if (nextIndex(payload, "ERROR") >= 0)
-	{
-		if (debugMode)
-			Serial.println(F("ELM responded with \"ERROR\""));
+    if (nextIndex(payload, "ERROR") >= 0)
+    {
+        if (debugMode)
+            Serial.println(F("ELM responded with \"ERROR\""));
 
-		nb_rx_state = ELM_GENERAL_ERROR;
-		return nb_rx_state;
-	}
+        nb_rx_state = ELM_GENERAL_ERROR;
+        return nb_rx_state;
+    }
 
-	nb_rx_state = ELM_SUCCESS;
-	return nb_rx_state;
+    nb_rx_state = ELM_SUCCESS;
+    return nb_rx_state;
 }
 
 /*
@@ -2558,4 +2558,232 @@ int8_t ELM327::get_vin_blocking(char vin[])
         }
     }
     return nb_rx_state;
+}
+
+/*
+ bool ELM327::resetDTC()
+
+ Description:
+ ------------
+    * Resets the stored DTCs in the ECU. This is a blocking function.
+      Note: The SAE spec requires that scan tools verify that a reset
+            is intended ("Are you sure?") before sending the mode 04
+            reset command to the vehicle. See p.32 of ELM327 datasheet.
+
+ Inputs:
+ -------
+    * void
+
+ Return:
+ -------
+  * bool - Indicates the success (or not) of the reset command.
+*/
+bool ELM327::resetDTC()
+{
+    if (sendCommand_Blocking("04") == ELM_SUCCESS)
+    {
+        if (strstr(payload, "44") != NULL)
+        {
+            if (debugMode)
+            {
+                Serial.println("ELMduino: DTC successfully reset.");
+            }
+
+            return true;
+        }
+    }
+    else
+    {
+        if (debugMode)
+        {
+            Serial.println("ELMduino: Resetting DTC codes failed.");
+        }
+    }
+
+    return false;
+}
+
+/*
+ void ELM327::currentDTCCodes()
+
+ Description:
+ ------------
+  * Get the list of current DTC codes. This method is blocking by default, but can be run
+    in non-blocking mode if desired with optional boolean argument. Typical use involves
+    calling the monitorStatus() function first to get the number of DTC current codes stored,
+    then calling this function to retrieve those codes. This would  not typically
+    be done in NB mode in a loop, but optional NB mode is supported.
+    
+  * To check the results of this query, inspect the DTC_Response struct: DTC_Response.codesFound
+    will contain the number of codes present and DTC_Response.codes is an array
+    of 5 char codes that were retrieved. 
+
+ Inputs:
+ -------
+  * bool isBlocking - optional arg to set (non)blocking mode - defaults to true / blocking mode
+
+ Return:
+ -------
+  * void
+*/
+void ELM327::currentDTCCodes(const bool &isBlocking)
+{
+    char *idx;
+    char codeType = '\0';
+    char codeNumber[5] = {0};
+    char temp[6] = {0};
+
+    if (isBlocking) // In blocking mode, we loop here until get_response() is past ELM_GETTING_MSG state
+    {
+        sendCommand("03"); // Check DTC is always Service 03 with no PID
+        while (get_response() == ELM_GETTING_MSG)
+            ;
+    }
+    else
+    {
+        if (nb_query_state == SEND_COMMAND)
+        {
+            sendCommand("03");
+            nb_query_state = WAITING_RESP;
+        }
+
+        else if (nb_query_state == WAITING_RESP)
+        {
+            get_response();
+        }
+    }
+
+    if (nb_rx_state == ELM_SUCCESS)
+    {
+        nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
+        memset(DTC_Response.codes, 0, DTC_CODE_LEN * DTC_MAX_CODES);
+
+        if (strstr(payload, "43") != NULL) // Successful response to Mode 03 request
+        {
+            // OBD scanner will provide a response that contains one or more lines indicating the codes present.
+            // Each response line will start with "43" indicating it is a response to a Mode 03 request.
+            // See p. 31 of ELM327 datasheet for details and lookup table of code types.
+            
+            uint codesFound = strlen(payload) / 8; // Each code found returns 8 chars starting with "43"
+            idx = strstr(payload, "43") + 4;       // Pointer to first DTC code digit (third char in the response)
+
+            if (codesFound > DTC_MAX_CODES)        // I don't think the ELM is capable of returning 
+            {                                      // more than 0xF (16) codes, but just in case...
+                codesFound = DTC_MAX_CODES;
+                Serial.print("DTC response truncated at ");
+                Serial.print(DTC_MAX_CODES);
+                Serial.println(" codes.");
+            }
+
+            DTC_Response.codesFound = codesFound;
+
+            for (int i = 0; i < codesFound; i++)
+            {
+                memset(temp, 0, sizeof(temp));
+                memset(codeNumber, 0, sizeof(codeNumber));
+
+                codeType = *idx;            // Get first digit of second byte
+                codeNumber[0] = *(idx + 1); // Get second digit of second byte
+                codeNumber[1] = *(idx + 2); // Get first digit of third byte
+                codeNumber[2] = *(idx + 3); // Get second digit of third byte
+
+                switch (codeType) // Set the correct type prefix for the code
+                {
+                case '0':
+                    strcat(temp, "P0");
+                    break;
+
+                case '1':
+                    strcat(temp, "P1");
+                    break;
+
+                case '2':
+                    strcat(temp, "P2");
+                    break;
+                case '3':
+                    strcat(temp, "P3");
+                    break;
+
+                case '4':
+                    strcat(temp, "C0");
+                    break;
+
+                case '5':
+                    strcat(temp, "C1");
+                    break;
+
+                case '6':
+                    strcat(temp, "C2");
+                    break;
+
+                case '7':
+                    strcat(temp, "C3");
+                    break;
+
+                case '8':
+                    strcat(temp, "B0");
+                    break;
+
+                case '9':
+                    strcat(temp, "B1");
+                    break;
+
+                case 'A':
+                    strcat(temp, "B2");
+                    break;
+
+                case 'B':
+                    strcat(temp, "B3");
+                    break;
+
+                case 'C':
+                    strcat(temp, "U0");
+                    break;
+
+                case 'D':
+                    strcat(temp, "U1");
+                    break;
+
+                case 'E':
+                    strcat(temp, "U2");
+                    break;
+
+                case 'F':
+                    strcat(temp, "U3");
+                    break;
+
+                default:
+                    break;
+                }
+
+                strcat(temp, codeNumber);            // Append the code number to the prefix
+                strcpy(DTC_Response.codes[i], temp); // Add the fully parsed code to the list (array)
+                idx = idx + 8;                       // reset idx to start of next code
+
+                if (debugMode)
+                {
+                    Serial.print("ELMduino: Found code: ");
+                    Serial.println(temp);
+                }
+            }
+        }
+        else
+        {
+            if (debugMode)
+            {
+                Serial.println("ELMduino: DTC response received with no valid data.");
+            }
+        }
+        return;
+    }
+    else if (nb_rx_state != ELM_GETTING_MSG)
+    {
+        nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
+
+        if (debugMode)
+        {
+            Serial.println("ELMduino: Getting current DTC codes failed.");
+            printError();
+        }
+    }
 }
