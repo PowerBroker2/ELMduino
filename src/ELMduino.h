@@ -259,7 +259,7 @@ const char * const RESET_ALL                  = "AT Z";        // General
 // Class constants
 //-------------------------------------------------------------------------------------//
 const float  KPH_MPH_CONVERT       = 0.6213711922;
-const int8_t QUERY_LEN	           = 8;
+const int8_t QUERY_LEN	           = 9;
 const int8_t ELM_SUCCESS           = 0;
 const int8_t ELM_NO_RESPONSE       = 1;
 const int8_t ELM_BUFFER_OVERFLOW   = 2;
