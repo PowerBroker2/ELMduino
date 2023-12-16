@@ -2476,7 +2476,8 @@ float ELM327::batteryVoltage(void)
         get_response();
         if (nb_rx_state == ELM_SUCCESS)
         {
-            nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
+            nb_query_state = SEND_COMMAND;       // Reset the query state machine for next command
+            payload[strlen(payload) - 1] = '\0'; // remove the last char ("V") from the payload value
             return (float)strtod(payload, NULL);
         }
         else if (nb_rx_state != ELM_GETTING_MSG)
@@ -2613,10 +2614,10 @@ bool ELM327::resetDTC()
     calling the monitorStatus() function first to get the number of DTC current codes stored,
     then calling this function to retrieve those codes. This would  not typically
     be done in NB mode in a loop, but optional NB mode is supported.
-    
+
   * To check the results of this query, inspect the DTC_Response struct: DTC_Response.codesFound
     will contain the number of codes present and DTC_Response.codes is an array
-    of 5 char codes that were retrieved. 
+    of 5 char codes that were retrieved.
 
  Inputs:
  -------
@@ -2663,11 +2664,11 @@ void ELM327::currentDTCCodes(const bool &isBlocking)
             // OBD scanner will provide a response that contains one or more lines indicating the codes present.
             // Each response line will start with "43" indicating it is a response to a Mode 03 request.
             // See p. 31 of ELM327 datasheet for details and lookup table of code types.
-            
+
             uint codesFound = strlen(payload) / 8; // Each code found returns 8 chars starting with "43"
             idx = strstr(payload, "43") + 4;       // Pointer to first DTC code digit (third char in the response)
 
-            if (codesFound > DTC_MAX_CODES)        // I don't think the ELM is capable of returning 
+            if (codesFound > DTC_MAX_CODES)        // I don't think the ELM is capable of returning
             {                                      // more than 0xF (16) codes, but just in case...
                 codesFound = DTC_MAX_CODES;
                 Serial.print("DTC response truncated at ");
