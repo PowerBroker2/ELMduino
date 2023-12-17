@@ -2359,7 +2359,7 @@ uint64_t ELM327::findResponse()
         {
             uint8_t payloadIndex = firstDatum + i;
             uint8_t bitsOffset = 4 * (numPayChars - i - 1);
-            response = response | (ctoi(payload[payloadIndex]) << bitsOffset);
+            response = response | ((uint64_t)ctoi(payload[payloadIndex]) << bitsOffset);
         }
 
         // It is useful to have the response bytes
