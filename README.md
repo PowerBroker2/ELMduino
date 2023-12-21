@@ -19,41 +19,124 @@ Just to be clear, do not try to query more than one PID at a time. You must wait
 
 # Example Code:
 ```C++
-#include <SoftwareSerial.h>
 #include "ELMduino.h"
 
 
-SoftwareSerial mySerial(2, 3); // RX, TX
+
+
+#define ELM_PORT Serial1
+
+
+
+
+const bool DEBUG        = true;
+const int  TIMEOUT      = 2000;
+const bool HALT_ON_FAIL = false;
+
+
+
+
 ELM327 myELM327;
 
 
-uint32_t rpm = 0;
+
+
+typedef enum { ENG_RPM,
+               SPEED } obd_pid_states;
+obd_pid_states obd_state = ENG_RPM;
+
+float rpm = 0;
+float mph = 0;
+
+
 
 
 void setup()
 {
   Serial.begin(115200);
-  mySerial.begin(115200);
-  myELM327.begin(mySerial, true, 2000);
+  ELM_PORT.begin(115200);
+
+  Serial.println("Attempting to connect to ELM327...");
+
+  if (!myELM327.begin(ELM_PORT, DEBUG, TIMEOUT))
+  {
+    Serial.println("Couldn't connect to OBD scanner");
+
+    if (HALT_ON_FAIL)
+      while (1);
+  }
+
+  Serial.println("Connected to ELM327");
 }
+
+
 
 
 void loop()
 {
-  float tempRPM = myELM327.rpm();
-
-  if (myELM327.nb_rx_state == ELM_SUCCESS)
+  switch (obd_state)
   {
-    rpm = (uint32_t)tempRPM;
-    Serial.print("RPM: "); Serial.println(rpm);
+    case ENG_RPM:
+    {
+      rpm = myELM327.rpm();
+      
+      if (myELM327.nb_rx_state == ELM_SUCCESS)
+      {
+        Serial.print("rpm: ");
+        Serial.println(rpm);
+        obd_state = SPEED;
+      }
+      else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
+      {
+        myELM327.printError();
+        obd_state = SPEED;
+      }
+      
+      break;
+    }
+    
+    case SPEED:
+    {
+      mph = myELM327.mph();
+      
+      if (myELM327.nb_rx_state == ELM_SUCCESS)
+      {
+        Serial.print("mph: ");
+        Serial.println(mph);
+        obd_state = ENG_RPM;
+      }
+      else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
+      {
+        myELM327.printError();
+        obd_state = ENG_RPM;
+      }
+      
+      break;
+    }
   }
-  else if (myELM327.nb_rx_state != ELM_GETTING_MSG)
-    myELM327.printError();
 }
 ```
 
 # List of Supported OBD PID Processing Functions:
 ```C++
+bool begin(Stream& stream, const bool& debug = false, const uint16_t& timeout = 1000, const char& protocol = '0', const uint16_t& payloadLen = 40, const byte& dataTimeout = 0);
+bool initializeELM(const char& protocol = '0', const byte& dataTimeout = 0);
+void flushInputBuff();
+uint64_t findResponse();
+bool queryPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses = 1);
+bool queryPID(char queryStr[]);
+float processPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses, const uint8_t& numExpectedBytes, const float& scaleFactor = 1, const float& bias = 0);
+void sendCommand(const char *cmd);
+int8_t sendCommand_Blocking(const char *cmd);
+int8_t get_response();
+bool timeout();
+float conditionResponse(const uint8_t& numExpectedBytes, const float& scaleFactor = 1, const float& bias = 0);
+
+float batteryVoltage(void);
+int8_t get_vin_blocking(char vin[]);
+bool resetDTC();
+void currentDTCCodes(const bool& isBlocking = true);
+
 uint32_t supportedPIDs_1_20();
 
 uint32_t monitorStatus();
@@ -100,7 +183,6 @@ float catTempB2S1();
 float catTempB1S2();
 float catTempB2S2();
 
-
 uint32_t supportedPIDs_41_60();
 
 uint32_t monitorDriveCycleStatus();
@@ -137,12 +219,7 @@ float demandedTorque();
 float torque();
 uint16_t referenceTorque();
 uint16_t auxSupported();
-```
-
-# Other commands
-```C++
-float batteryVoltage(void); // Gets vehicle battery voltage
-int8_t get_vin_blocking(char vin[]); // Gets Vehicle Identification Number (VIN)
+void printError();
 ```
 
 # List of OBD Protocols:
