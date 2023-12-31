@@ -139,7 +139,7 @@ const uint8_t AUX_INPUT_OUTPUT_SUPPORTED       = 101; // 0x65 - bit encoded
 
 const uint8_t SERVICE_02                       = 2;
 const uint8_t SERVICE_03                       = 3;
-
+const uint8_t PID_INTERVAL_OFFSET 			   = 0x20;
 
 
 //-------------------------------------------------------------------------------------//
@@ -329,6 +329,7 @@ public:
 	int8_t get_vin_blocking(char vin[]);
 	bool resetDTC();
 	void currentDTCCodes(const bool& isBlocking = true);
+	bool isPidSupported(uint8_t pid);
 
 	uint32_t supportedPIDs_1_20();
 
