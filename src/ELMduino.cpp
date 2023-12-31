@@ -2788,3 +2788,59 @@ void ELM327::currentDTCCodes(const bool &isBlocking)
         }
     }
 }
+
+
+/*
+ bool ELM327::isPidSupported(uint8_t pid)
+
+ Description:
+ ------------
+  * Checks if a particular PID is supported by the connected ECU.
+
+  * This is a convenience method that selects the correct supportedPIDS_xx_xx() query and parses
+    the bit-encoded result, returning a simple Boolean value indicating PID support from the ECU.
+
+ Inputs:
+ -------
+  * uint8_t pid - the PID to check for support. 
+
+ Return:
+ -------
+  * bool - Whether or not the queried PID is supported by the ECU. 
+*/
+bool ELM327::isPidSupported(uint8_t pid)
+{
+    uint8_t pidInterval = (pid / PID_INTERVAL_OFFSET) * PID_INTERVAL_OFFSET;
+    uint8_t checkPid = 0;
+
+    switch (pidInterval)
+    {
+    case SUPPORTED_PIDS_1_20:
+        supportedPIDs_1_20();
+        break;
+
+    case SUPPORTED_PIDS_21_40:
+        supportedPIDs_21_40();
+        pid = (pid - SUPPORTED_PIDS_21_40);
+        break;
+
+    case SUPPORTED_PIDS_41_60:
+        supportedPIDs_41_60();
+        pid = (pid - SUPPORTED_PIDS_41_60);
+        break;
+
+    case SUPPORTED_PIDS_61_80:
+        supportedPIDs_61_80();
+        pid = (pid - SUPPORTED_PIDS_61_80);
+        break;
+    
+    default:
+        break;
+    }      
+
+    if (nb_rx_state == ELM_SUCCESS)
+    {
+        return ((response >> (32 - pid)) & 0x1);
+    }
+    return false;
+}
