@@ -410,7 +410,7 @@ int8_t ELM327::nextIndex(char const *str,
  -------
   * float - Converted numerical value
 */
-float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
+double ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 {
     uint8_t numExpectedPayChars = numExpectedBytes * 2;
     uint8_t payCharDiff = numPayChars - numExpectedPayChars;
@@ -438,7 +438,17 @@ float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &sc
         return 0;
     }
     else if (numExpectedPayChars == numPayChars)
-        return (response * scaleFactor) + bias;
+    {
+        if (scaleFactor == 1 && bias == 0) // No scale/bias needed
+        {
+            return response;
+        }
+        else 
+        {
+            return (response * scaleFactor) + bias;
+        }
+    }
+        
 
     // If there were more payload bytes returned than we expected, test the first and last bytes in the
     // returned payload and see which gives us a higher value. Sometimes ELM327's return leading zeros
@@ -459,15 +469,29 @@ float ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &sc
     {
         if (debugMode)
             Serial.println("Lagging zeros found");
-
-        return ((float)(response >> (4 * payCharDiff)) * scaleFactor) + bias;
+        if (scaleFactor == 1 && bias == 0) // No scale/bias needed
+        {
+            return (response >> (4 * payCharDiff));
+        }
+        else 
+        {
+            return ((float)(response >> (4 * payCharDiff)) * scaleFactor) + bias;
+        }
+        
     }
     else
     {
         if (debugMode)
             Serial.println("Lagging zeros not found - assuming leading zeros");
 
-        return (response * scaleFactor) + bias;
+        if (scaleFactor == 1 && bias == 0) // No scale/bias needed
+        {
+            return response;
+        }
+        else 
+        {
+            return (response * scaleFactor) + bias;
+        }
     }
 }
 
@@ -573,7 +597,7 @@ bool ELM327::queryPID(char queryStr[])
  -------
   * float - The PID value if successfully received, else 0.0
 */
-float ELM327::processPID(const uint8_t &service, const uint16_t &pid, const uint8_t &num_responses, const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
+double ELM327::processPID(const uint8_t &service, const uint16_t &pid, const uint8_t &num_responses, const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 {
     if (nb_query_state == SEND_COMMAND)
     {
@@ -588,7 +612,7 @@ float ELM327::processPID(const uint8_t &service, const uint16_t &pid, const uint
             nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
 
             findResponse();
-
+           
             return conditionResponse(numExpectedBytes, scaleFactor, bias);
         }
         else if (nb_rx_state != ELM_GETTING_MSG)
