@@ -475,7 +475,7 @@ double ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &s
         }
         else 
         {
-            return ((float)(response >> (4 * payCharDiff)) * scaleFactor) + bias;
+            return ((double)(response >> (4 * payCharDiff)) * scaleFactor) + bias;
         }
         
     }
