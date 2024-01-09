@@ -2689,7 +2689,7 @@ void ELM327::currentDTCCodes(const bool &isBlocking)
             // Each response line will start with "43" indicating it is a response to a Mode 03 request.
             // See p. 31 of ELM327 datasheet for details and lookup table of code types.
 
-            uint codesFound = strlen(payload) / 8; // Each code found returns 8 chars starting with "43"
+            uint8_t codesFound = strlen(payload) / 8; // Each code found returns 8 chars starting with "43"
             idx = strstr(payload, "43") + 4;       // Pointer to first DTC code digit (third char in the response)
 
             if (codesFound > DTC_MAX_CODES)        // I don't think the ELM is capable of returning

@@ -271,8 +271,8 @@ const int8_t ELM_TIMEOUT           = 7;
 const int8_t ELM_GETTING_MSG       = 8;
 const int8_t ELM_MSG_RXD           = 9;
 const int8_t ELM_GENERAL_ERROR     = -1;
-const int8_t DTC_CODE_LEN		   = 6;
-const int8_t DTC_MAX_CODES		   = 16;
+const uint8_t DTC_CODE_LEN		   = 6;
+const uint8_t DTC_MAX_CODES		   = 16;
 
 // Non-blocking (NB) command states
 typedef enum { SEND_COMMAND,
@@ -308,7 +308,7 @@ public:
 	byte responseByte_7;
 
 	struct dtcResponse {
-		uint codesFound = 0;
+		uint8_t codesFound = 0;
 		char codes[DTC_MAX_CODES][DTC_CODE_LEN];
 	} DTC_Response;
 	
