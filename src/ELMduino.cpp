@@ -117,12 +117,19 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
                 // the timeout value to 30 seconds, then restore the previous value.
                 uint16_t prevTimeout = timeout_ms;
                 timeout_ms = 30000;
+                
+                int8_t state = sendCommand_Blocking("0100");
 
-                if (sendCommand_Blocking("0100") == ELM_SUCCESS)
+                if (state == ELM_SUCCESS)
                 {
                     timeout_ms = prevTimeout;
                     connected = true;
                     return connected;
+                }
+                else if (state == ELM_BUFFER_OVERFLOW)
+                {
+                    while (elm_port->available())
+                        elm_port->read();
                 }
 
                 timeout_ms = prevTimeout;
