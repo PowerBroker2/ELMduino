@@ -117,7 +117,7 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
                 // the timeout value to 30 seconds, then restore the previous value.
                 uint16_t prevTimeout = timeout_ms;
                 timeout_ms = 30000;
-                
+
                 int8_t state = sendCommand_Blocking("0100");
 
                 if (state == ELM_SUCCESS)
@@ -202,6 +202,8 @@ void ELM327::formatQueryArray(uint8_t service, uint16_t pid, uint8_t num_respons
         Serial.print(F("PID: "));
         Serial.println(pid);
     }
+
+    isMode0x22Query = (service == 0x22 && pid <= 0xFF); // mode 0x22 responses always zero-pad the pid to 4 chars, even for a 2-char pid
 
     query[0] = ((service >> 4) & 0xF) + '0';
     query[1] = (service & 0xF) + '0';
@@ -616,7 +618,7 @@ double ELM327::processPID(const uint8_t &service, const uint16_t &pid, const uin
         {
             nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
 
-            findResponse();
+            findResponse(service, pid);
 
             return conditionResponse(numExpectedBytes, scaleFactor, bias);
         }
@@ -2312,7 +2314,7 @@ int8_t ELM327::get_response(void)
 }
 
 /*
- uint64_t ELM327::findResponse()
+ uint64_t ELM327::findResponse(uint8_t &service)
 
  Description:
  ------------
@@ -2326,7 +2328,7 @@ int8_t ELM327::get_response(void)
  -------
   * uint64_t - Query response value
 */
-uint64_t ELM327::findResponse()
+uint64_t ELM327::findResponse(const uint8_t &service, const uint8_t &pid)
 {
     uint8_t firstDatum = 0;
     char header[7] = {'\0'};
@@ -2344,8 +2346,18 @@ uint64_t ELM327::findResponse()
     {
         header[0] = query[0] + 4;
         header[1] = query[1];
-        header[2] = query[2];
-        header[3] = query[3];
+        if (isMode0x22Query) // mode 0x22 responses always zero-pad the pid to 4 chars, even for a 2-char pid
+        {
+            header[2] = '0';
+            header[3] = '0';
+            header[4] = query[2];
+            header[5] = query[3];
+        }
+        else
+        {
+            header[2] = query[2];
+            header[3] = query[3];
+        }
     }
 
     if (debugMode)
@@ -2359,7 +2371,7 @@ uint64_t ELM327::findResponse()
 
     if (firstHeadIndex >= 0)
     {
-        if (longQuery)
+        if (longQuery | isMode0x22Query)
             firstDatum = firstHeadIndex + 6;
         else
             firstDatum = firstHeadIndex + 4;
