@@ -2856,7 +2856,6 @@ void ELM327::currentDTCCodes(const bool &isBlocking)
 bool ELM327::isPidSupported(uint8_t pid)
 {
     uint8_t pidInterval = (pid / PID_INTERVAL_OFFSET) * PID_INTERVAL_OFFSET;
-    uint8_t checkPid = 0;
 
     switch (pidInterval)
     {
