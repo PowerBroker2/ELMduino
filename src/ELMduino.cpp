@@ -111,7 +111,7 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
         sprintf(command, SET_PROTOCOL_TO_AUTO_H_SAVE, protocol);
         if (sendCommand_Blocking(command) == ELM_SUCCESS)
         {
-            if (strstr(payload, "OK") != NULL)
+            if (strstr(payload, RESPONSE_OK) != NULL)
             {
                 // Protocol search can take a comparatively long time. Temporarily set
                 // the timeout value to 30 seconds, then restore the previous value.
@@ -143,7 +143,7 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
 
         if (sendCommand_Blocking(command) == ELM_SUCCESS)
         {
-            if (strstr(payload, "OK") != NULL)
+            if (strstr(payload, RESPONSE_OK) != NULL)
             {
                 connected = true;
                 return connected;
@@ -163,7 +163,7 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
     sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
 
     if (sendCommand_Blocking(command) == ELM_SUCCESS)
-        if (strstr(payload, "OK") != NULL)
+        if (strstr(payload, RESPONSE_OK) != NULL)
             connected = true;
 
     if (debugMode)
@@ -465,7 +465,7 @@ double ELM327::conditionResponse(const uint8_t &numExpectedBytes, const double &
     // will not give accurate results!
 
     if (debugMode)
-        Serial.println("Looking for lagging zeros");
+        Serial.println(F("Looking for lagging zeros"));
 
     uint16_t numExpectedBits = numExpectedBytes * 8;
     uint64_t laggingZerosMask = 0;
@@ -476,7 +476,8 @@ double ELM327::conditionResponse(const uint8_t &numExpectedBytes, const double &
     if (!(laggingZerosMask & response)) // Detect all lagging zeros in `response`
     {
         if (debugMode)
-            Serial.println("Lagging zeros found");
+            Serial.println(F("Lagging zeros found"));
+
         if (scaleFactor == 1 && bias == 0) // No scale/bias needed
         {
             return (response >> (4 * payCharDiff));
@@ -489,7 +490,7 @@ double ELM327::conditionResponse(const uint8_t &numExpectedBytes, const double &
     else
     {
         if (debugMode)
-            Serial.println("Lagging zeros not found - assuming leading zeros");
+            Serial.println(F("Lagging zeros not found - assuming leading zeros"));
 
         if (scaleFactor == 1 && bias == 0) // No scale/bias needed
         {
@@ -2206,7 +2207,7 @@ int8_t ELM327::get_response(void)
                 Serial.println(F("\\v"));
             // convert spaces to underscore, easier to see in debug output
             else if (recChar == ' ')
-                Serial.println("_");
+                Serial.println(F("_"));
             // display regular printable
             else
                 Serial.println(recChar);
@@ -2271,7 +2272,7 @@ int8_t ELM327::get_response(void)
     }
 
     // Now we have successfully received OBD response, check if the payload indicates any OBD errors
-    if (nextIndex(payload, "UNABLETOCONNECT") >= 0)
+    if (nextIndex(payload, RESPONSE_UNABLE_TO_CONNECT) >= 0)
     {
         if (debugMode)
             Serial.println(F("ELM responded with error \"UNABLE TO CONNECT\""));
@@ -2282,7 +2283,7 @@ int8_t ELM327::get_response(void)
 
     connected = true;
 
-    if (nextIndex(payload, "NODATA") >= 0)
+    if (nextIndex(payload, RESPONSE_NO_DATA) >= 0)
     {
         if (debugMode)
             Serial.println(F("ELM responded with error \"NO DATA\""));
@@ -2291,7 +2292,7 @@ int8_t ELM327::get_response(void)
         return nb_rx_state;
     }
 
-    if (nextIndex(payload, "STOPPED") >= 0)
+    if (nextIndex(payload, RESPONSE_STOPPED) >= 0)
     {
         if (debugMode)
             Serial.println(F("ELM responded with error \"STOPPED\""));
@@ -2300,7 +2301,7 @@ int8_t ELM327::get_response(void)
         return nb_rx_state;
     }
 
-    if (nextIndex(payload, "ERROR") >= 0)
+    if (nextIndex(payload, RESPONSE_ERROR) >= 0)
     {
         if (debugMode)
             Serial.println(F("ELM responded with \"ERROR\""));
@@ -2491,7 +2492,7 @@ void ELM327::printError()
 }
 
 /*
- float ELM327::batteryVoltage(void)
+ float ELM327::batteryVoltage()
 
  Description:
  ------------
@@ -2503,9 +2504,9 @@ void ELM327::printError()
 
  Return:
  -------
-  * flaot - vehicle battery voltage in VDC
+  * float - vehicle battery voltage in VDC
 */
-float ELM327::batteryVoltage(void)
+float ELM327::batteryVoltage()
 {
     if (nb_query_state == SEND_COMMAND)
     {
@@ -2556,7 +2557,8 @@ int8_t ELM327::get_vin_blocking(char vin[])
     uint8_t ascii_val;
 
     if (debugMode)
-        Serial.println("Getting VIN...");
+        Serial.println(F("Getting VIN..."));
+
     sendCommand("0902"); // VIN is command 0902
     while (get_response() == ELM_GETTING_MSG)
         ;
@@ -2592,7 +2594,7 @@ int8_t ELM327::get_vin_blocking(char vin[])
         }
         if (debugMode)
         {
-            Serial.print("VIN: ");
+            Serial.print(F("VIN: "));
             Serial.println(vin);
         }
     }
@@ -2600,7 +2602,7 @@ int8_t ELM327::get_vin_blocking(char vin[])
     {
         if (debugMode)
         {
-            Serial.println("No VIN response");
+            Serial.println(F("No VIN response"));
             printError();
         }
     }
@@ -2633,7 +2635,7 @@ bool ELM327::resetDTC()
         {
             if (debugMode)
             {
-                Serial.println("ELMduino: DTC successfully reset.");
+                Serial.println(F("ELMduino: DTC successfully reset."));
             }
 
             return true;
@@ -2643,7 +2645,7 @@ bool ELM327::resetDTC()
     {
         if (debugMode)
         {
-            Serial.println("ELMduino: Resetting DTC codes failed.");
+            Serial.println(F("ELMduino: Resetting DTC codes failed."));
         }
     }
 
@@ -2717,9 +2719,9 @@ void ELM327::currentDTCCodes(const bool &isBlocking)
             if (codesFound > DTC_MAX_CODES) // I don't think the ELM is capable of returning
             {                               // more than 0xF (16) codes, but just in case...
                 codesFound = DTC_MAX_CODES;
-                Serial.print("DTC response truncated at ");
+                Serial.print(F("DTC response truncated at "));
                 Serial.print(DTC_MAX_CODES);
-                Serial.println(" codes.");
+                Serial.println(F(" codes."));
             }
 
             DTC_Response.codesFound = codesFound;
@@ -2809,7 +2811,7 @@ void ELM327::currentDTCCodes(const bool &isBlocking)
 
                 if (debugMode)
                 {
-                    Serial.print("ELMduino: Found code: ");
+                    Serial.print(F("ELMduino: Found code: "));
                     Serial.println(temp);
                 }
             }
@@ -2818,7 +2820,7 @@ void ELM327::currentDTCCodes(const bool &isBlocking)
         {
             if (debugMode)
             {
-                Serial.println("ELMduino: DTC response received with no valid data.");
+                Serial.println(F("ELMduino: DTC response received with no valid data."));
             }
         }
         return;
@@ -2829,7 +2831,7 @@ void ELM327::currentDTCCodes(const bool &isBlocking)
 
         if (debugMode)
         {
-            Serial.println("ELMduino: Getting current DTC codes failed.");
+            Serial.println(F("ELMduino: Getting current DTC codes failed."));
             printError();
         }
     }
