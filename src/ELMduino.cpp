@@ -2503,7 +2503,7 @@ void ELM327::printError()
 
  Return:
  -------
-  * flaot - vehicle battery voltage in VDC
+  * float - vehicle battery voltage in VDC
 */
 float ELM327::batteryVoltage(void)
 {
@@ -2519,12 +2519,14 @@ float ELM327::batteryVoltage(void)
         {
             nb_query_state = SEND_COMMAND;         // Reset the query state machine for next command
             payload[strlen(payload) - 1] = '\0';   // Remove the last char ("V") from the payload value
-            char *start = strstr(payload, "ATRV"); // Get start of voltage value
-            if (start != NULL)
+            if (strncmp(payload, "ATRV", 4) == 0)
             {
-                payload = start + 4;
+                return (float)strtod(payload + 4, NULL);
             }
-            return (float)strtod(payload, NULL);
+            else 
+            {
+                return (float)strtod(payload, NULL);
+            }
         }
         else if (nb_rx_state != ELM_GETTING_MSG)
             nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
