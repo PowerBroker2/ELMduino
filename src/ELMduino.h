@@ -28,7 +28,10 @@ const char USER_2_CAN                 = 'C';
 // PIDs (https://en.wikipedia.org/wiki/OBD-II_PIDs)
 //-------------------------------------------------------------------------------------//
 const uint8_t SERVICE_01                       = 1;
-	
+const uint8_t SERVICE_02                       = 2;
+const uint8_t SERVICE_03                       = 3;
+const uint8_t PID_INTERVAL_OFFSET 			   = 0x20;
+
 
 const uint8_t SUPPORTED_PIDS_1_20              = 0;   // 0x00 - bit encoded
 const uint8_t MONITOR_STATUS_SINCE_DTC_CLEARED = 1;   // 0x01 - bit encoded
@@ -137,9 +140,6 @@ const uint8_t ENGINE_PERCENT_TORQUE_DATA       = 100; // 0x64 - %
 const uint8_t AUX_INPUT_OUTPUT_SUPPORTED       = 101; // 0x65 - bit encoded
 
 
-const uint8_t SERVICE_02                       = 2;
-const uint8_t SERVICE_03                       = 3;
-const uint8_t PID_INTERVAL_OFFSET 			   = 0x20;
 
 
 //-------------------------------------------------------------------------------------//
@@ -273,6 +273,12 @@ const int8_t ELM_MSG_RXD           = 9;
 const int8_t ELM_GENERAL_ERROR     = -1;
 const uint8_t DTC_CODE_LEN		   = 6;
 const uint8_t DTC_MAX_CODES		   = 16;
+
+const char * const RESPONSE_OK					= "OK";
+const char * const RESPONSE_UNABLE_TO_CONNECT	= "UNABLETOCONNECT";
+const char * const RESPONSE_NO_DATA				= "NODATA";
+const char * const RESPONSE_STOPPED				= "STOPPED";
+const char * const RESPONSE_ERROR				= "ERROR";
 
 // Non-blocking (NB) command states
 typedef enum { SEND_COMMAND,
