@@ -163,9 +163,14 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
     sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
 
     if (sendCommand_Blocking(command) == ELM_SUCCESS)
+    {
         if (strstr(payload, RESPONSE_OK) != NULL)
+        {
             connected = true;
-
+            return connected;
+        }
+    }
+    
     if (debugMode)
     {
         Serial.print(F("Setting protocol via "));
