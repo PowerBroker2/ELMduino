@@ -227,21 +227,30 @@ void ELM327::formatQueryArray(uint8_t service, uint16_t pid, uint8_t num_respons
         query[4] = ((pid >> 4) & 0xF) + '0';
         query[5] = (pid & 0xF) + '0';
 
-        if (num_responses > 0xF)
+        if (specifyNumResponses)
         {
-            query[6] = ((num_responses >> 4) & 0xF) + '0';
-            query[7] = (num_responses & 0xF) + '0';
-            query[8] = '\0';
+            if (num_responses > 0xF)
+            {
+                query[6] = ((num_responses >> 4) & 0xF) + '0';
+                query[7] = (num_responses & 0xF) + '0';
+                query[8] = '\0';
 
-            upper(query, 8);
+                upper(query, 8);
+            }
+            else
+            {
+                query[6] = (num_responses & 0xF) + '0';
+                query[7] = '\0';
+                query[8] = '\0';
+
+                upper(query, 7);
+            }
         }
         else
         {
-            query[6] = (num_responses & 0xF) + '0';
+            query[6] = '\0';
             query[7] = '\0';
             query[8] = '\0';
-
-            upper(query, 7);
         }
     }
     else
@@ -254,25 +263,36 @@ void ELM327::formatQueryArray(uint8_t service, uint16_t pid, uint8_t num_respons
         query[2] = ((pid >> 4) & 0xF) + '0';
         query[3] = (pid & 0xF) + '0';
 
-        if (num_responses > 0xF)
+        if (specifyNumResponses)
         {
-            query[4] = ((num_responses >> 4) & 0xF) + '0';
-            query[5] = (num_responses & 0xF) + '0';
-            query[6] = '\0';
-            query[7] = '\0';
-            query[8] = '\0';
+            if (num_responses > 0xF)
+            {
+                query[4] = ((num_responses >> 4) & 0xF) + '0';
+                query[5] = (num_responses & 0xF) + '0';
+                query[6] = '\0';
+                query[7] = '\0';
+                query[8] = '\0';
 
-            upper(query, 6);
+                upper(query, 6);
+            }
+            else
+            {
+                query[4] = (num_responses & 0xF) + '0';
+                query[5] = '\0';
+                query[6] = '\0';
+                query[7] = '\0';
+                query[8] = '\0';
+
+                upper(query, 5);
+            }
         }
         else
         {
-            query[4] = (num_responses & 0xF) + '0';
+            query[4] = '\0';
             query[5] = '\0';
             query[6] = '\0';
             query[7] = '\0';
             query[8] = '\0';
-
-            upper(query, 5);
         }
     }
 

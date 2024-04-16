@@ -296,6 +296,7 @@ public:
 	Stream* elm_port;
 
 	bool connected = false;
+    bool specifyNumResponses = true;
 	bool debugMode;
 	char* payload;
 	uint16_t PAYLOAD_LEN;
