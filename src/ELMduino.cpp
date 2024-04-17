@@ -251,6 +251,8 @@ void ELM327::formatQueryArray(uint8_t service, uint16_t pid, uint8_t num_respons
             query[6] = '\0';
             query[7] = '\0';
             query[8] = '\0';
+
+            upper(query, 6);
         }
     }
     else
@@ -293,6 +295,8 @@ void ELM327::formatQueryArray(uint8_t service, uint16_t pid, uint8_t num_respons
             query[6] = '\0';
             query[7] = '\0';
             query[8] = '\0';
+
+            upper(query, 4);
         }
     }
 
