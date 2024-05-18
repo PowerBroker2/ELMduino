@@ -123,8 +123,8 @@ bool begin(Stream& stream, const bool& debug = false, const uint16_t& timeout = 
 bool initializeELM(const char& protocol = '0', const byte& dataTimeout = 0);
 void flushInputBuff();
 uint64_t findResponse();
-bool queryPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses = 1);
-bool queryPID(char queryStr[]);
+void queryPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses = 1);
+void queryPID(char queryStr[]);
 float processPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses, const uint8_t& numExpectedBytes, const float& scaleFactor = 1, const float& bias = 0);
 void sendCommand(const char *cmd);
 int8_t sendCommand_Blocking(const char *cmd);

@@ -441,7 +441,7 @@ int8_t ELM327::nextIndex(char const *str,
  -------
   * uint64_t response        - ELM327's response
   * uint8_t numExpectedBytes - Number of valid bytes from the response to process
-  * float scaleFactor        - Amount to scale the response by
+  * double scaleFactor       - Amount to scale the response by
   * float bias               - Amount to bias the response by
 
  Return:
@@ -557,7 +557,7 @@ void ELM327::flushInputBuff()
 }
 
 /*
-  bool ELM327::queryPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses)
+  void ELM327::queryPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses)
 
   Description:
   ------------
@@ -574,18 +574,16 @@ void ELM327::flushInputBuff()
 
   Return:
   -------
-  * bool - Whether or not the query was submitted successfully
+  * void
 */
-bool ELM327::queryPID(const uint8_t &service, const uint16_t &pid, const uint8_t &num_responses)
+void ELM327::queryPID(const uint8_t &service, const uint16_t &pid, const uint8_t &num_responses)
 {
     formatQueryArray(service, pid, num_responses);
     sendCommand(query);
-
-    return connected;
 }
 
 /*
- bool ELM327::queryPID(char queryStr[])
+ void ELM327::queryPID(char queryStr[])
 
  Description:
  ------------
@@ -597,9 +595,9 @@ bool ELM327::queryPID(const uint8_t &service, const uint16_t &pid, const uint8_t
 
  Return:
  -------
-  * bool - Whether or not the query was submitted successfully
+  * void
 */
-bool ELM327::queryPID(char queryStr[])
+void ELM327::queryPID(char queryStr[])
 {
     if (strlen(queryStr) <= 4)
         longQuery = false;
@@ -607,8 +605,6 @@ bool ELM327::queryPID(char queryStr[])
         longQuery = true;
 
     sendCommand(queryStr);
-
-    return connected;
 }
 
 /*
@@ -632,7 +628,7 @@ bool ELM327::queryPID(char queryStr[])
 
  Return:
  -------
-  * float - The PID value if successfully received, else 0.0
+  * double - The PID value if successfully received, else 0.0
 */
 double ELM327::processPID(const uint8_t &service, const uint16_t &pid, const uint8_t &num_responses, const uint8_t &numExpectedBytes, const double &scaleFactor, const float &bias)
 {

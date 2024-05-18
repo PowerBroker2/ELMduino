@@ -323,8 +323,8 @@ public:
 	bool initializeELM(const char& protocol = '0', const byte& dataTimeout = 0);
 	void flushInputBuff();
 	uint64_t findResponse(const uint8_t &service, const uint8_t &pid);
-	bool queryPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses = 1);
-	bool queryPID(char queryStr[]);
+	void queryPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses = 1);
+	void queryPID(char queryStr[]);
 	double processPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses, const uint8_t& numExpectedBytes, const double& scaleFactor = 1, const float& bias = 0);
 	void sendCommand(const char *cmd);
 	int8_t sendCommand_Blocking(const char *cmd);
