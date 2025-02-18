@@ -2440,16 +2440,28 @@ uint64_t ELM327::findResponse(const uint8_t& service,
         }
 
         if (logColonIndex >= 0)
+        {
+            if (debugMode)
+                Serial.println(F("Log response detected"));
+            
             logBytes = recBytes - logColonIndex; // Number of logging bytes INCLUDING the colon
-        
-        // Do not process logging bytes
-        numPayChars -= logBytes;
+
+            if (debugMode)
+            {
+                Serial.print(logBytes);
+                Serial.println(F(" log bytes found - ignoring these bytes during processing"));
+            }
+            
+            // Do not process logging bytes
+            numPayChars -= logBytes;
+        }
 
         response = 0;
         for (uint8_t i = 0; i < numPayChars; i++)
         {
             uint8_t payloadIndex = firstDatum + i;
-            uint8_t bitsOffset = 4 * (numPayChars - i - 1);
+            uint8_t bitsOffset   = 4 * (numPayChars - i - 1);
+            
             response = response | ((uint64_t)ctoi(payload[payloadIndex]) << bitsOffset);
         }
 
