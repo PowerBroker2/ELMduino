@@ -2426,7 +2426,7 @@ uint64_t ELM327::findResponse(const uint8_t& service,
             numPayChars = secondHeadIndex - firstDatum;
 
             // Look for the first colon after the last found header - this is the colon separating the data response from the logging response
-            logColonIndex = nextIndex(payload + secondHeadIndex, header, 1);
+            logColonIndex = nextIndex(payload + secondHeadIndex, ':', 1);
         }
         else
         {
@@ -2436,7 +2436,7 @@ uint64_t ELM327::findResponse(const uint8_t& service,
             numPayChars = recBytes - firstDatum;
 
             // Look for the first colon after the last found header - this is the colon separating the data response from the logging response
-            logColonIndex = nextIndex(payload + firstHeadIndex, header, 1);
+            logColonIndex = nextIndex(payload + firstHeadIndex, ':', 1);
         }
 
         if (logColonIndex >= 0)
