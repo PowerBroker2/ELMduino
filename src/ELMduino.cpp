@@ -20,7 +20,12 @@
  -------
   * bool - Whether or not the ELM327 was properly initialized
 */
-bool ELM327::begin(Stream &stream, const bool &debug, const uint16_t &timeout, const char &protocol, const uint16_t &payloadLen, const byte &dataTimeout)
+bool ELM327::begin(      Stream&   stream,
+                   const bool&     debug,
+                   const uint16_t& timeout,
+                   const char&     protocol,
+                   const uint16_t& payloadLen,
+                   const byte&     dataTimeout)
 {
     elm_port = &stream;
     PAYLOAD_LEN = payloadLen;
@@ -76,7 +81,8 @@ bool ELM327::begin(Stream &stream, const bool &debug, const uint16_t &timeout, c
 
   * --> *user adjustable
 */
-bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
+bool ELM327::initializeELM(const char& protocol,
+                           const byte& dataTimeout)
 {
     char command[10] = {'\0'};
     connected = false;
@@ -198,7 +204,9 @@ bool ELM327::initializeELM(const char &protocol, const byte &dataTimeout)
  -------
   * void
 */
-void ELM327::formatQueryArray(uint8_t service, uint16_t pid, uint8_t num_responses)
+void ELM327::formatQueryArray(const uint8_t&  service,
+                              const uint16_t& pid,
+                              const uint8_t&  num_responses)
 {
     if (debugMode)
     {
@@ -324,7 +332,8 @@ void ELM327::formatQueryArray(uint8_t service, uint16_t pid, uint8_t num_respons
  -------
   * void
 */
-void ELM327::upper(char string[], uint8_t buflen)
+void ELM327::upper(char   string[],
+                   uint8_t buflen)
 {
     for (uint8_t i = 0; i < buflen; i++)
     {
@@ -405,7 +414,7 @@ uint8_t ELM327::ctoi(uint8_t value)
 */
 int8_t ELM327::nextIndex(char const *str,
                          char const *target,
-                         uint8_t numOccur = 1)
+                         uint8_t     numOccur)
 {
     char const *p = str;
     char const *r = str;
@@ -448,7 +457,9 @@ int8_t ELM327::nextIndex(char const *str,
  -------
   * double - Converted numerical value
 */
-double ELM327::conditionResponse(const uint8_t &numExpectedBytes, const double &scaleFactor, const float &bias)
+double ELM327::conditionResponse(const uint8_t& numExpectedBytes,
+                                 const double&  scaleFactor,
+                                 const float&   bias)
 {
     uint8_t numExpectedPayChars = numExpectedBytes * 2;
     uint8_t payCharDiff = numPayChars - numExpectedPayChars;
@@ -576,7 +587,9 @@ void ELM327::flushInputBuff()
   -------
   * void
 */
-void ELM327::queryPID(const uint8_t &service, const uint16_t &pid, const uint8_t &num_responses)
+void ELM327::queryPID(const uint8_t&  service,
+                      const uint16_t& pid,
+                      const uint8_t&  num_responses)
 {
     formatQueryArray(service, pid, num_responses);
     sendCommand(query);
@@ -630,7 +643,12 @@ void ELM327::queryPID(char queryStr[])
  -------
   * double - The PID value if successfully received, else 0.0
 */
-double ELM327::processPID(const uint8_t &service, const uint16_t &pid, const uint8_t &num_responses, const uint8_t &numExpectedBytes, const double &scaleFactor, const float &bias)
+double ELM327::processPID(const uint8_t&  service,
+                          const uint16_t& pid,
+                          const uint8_t&  num_responses,
+                          const uint8_t&  numExpectedBytes,
+                          const double&   scaleFactor,
+                          const float&    bias)
 {
     if (nb_query_state == SEND_COMMAND)
     {
@@ -2340,7 +2358,7 @@ int8_t ELM327::get_response(void)
 }
 
 /*
- uint64_t ELM327::findResponse(uint8_t &service)
+ uint64_t ELM327::findResponse(const uint8_t& service, const uint8_t& pid)
 
  Description:
  ------------
@@ -2354,7 +2372,8 @@ int8_t ELM327::get_response(void)
  -------
   * uint64_t - Query response value
 */
-uint64_t ELM327::findResponse(const uint8_t &service, const uint8_t &pid)
+uint64_t ELM327::findResponse(const uint8_t& service,
+                              const uint8_t& pid)
 {
     uint8_t firstDatum = 0;
     char header[7] = {'\0'};
@@ -2680,7 +2699,7 @@ bool ELM327::resetDTC()
 }
 
 /*
- void ELM327::currentDTCCodes()
+ void ELM327::currentDTCCodes(const bool& isBlocking)
 
  Description:
  ------------
@@ -2702,7 +2721,7 @@ bool ELM327::resetDTC()
  -------
   * void
 */
-void ELM327::currentDTCCodes(const bool &isBlocking)
+void ELM327::currentDTCCodes(const bool& isBlocking)
 {
     char *idx;
     char codeType = '\0';

@@ -30,7 +30,7 @@ const char USER_2_CAN                 = 'C';
 const uint8_t SERVICE_01                       = 1;
 const uint8_t SERVICE_02                       = 2;
 const uint8_t SERVICE_03                       = 3;
-const uint8_t PID_INTERVAL_OFFSET 			   = 0x20;
+const uint8_t PID_INTERVAL_OFFSET              = 0x20;
 
 
 const uint8_t SUPPORTED_PIDS_1_20              = 0;   // 0x00 - bit encoded
@@ -259,7 +259,7 @@ const char * const RESET_ALL                  = "AT Z";        // General
 // Class constants
 //-------------------------------------------------------------------------------------//
 const float  KPH_MPH_CONVERT       = 0.6213711922;
-const int8_t QUERY_LEN	           = 9;
+const int8_t QUERY_LEN             = 9;
 const int8_t ELM_SUCCESS           = 0;
 const int8_t ELM_NO_RESPONSE       = 1;
 const int8_t ELM_BUFFER_OVERFLOW   = 2;
@@ -271,14 +271,14 @@ const int8_t ELM_TIMEOUT           = 7;
 const int8_t ELM_GETTING_MSG       = 8;
 const int8_t ELM_MSG_RXD           = 9;
 const int8_t ELM_GENERAL_ERROR     = -1;
-const uint8_t DTC_CODE_LEN		   = 6;
-const uint8_t DTC_MAX_CODES		   = 16;
+const uint8_t DTC_CODE_LEN         = 6;
+const uint8_t DTC_MAX_CODES        = 16;
 
-const char * const RESPONSE_OK					= "OK";
-const char * const RESPONSE_UNABLE_TO_CONNECT	= "UNABLETOCONNECT";
-const char * const RESPONSE_NO_DATA				= "NODATA";
-const char * const RESPONSE_STOPPED				= "STOPPED";
-const char * const RESPONSE_ERROR				= "ERROR";
+const char * const RESPONSE_OK                = "OK";
+const char * const RESPONSE_UNABLE_TO_CONNECT = "UNABLETOCONNECT";
+const char * const RESPONSE_NO_DATA           = "NODATA";
+const char * const RESPONSE_STOPPED           = "STOPPED";
+const char * const RESPONSE_ERROR             = "ERROR";
 
 // Non-blocking (NB) command states
 typedef enum { SEND_COMMAND,
@@ -293,151 +293,170 @@ typedef enum { SEND_COMMAND,
 class ELM327
 {
 public:
-	Stream* elm_port;
+    Stream* elm_port;
 
-	bool connected = false;
+    bool connected = false;
     bool specifyNumResponses = true;
-	bool debugMode;
-	char* payload;
-	uint16_t PAYLOAD_LEN;
-	int8_t nb_rx_state = ELM_GETTING_MSG;
-	uint64_t response;
-	uint16_t recBytes;
-	uint8_t numPayChars;
-	uint16_t timeout_ms;
-	byte responseByte_0;
-	byte responseByte_1;
-	byte responseByte_2;
-	byte responseByte_3;
-	byte responseByte_4;
-	byte responseByte_5;
-	byte responseByte_6;
-	byte responseByte_7;
+    bool debugMode;
+    char* payload;
+    uint16_t PAYLOAD_LEN;
+    int8_t nb_rx_state = ELM_GETTING_MSG;
+    uint64_t response;
+    uint16_t recBytes;
+    uint8_t numPayChars;
+    uint16_t timeout_ms;
+    byte responseByte_0;
+    byte responseByte_1;
+    byte responseByte_2;
+    byte responseByte_3;
+    byte responseByte_4;
+    byte responseByte_5;
+    byte responseByte_6;
+    byte responseByte_7;
 
-	struct dtcResponse {
-		uint8_t codesFound = 0;
-		char codes[DTC_MAX_CODES][DTC_CODE_LEN];
-	} DTC_Response;
-	
-	bool begin(Stream& stream, const bool& debug = false, const uint16_t& timeout = 1000, const char& protocol = '0', const uint16_t& payloadLen = 40, const byte& dataTimeout = 0);
-	bool initializeELM(const char& protocol = '0', const byte& dataTimeout = 0);
-	void flushInputBuff();
-	uint64_t findResponse(const uint8_t &service, const uint8_t &pid);
-	void queryPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses = 1);
-	void queryPID(char queryStr[]);
-	double processPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses, const uint8_t& numExpectedBytes, const double& scaleFactor = 1, const float& bias = 0);
-	void sendCommand(const char *cmd);
-	int8_t sendCommand_Blocking(const char *cmd);
-	int8_t get_response();
-	bool timeout();
-	double conditionResponse(const uint8_t& numExpectedBytes, const double& scaleFactor = 1, const float& bias = 0);
+    struct dtcResponse {
+        uint8_t codesFound = 0;
+        char    codes[DTC_MAX_CODES][DTC_CODE_LEN];
+    } DTC_Response;
+    
+            bool     begin(      Stream&   stream,
+                           const bool&     debug       = false,
+                           const uint16_t& timeout     = 1000,
+                           const char&     protocol    = '0',
+                           const uint16_t& payloadLen  = 40,
+                           const byte&     dataTimeout = 0);
+            bool     initializeELM(const char& protocol    = '0',
+                                   const byte& dataTimeout = 0);
+            void     flushInputBuff();
+    virtual uint64_t findResponse(const uint8_t &service,
+                                  const uint8_t &pid);
+            void     queryPID(const uint8_t&  service,
+                              const uint16_t& pid,
+                              const uint8_t&  num_responses = 1);
+            void     queryPID(char queryStr[]);
+            double   processPID(const uint8_t&  service,
+                                const uint16_t& pid,
+                                const uint8_t&  num_responses,
+                                const uint8_t&  numExpectedBytes,
+                                const double&   scaleFactor = 1,
+                                const float&    bias        = 0);
+            void     sendCommand(const char *cmd);
+            int8_t   sendCommand_Blocking(const char *cmd);
+            int8_t   get_response();
+            bool     timeout();
+            double   conditionResponse(const uint8_t& numExpectedBytes,
+                                       const double&  scaleFactor = 1,
+                                       const float&   bias        = 0);
 
-	float batteryVoltage(void);
-	int8_t get_vin_blocking(char vin[]);
-	bool resetDTC();
-	void currentDTCCodes(const bool& isBlocking = true);
-	bool isPidSupported(uint8_t pid);
+    float  batteryVoltage(void);
+    int8_t get_vin_blocking(char vin[]);
+    bool   resetDTC();
+    void   currentDTCCodes(const bool& isBlocking = true);
+    bool   isPidSupported(uint8_t pid);
 
-	uint32_t supportedPIDs_1_20();
+    uint32_t supportedPIDs_1_20();
 
-	uint32_t monitorStatus();
-	uint16_t freezeDTC();
-	uint16_t fuelSystemStatus();
-	float engineLoad();
-	float engineCoolantTemp();
-	float shortTermFuelTrimBank_1();
-	float longTermFuelTrimBank_1();
-	float shortTermFuelTrimBank_2();
-	float longTermFuelTrimBank_2();
-	float fuelPressure();
-	uint8_t manifoldPressure();
-	float rpm();
-	int32_t kph();
-	float mph();
-	float timingAdvance();
-	float intakeAirTemp();
-	float mafRate();
-	float throttle();
-	uint8_t commandedSecAirStatus();
-	uint8_t oxygenSensorsPresent_2banks();
-	uint8_t obdStandards();
-	uint8_t oxygenSensorsPresent_4banks();
-	bool auxInputStatus();
-	uint16_t runTime();
-
-
-	uint32_t supportedPIDs_21_40();
-
-	uint16_t distTravelWithMIL();
-	float fuelRailPressure();
-	float fuelRailGuagePressure();
-	float commandedEGR();
-	float egrError();
-	float commandedEvapPurge();
-	float fuelLevel();
-	uint8_t warmUpsSinceCodesCleared();
-	uint16_t distSinceCodesCleared();
-	float evapSysVapPressure();
-	uint8_t absBaroPressure();
-	float catTempB1S1();
-	float catTempB2S1();
-	float catTempB1S2();
-	float catTempB2S2();
-
-	uint32_t supportedPIDs_41_60();
-
-	uint32_t monitorDriveCycleStatus();
-	float ctrlModVoltage();
-	float absLoad();
-	float commandedAirFuelRatio();
-	float relativeThrottle();
-	float ambientAirTemp();
-	float absThrottlePosB();
-	float absThrottlePosC();
-	float absThrottlePosD();
-	float absThrottlePosE();
-	float absThrottlePosF();
-	float commandedThrottleActuator();
-	uint16_t timeRunWithMIL();
-	uint16_t timeSinceCodesCleared();
-	float maxMafRate();
-	uint8_t fuelType();
-	float ethanolPercent();
-	float absEvapSysVapPressure();
-	float evapSysVapPressure2();
-	float absFuelRailPressure();
-	float relativePedalPos();
-	float hybridBatLife();
-	float oilTemp();
-	float fuelInjectTiming();
-	float fuelRate();
-	uint8_t emissionRqmts();
+    uint32_t monitorStatus();
+    uint16_t freezeDTC();
+    uint16_t fuelSystemStatus();
+    float    engineLoad();
+    float    engineCoolantTemp();
+    float    shortTermFuelTrimBank_1();
+    float    longTermFuelTrimBank_1();
+    float    shortTermFuelTrimBank_2();
+    float    longTermFuelTrimBank_2();
+    float    fuelPressure();
+    uint8_t  manifoldPressure();
+    float    rpm();
+    int32_t  kph();
+    float    mph();
+    float    timingAdvance();
+    float    intakeAirTemp();
+    float    mafRate();
+    float    throttle();
+    uint8_t  commandedSecAirStatus();
+    uint8_t  oxygenSensorsPresent_2banks();
+    uint8_t  obdStandards();
+    uint8_t  oxygenSensorsPresent_4banks();
+    bool     auxInputStatus();
+    uint16_t runTime();
 
 
-	uint32_t supportedPIDs_61_80();
+    uint32_t supportedPIDs_21_40();
 
-	float demandedTorque();
-	float torque();
-	uint16_t referenceTorque();
-	uint16_t auxSupported();
-	void printError();
+    uint16_t distTravelWithMIL();
+    float    fuelRailPressure();
+    float    fuelRailGuagePressure();
+    float    commandedEGR();
+    float    egrError();
+    float    commandedEvapPurge();
+    float    fuelLevel();
+    uint8_t  warmUpsSinceCodesCleared();
+    uint16_t distSinceCodesCleared();
+    float    evapSysVapPressure();
+    uint8_t  absBaroPressure();
+    float    catTempB1S1();
+    float    catTempB2S1();
+    float    catTempB1S2();
+    float    catTempB2S2();
+
+    uint32_t supportedPIDs_41_60();
+
+    uint32_t monitorDriveCycleStatus();
+    float    ctrlModVoltage();
+    float    absLoad();
+    float    commandedAirFuelRatio();
+    float    relativeThrottle();
+    float    ambientAirTemp();
+    float    absThrottlePosB();
+    float    absThrottlePosC();
+    float    absThrottlePosD();
+    float    absThrottlePosE();
+    float    absThrottlePosF();
+    float    commandedThrottleActuator();
+    uint16_t timeRunWithMIL();
+    uint16_t timeSinceCodesCleared();
+    float    maxMafRate();
+    uint8_t  fuelType();
+    float    ethanolPercent();
+    float    absEvapSysVapPressure();
+    float    evapSysVapPressure2();
+    float    absFuelRailPressure();
+    float    relativePedalPos();
+    float    hybridBatLife();
+    float    oilTemp();
+    float    fuelInjectTiming();
+    float    fuelRate();
+    uint8_t  emissionRqmts();
+
+
+    uint32_t supportedPIDs_61_80();
+
+    float    demandedTorque();
+    float    torque();
+    uint16_t referenceTorque();
+    uint16_t auxSupported();
+    void     printError();
 
 
 
 
 private:
-	char query[QUERY_LEN] = { '\0' };
-	bool longQuery = false;
-	bool isMode0x22Query = false;
-	uint32_t currentTime;
-	uint32_t previousTime;
+    char     query[QUERY_LEN] = { '\0' };
+    bool     longQuery = false;
+    bool     isMode0x22Query = false;
+    uint32_t currentTime;
+    uint32_t previousTime;
 
-	obd_cmd_states nb_query_state = SEND_COMMAND; // Non-blocking query state
+    obd_cmd_states nb_query_state = SEND_COMMAND; // Non-blocking query state
 
-	void upper(char string[], uint8_t buflen);
-	void formatQueryArray(uint8_t service, uint16_t pid, uint8_t num_responses);
-	uint8_t ctoi(uint8_t value);
-	int8_t nextIndex(char const *str,
-	                 char const *target,
-	                 uint8_t numOccur);
+    void    upper(char    string[],
+                  uint8_t buflen);
+    void    formatQueryArray(const uint8_t&  service,
+                             const uint16_t& pid, 
+                             const uint8_t&  num_responses);
+    uint8_t ctoi(uint8_t value);
+    int8_t  nextIndex(char const *str,
+                      char const *target,
+                      uint8_t     numOccur = 1);
 };
