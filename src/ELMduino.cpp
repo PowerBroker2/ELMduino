@@ -27,10 +27,10 @@ bool ELM327::begin(      Stream&   stream,
                    const uint16_t& payloadLen,
                    const byte&     dataTimeout)
 {
-    elm_port = &stream;
+    elm_port    = &stream;
     PAYLOAD_LEN = payloadLen;
-    debugMode = debug;
-    timeout_ms = timeout;
+    debugMode   = debug;
+    timeout_ms  = timeout;
 
     payload = (char *)malloc(PAYLOAD_LEN + 1); // allow for terminating '\0'
 
@@ -462,7 +462,7 @@ double ELM327::conditionResponse(const uint8_t& numExpectedBytes,
                                  const float&   bias)
 {
     uint8_t numExpectedPayChars = numExpectedBytes * 2;
-    uint8_t payCharDiff = numPayChars - numExpectedPayChars;
+    uint8_t payCharDiff         = numPayChars - numExpectedPayChars;
 
     if (numExpectedBytes > 8)
     {
@@ -489,13 +489,9 @@ double ELM327::conditionResponse(const uint8_t& numExpectedBytes,
     else if (numExpectedPayChars == numPayChars)
     {
         if (scaleFactor == 1 && bias == 0) // No scale/bias needed
-        {
             return response;
-        }
         else
-        {
             return (response * scaleFactor) + bias;
-        }
     }
 
     // If there were more payload bytes returned than we expected, test the first and last bytes in the
@@ -507,7 +503,7 @@ double ELM327::conditionResponse(const uint8_t& numExpectedBytes,
     if (debugMode)
         Serial.println(F("Looking for lagging zeros"));
 
-    uint16_t numExpectedBits = numExpectedBytes * 8;
+    uint16_t numExpectedBits  = numExpectedBytes * 8;
     uint64_t laggingZerosMask = 0;
 
     for (uint16_t i = 0; i < numExpectedBits; i++)
@@ -519,13 +515,9 @@ double ELM327::conditionResponse(const uint8_t& numExpectedBytes,
             Serial.println(F("Lagging zeros found"));
 
         if (scaleFactor == 1 && bias == 0) // No scale/bias needed
-        {
             return (response >> (4 * payCharDiff));
-        }
         else
-        {
             return ((response >> (4 * payCharDiff)) * scaleFactor) + bias;
-        }
     }
     else
     {
@@ -533,13 +525,9 @@ double ELM327::conditionResponse(const uint8_t& numExpectedBytes,
             Serial.println(F("Lagging zeros not found - assuming leading zeros"));
 
         if (scaleFactor == 1 && bias == 0) // No scale/bias needed
-        {
             return response;
-        }
         else
-        {
             return (response * scaleFactor) + bias;
-        }
     }
 }
 
@@ -2391,6 +2379,7 @@ uint64_t ELM327::findResponse(const uint8_t& service,
     {
         header[0] = query[0] + 4;
         header[1] = query[1];
+
         if (isMode0x22Query) // mode 0x22 responses always zero-pad the pid to 4 chars, even for a 2-char pid
         {
             header[2] = '0';
@@ -2411,7 +2400,7 @@ uint64_t ELM327::findResponse(const uint8_t& service,
         Serial.println(header);
     }
 
-    int8_t firstHeadIndex = nextIndex(payload, header);
+    int8_t firstHeadIndex  = nextIndex(payload, header);
     int8_t secondHeadIndex = nextIndex(payload, header, 2);
 
     if (firstHeadIndex >= 0)
@@ -2452,8 +2441,8 @@ uint64_t ELM327::findResponse(const uint8_t& service,
         // broken-out because some PID algorithms (standard
         // and custom) require special operations for each
         // byte returned
-        responseByte_0 = response & 0xFF;
-        responseByte_1 = (response >> 8) & 0xFF;
+        responseByte_0 =  response        & 0xFF;
+        responseByte_1 = (response >> 8)  & 0xFF;
         responseByte_2 = (response >> 16) & 0xFF;
         responseByte_3 = (response >> 24) & 0xFF;
         responseByte_4 = (response >> 32) & 0xFF;
@@ -2564,14 +2553,11 @@ float ELM327::batteryVoltage()
         {
             nb_query_state = SEND_COMMAND;         // Reset the query state machine for next command
             payload[strlen(payload) - 1] = '\0';   // Remove the last char ("V") from the payload value
+
             if (strncmp(payload, "ATRV", 4) == 0)
-            {
                 return (float)strtod(payload + 4, NULL);
-            }
-            else 
-            {
+            else
                 return (float)strtod(payload, NULL);
-            }
         }
         else if (nb_rx_state != ELM_GETTING_MSG)
             nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
@@ -2631,8 +2617,10 @@ int8_t ELM327::get_vin_blocking(char vin[])
                 temp[0] = *(idx + i);     // Get first digit of ASCII code
                 temp[1] = *(idx + i + 1); // Get second digit of ASCII code
                 // No need to add string termination, temp[3] always == 0
+
                 if (strstr(temp, ":"))
                     continue;                                  // Skip the second "1:" and third "2:" line numbers
+                
                 ascii_val = strtol(temp, 0, 16);               // Convert ASCII code to integer
                 sprintf(vin + vin_counter++, "%c", ascii_val); // Convert ASCII code integer back to character
                                                                // Serial.printf("Chars %s, ascii_val=%d[dec] 0x%02hhx[hex] ==> VIN=%s\n", temp, ascii_val, ascii_val, vin);
@@ -2680,9 +2668,7 @@ bool ELM327::resetDTC()
         if (strstr(payload, "44") != NULL)
         {
             if (debugMode)
-            {
                 Serial.println(F("ELMduino: DTC successfully reset."));
-            }
 
             return true;
         }
@@ -2690,9 +2676,7 @@ bool ELM327::resetDTC()
     else
     {
         if (debugMode)
-        {
             Serial.println(F("ELMduino: Resetting DTC codes failed."));
-        }
     }
 
     return false;
@@ -2743,9 +2727,7 @@ void ELM327::currentDTCCodes(const bool& isBlocking)
         }
 
         else if (nb_query_state == WAITING_RESP)
-        {
             get_response();
-        }
     }
 
     if (nb_rx_state == ELM_SUCCESS)
