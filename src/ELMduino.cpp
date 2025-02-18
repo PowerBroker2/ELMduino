@@ -2354,7 +2354,8 @@ int8_t ELM327::get_response(void)
 
  Inputs:
  -------
-  * void
+  * const uint8_t& service - The diagnostic service ID. 01 is "Show current data"
+  * const uint8_t& pid     - The Parameter ID (PID) from the service
 
  Return:
  -------
@@ -2400,11 +2401,14 @@ uint64_t ELM327::findResponse(const uint8_t& service,
         Serial.println(header);
     }
 
-    int8_t firstHeadIndex  = nextIndex(payload, header);
+    int8_t firstHeadIndex  = nextIndex(payload, header, 1);
     int8_t secondHeadIndex = nextIndex(payload, header, 2);
 
     if (firstHeadIndex >= 0)
     {
+        int8_t logColonIndex = 0;
+        int8_t logBytes      = 0;
+
         if (longQuery | isMode0x22Query)
             firstDatum = firstHeadIndex + 6;
         else
@@ -2420,6 +2424,9 @@ uint64_t ELM327::findResponse(const uint8_t& service,
                 Serial.println(F("Double response detected"));
 
             numPayChars = secondHeadIndex - firstDatum;
+
+            // Look for the first colon after the last found header - this is the colon separating the data response from the logging response
+            logColonIndex = nextIndex(payload + secondHeadIndex, header, 1);
         }
         else
         {
@@ -2427,7 +2434,16 @@ uint64_t ELM327::findResponse(const uint8_t& service,
                 Serial.println(F("Single response detected"));
 
             numPayChars = recBytes - firstDatum;
+
+            // Look for the first colon after the last found header - this is the colon separating the data response from the logging response
+            logColonIndex = nextIndex(payload + firstHeadIndex, header, 1);
         }
+
+        if (logColonIndex >= 0)
+            logBytes = recBytes - logColonIndex; // Number of logging bytes INCLUDING the colon
+        
+        // Do not process logging bytes
+        numPayChars -= logBytes;
 
         response = 0;
         for (uint8_t i = 0; i < numPayChars; i++)
