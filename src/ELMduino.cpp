@@ -2404,15 +2404,26 @@ uint64_t ELM327::findResponse(const uint8_t& service,
     int8_t firstHeadIndex  = nextIndex(payload, header, 1);
     int8_t secondHeadIndex = nextIndex(payload, header, 2);
 
+    // int8_t firstLogColonIndex  = nextIndex(payload, ":", 1);
+    int8_t secondLogColonIndex = nextIndex(payload, ":", 2);
+
     if (firstHeadIndex >= 0)
     {
-        int8_t logColonIndex = 0;
-        int8_t logBytes      = 0;
-
         if (longQuery | isMode0x22Query)
             firstDatum = firstHeadIndex + 6;
         else
             firstDatum = firstHeadIndex + 4;
+
+        if (secondLogColonIndex >= 0)
+        {
+            if (debugMode)
+            {
+                Serial.print(F("Log response detected at index: "));
+                Serial.println(secondLogColonIndex);
+            }
+            
+            firstDatum = secondLogColonIndex + 1;
+        }
 
         // Some ELM327s (such as my own) respond with two
         // "responses" per query. "numPayChars" represents the
@@ -2424,9 +2435,6 @@ uint64_t ELM327::findResponse(const uint8_t& service,
                 Serial.println(F("Double response detected"));
 
             numPayChars = secondHeadIndex - firstDatum;
-
-            // Look for the first colon after the last found header - this is the colon separating the data response from the logging response
-            logColonIndex = nextIndex(payload + secondHeadIndex, ':', 1);
         }
         else
         {
@@ -2434,26 +2442,6 @@ uint64_t ELM327::findResponse(const uint8_t& service,
                 Serial.println(F("Single response detected"));
 
             numPayChars = recBytes - firstDatum;
-
-            // Look for the first colon after the last found header - this is the colon separating the data response from the logging response
-            logColonIndex = nextIndex(payload + firstHeadIndex, ':', 1);
-        }
-
-        if (logColonIndex >= 0)
-        {
-            if (debugMode)
-                Serial.println(F("Log response detected"));
-            
-            logBytes = recBytes - logColonIndex; // Number of logging bytes INCLUDING the colon
-
-            if (debugMode)
-            {
-                Serial.print(logBytes);
-                Serial.println(F(" log bytes found - ignoring these bytes during processing"));
-            }
-            
-            // Do not process logging bytes
-            numPayChars -= logBytes;
         }
 
         response = 0;
@@ -2461,6 +2449,9 @@ uint64_t ELM327::findResponse(const uint8_t& service,
         {
             uint8_t payloadIndex = firstDatum + i;
             uint8_t bitsOffset   = 4 * (numPayChars - i - 1);
+
+            Serial.print("\tProcessing hex nibble: ");
+            Serial.println(payload[payloadIndex]);
             
             response = response | ((uint64_t)ctoi(payload[payloadIndex]) << bitsOffset);
         }
