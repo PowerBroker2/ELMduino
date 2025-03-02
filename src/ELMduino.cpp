@@ -2450,8 +2450,11 @@ uint64_t ELM327::findResponse(const uint8_t& service,
             uint8_t payloadIndex = firstDatum + i;
             uint8_t bitsOffset   = 4 * (numPayChars - i - 1);
 
-            Serial.print("\tProcessing hex nibble: ");
-            Serial.println(payload[payloadIndex]);
+            if (debugMode)
+            {
+                Serial.print("\tProcessing hex nibble: ");
+                Serial.println(payload[payloadIndex]);
+            }
             
             response = response | ((uint64_t)ctoi(payload[payloadIndex]) << bitsOffset);
         }
