@@ -319,35 +319,19 @@ public:
         char    codes[DTC_MAX_CODES][DTC_CODE_LEN];
     } DTC_Response;
     
-            bool     begin(      Stream&   stream,
-                           const bool&     debug       = false,
-                           const uint16_t& timeout     = 1000,
-                           const char&     protocol    = '0',
-                           const uint16_t& payloadLen  = 40,
-                           const byte&     dataTimeout = 0);
-            bool     initializeELM(const char& protocol    = '0',
-                                   const byte& dataTimeout = 0);
-            void     flushInputBuff();
-    virtual uint64_t findResponse(const uint8_t &service,
-                                  const uint8_t &pid);
-            void     queryPID(const uint8_t&  service,
-                              const uint16_t& pid,
-                              const uint8_t&  num_responses = 1);
-            void     queryPID(char queryStr[]);
-            double   processPID(const uint8_t&  service,
-                                const uint16_t& pid,
-                                const uint8_t&  num_responses,
-                                const uint8_t&  numExpectedBytes,
-                                const double&   scaleFactor = 1,
-                                const float&    bias        = 0);
-            void     sendCommand(const char *cmd);
-            int8_t   sendCommand_Blocking(const char *cmd);
-            int8_t   get_response();
-            bool     timeout();
-            double   conditionResponse(const uint8_t& numExpectedBytes,
-                                       const double&  scaleFactor = 1,
-                                       const float&   bias        = 0);
-
+    bool begin(Stream& stream, const bool& debug = false, const uint16_t& timeout = 1000, const char& protocol = '0', const uint16_t& payloadLen = 40, const byte& dataTimeout = 0);
+    bool initializeELM(const char& protocol = '0', const byte& dataTimeout = 0);
+    void flushInputBuff();
+    uint64_t findResponse(const uint8_t &service, const uint8_t &pid);
+    void queryPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses = 1);
+    void queryPID(char queryStr[]);
+    double processPID(const uint8_t& service, const uint16_t& pid, const uint8_t& num_responses, const uint8_t& numExpectedBytes, const double& scaleFactor = 1, const float& bias = 0);
+    void sendCommand(const char *cmd);
+    int8_t sendCommand_Blocking(const char *cmd);
+    int8_t get_response();
+    bool timeout();
+    double conditionResponse(const uint8_t& numExpectedBytes, const double& scaleFactor = 1, const float& bias = 0);
+    
     float  batteryVoltage(void);
     int8_t get_vin_blocking(char vin[]);
     bool   resetDTC();
@@ -455,6 +439,8 @@ private:
     void    formatQueryArray(const uint8_t&  service,
                              const uint16_t& pid, 
                              const uint8_t&  num_responses);
+    void parseCANResponse();
+
     uint8_t ctoi(uint8_t value);
     int8_t  nextIndex(char const *str,
                       char const *target,

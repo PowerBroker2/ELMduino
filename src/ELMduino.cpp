@@ -2345,6 +2345,64 @@ int8_t ELM327::get_response(void)
     return nb_rx_state;
 }
 
+void ELM327::parseCANResponse() {
+    uint8_t totalBytes = 0;
+    uint8_t bytesReceived = 0;
+    bool dataSection = false;
+    char canResponse[PAYLOAD_LEN] = "";
+
+    char* start = payload;
+    char* end = strchr(start, '\n');
+
+    while (start && *start && bytesReceived < totalBytes) 
+    {
+        char line[256];
+        if (end != NULL) {
+            strncpy(line, start, end - start);
+            line[end - start] = '\0';
+        } else {
+            strncpy(line, start, strlen(start));
+            line[strlen(start)] = '\0';
+        }
+
+        if (!dataSection) {
+            // First line: determine total bytes from the entire line
+            if (strlen(line) > 0) {
+                totalBytes = strtol(line, NULL, 16) * 2;
+            }
+        } else {
+            // Parse data lines: look for "0:", "1:", etc.
+            if (strchr(line, ':')) {
+                char* dataStart = strchr(line, ':') + 1;
+                uint8_t dataLength = strlen(dataStart);
+
+                // Only add data up to totalBytes
+                uint8_t bytesToCopy = (bytesReceived + dataLength > totalBytes) ? (totalBytes - bytesReceived) : dataLength;
+                strncat(canResponse, dataStart, bytesToCopy);
+                bytesReceived += bytesToCopy;
+            }
+        }
+
+        if (strncmp(line, "0:", 2) == 0)
+        {
+            dataSection = true;
+        }
+        if (end == NULL) 
+        {
+            break;
+        }
+        start = end + 1;
+        end = strchr(start, '\n');
+    }
+
+    // Replace payload with parsed canResponse, null-terminate after totalBytes * 2
+    int nullTermPos = (totalBytes < PAYLOAD_LEN - 1) ? totalBytes : PAYLOAD_LEN - 1;
+    strncpy(payload, canResponse, nullTermPos);
+    payload[nullTermPos] = '\0'; // Ensure null termination
+}
+
+
+
 /*
  uint64_t ELM327::findResponse(const uint8_t& service, const uint8_t& pid)
 
@@ -2359,11 +2417,16 @@ int8_t ELM327::get_response(void)
 
  Return:
  -------
-  * uint64_t - Query response value
+  * void
 */
 uint64_t ELM327::findResponse(const uint8_t& service,
                               const uint8_t& pid)
 {
+    if (NULL != strchr(payload, ':'))
+    {
+        parseCANResponse();
+    } 
+
     uint8_t firstDatum = 0;
     char header[7] = {'\0'};
 
@@ -2404,26 +2467,12 @@ uint64_t ELM327::findResponse(const uint8_t& service,
     int8_t firstHeadIndex  = nextIndex(payload, header, 1);
     int8_t secondHeadIndex = nextIndex(payload, header, 2);
 
-    // int8_t firstLogColonIndex  = nextIndex(payload, ":", 1);
-    int8_t secondLogColonIndex = nextIndex(payload, ":", 2);
-
     if (firstHeadIndex >= 0)
     {
         if (longQuery | isMode0x22Query)
             firstDatum = firstHeadIndex + 6;
         else
             firstDatum = firstHeadIndex + 4;
-
-        if (secondLogColonIndex >= 0)
-        {
-            if (debugMode)
-            {
-                Serial.print(F("Log response detected at index: "));
-                Serial.println(secondLogColonIndex);
-            }
-            
-            firstDatum = secondLogColonIndex + 1;
-        }
 
         // Some ELM327s (such as my own) respond with two
         // "responses" per query. "numPayChars" represents the
