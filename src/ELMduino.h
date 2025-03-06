@@ -313,7 +313,7 @@ public:
     byte responseByte_5;
     byte responseByte_6;
     byte responseByte_7;
-
+    
     struct dtcResponse {
         uint8_t codesFound = 0;
         char    codes[DTC_MAX_CODES][DTC_CODE_LEN];
@@ -331,13 +331,14 @@ public:
     int8_t get_response();
     bool timeout();
     double conditionResponse(const uint8_t& numExpectedBytes, const double& scaleFactor = 1, const float& bias = 0);
-    
+    double conditionResponse(double (*func)());
     float  batteryVoltage(void);
     int8_t get_vin_blocking(char vin[]);
     bool   resetDTC();
     void   currentDTCCodes(const bool& isBlocking = true);
     bool   isPidSupported(uint8_t pid);
-
+    void parseCANResponse();
+    
     uint32_t supportedPIDs_1_20();
 
     uint32_t monitorStatus();
@@ -439,7 +440,6 @@ private:
     void    formatQueryArray(const uint8_t&  service,
                              const uint16_t& pid, 
                              const uint8_t&  num_responses);
-    void parseCANResponse();
 
     uint8_t ctoi(uint8_t value);
     int8_t  nextIndex(char const *str,

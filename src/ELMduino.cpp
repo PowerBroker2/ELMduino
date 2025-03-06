@@ -532,6 +532,27 @@ double ELM327::conditionResponse(const uint8_t& numExpectedBytes,
 }
 
 /*
+ double ELM327::conditionResponse(double (*func)())
+
+ Description:
+ ------------
+  * Provides a means to pass in a user-defined function to process the response. Useful for 
+  * processing custom PIDs which are too numerous and varied to encode in the lib. 
+
+ Inputs:
+ -------
+  * (*func)()                  - pointer to function to do response conditioning
+  
+ Return:
+ -------
+  * double - Converted numerical value
+*/
+
+double ELM327::conditionResponse(double (*func)()) {
+    return func();
+}
+
+/*
  void ELM327::flushInputBuff()
 
  Description:
@@ -649,9 +670,9 @@ double ELM327::processPID(const uint8_t&  service,
         if (nb_rx_state == ELM_SUCCESS)
         {
             nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
-
+            if (NULL != strchr(payload, ':'))
+                parseCANResponse();
             findResponse(service, pid);
-
             return conditionResponse(numExpectedBytes, scaleFactor, bias);
         }
         else if (nb_rx_state != ELM_GETTING_MSG)
@@ -2395,12 +2416,11 @@ void ELM327::parseCANResponse() {
         end = strchr(start, '\n');
     }
 
-    // Replace payload with parsed canResponse, null-terminate after totalBytes * 2
+    // Replace payload with parsed canResponse, null-terminate after totalBytes
     int nullTermPos = (totalBytes < PAYLOAD_LEN - 1) ? totalBytes : PAYLOAD_LEN - 1;
     strncpy(payload, canResponse, nullTermPos);
     payload[nullTermPos] = '\0'; // Ensure null termination
 }
-
 
 
 /*
@@ -2422,11 +2442,6 @@ void ELM327::parseCANResponse() {
 uint64_t ELM327::findResponse(const uint8_t& service,
                               const uint8_t& pid)
 {
-    if (NULL != strchr(payload, ':'))
-    {
-        parseCANResponse();
-    } 
-
     uint8_t firstDatum = 0;
     char header[7] = {'\0'};
 
@@ -2504,7 +2519,6 @@ uint64_t ELM327::findResponse(const uint8_t& service,
                 Serial.print("\tProcessing hex nibble: ");
                 Serial.println(payload[payloadIndex]);
             }
-            
             response = response | ((uint64_t)ctoi(payload[payloadIndex]) << bitsOffset);
         }
 
@@ -2512,6 +2526,7 @@ uint64_t ELM327::findResponse(const uint8_t& service,
         // broken-out because some PID algorithms (standard
         // and custom) require special operations for each
         // byte returned
+
         responseByte_0 =  response        & 0xFF;
         responseByte_1 = (response >> 8)  & 0xFF;
         responseByte_2 = (response >> 16) & 0xFF;
