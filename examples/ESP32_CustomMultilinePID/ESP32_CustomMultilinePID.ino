@@ -68,8 +68,8 @@ void loop()
     
     if (myELM327.nb_rx_state == ELM_SUCCESS)    // Our response is fully received, let's get our data
     {          
-        double dpf = myELM327.conditionResponse(calcDPF); // Apply the formula for the fuel rail pressure                                             
-        Serial.println(dpf);       // Print the adjusted value
+        double dpf = myELM327.conditionResponse(calcDPF); // Apply the formula for dpf                                             
+        Serial.println(dpf);                    // Print the adjusted value
         nb_query_state = SEND_COMMAND;          // Reset the query state for the next command
         delay(5000);                            // Wait 5 seconds until we query again
     }

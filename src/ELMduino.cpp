@@ -670,8 +670,6 @@ double ELM327::processPID(const uint8_t&  service,
         if (nb_rx_state == ELM_SUCCESS)
         {
             nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
-            if (NULL != strchr(payload, ':'))
-                parseCANResponse();
             findResponse(service, pid);
             return conditionResponse(numExpectedBytes, scaleFactor, bias);
         }
@@ -2273,8 +2271,8 @@ int8_t ELM327::get_response(void)
 
             nb_rx_state = ELM_MSG_RXD;
         }
-        else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.'))
-            // discard all characters except for alphanumeric and decimal places.
+        else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.') && (recChar != '\r'))
+            // Keep only alphanumeric, decimal, colon, CR. These are needed for response parsing
             // decimal places needed to extract floating point numbers, e.g. battery voltage
             nb_rx_state = ELM_GETTING_MSG; // Discard this character
         else
@@ -2363,63 +2361,111 @@ int8_t ELM327::get_response(void)
     }
 
     nb_rx_state = ELM_SUCCESS;
+    if (NULL != strchr(payload, ':'))
+        parseMultiLineResponse();
+
     return nb_rx_state;
 }
 
-void ELM327::parseCANResponse() {
+/*
+ void ELM327::parseMultilineResponse()
+ 
+ Description:
+ ------------
+  * Parses a buffered multiline response into a single line with the specified data
+  * Modifies the value of payload for further processing and removes the '\r' chars
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * void
+*/
+void ELM327::parseMultiLineResponse() {
     uint8_t totalBytes = 0;
     uint8_t bytesReceived = 0;
-    bool dataSection = false;
-    char canResponse[PAYLOAD_LEN] = "";
-
+    bool headerFound = false;
+    char newResponse[PAYLOAD_LEN] = "";
+    char line[256] = "";
     char* start = payload;
-    char* end = strchr(start, '\n');
-
-    while (start && *start && bytesReceived < totalBytes) 
-    {
-        char line[256];
+    char* end = strchr(start, '\r');
+  
+   do 
+    {   //Step 1: Get a line from the response
+        memset(line, '\0', 256); 
         if (end != NULL) {
             strncpy(line, start, end - start);
             line[end - start] = '\0';
         } else {
             strncpy(line, start, strlen(start));
             line[strlen(start)] = '\0';
+    
+            // Exit when there's no more data
+            if (strlen(line) == 0) break;
         }
-
-        if (!dataSection) {
-            // First line: determine total bytes from the entire line
-            if (strlen(line) > 0) {
-                totalBytes = strtol(line, NULL, 16) * 2;
+    
+        if (debugMode) {
+            Serial.print("Found line in response: ");
+            Serial.println(line);
+        }
+        // Step 2: Check if this is the first line of the response
+        if (0 == totalBytes)
+        // Some devices return the response header in the first line instead of the data length, ignore this line
+        // Line containing totalBytes indicator is 3 hex chars only, longer first line will be a header.
+        { 
+            if (strlen(line) > 3) {
+                if (debugMode)
+                {
+                    Serial.print("Found header in response line: ");
+                    Serial.println(line); 
+                }
             }
-        } else {
-            // Parse data lines: look for "0:", "1:", etc.
+            else {
+                if (strlen(line) > 0) {
+                    totalBytes = strtol(line, NULL, 16) * 2;
+                    if (debugMode) {
+                        Serial.print("totalBytes = ");
+                        Serial.println(totalBytes);
+                    }
+                }
+            }
+        } 
+        // Step 3: Process data response lines 
+        else { 
             if (strchr(line, ':')) {
                 char* dataStart = strchr(line, ':') + 1;
                 uint8_t dataLength = strlen(dataStart);
-
-                // Only add data up to totalBytes
                 uint8_t bytesToCopy = (bytesReceived + dataLength > totalBytes) ? (totalBytes - bytesReceived) : dataLength;
-                strncat(canResponse, dataStart, bytesToCopy);
+                strncat(newResponse, dataStart, bytesToCopy);
                 bytesReceived += bytesToCopy;
+
+                if (debugMode) {
+                    Serial.print("Response data: ");
+                    Serial.println(dataStart);
+                }
             }
         }
-
-        if (strncmp(line, "0:", 2) == 0)
-        {
-            dataSection = true;
-        }
-        if (end == NULL) 
-        {
-            break;
-        }
+        // if (*(end + 1) == '\0') {  
+        //     start = NULL;  
+        // } else {
+        //     start = end + 1;
+        // }
         start = end + 1;
-        end = strchr(start, '\n');
-    }
+        end = (start != NULL) ? strchr(start, '\r') : NULL;
 
-    // Replace payload with parsed canResponse, null-terminate after totalBytes
+    } while ((bytesReceived < totalBytes || 0 == totalBytes) && start != NULL);
+
+    // Replace payload with parsed response, null-terminate after totalBytes
     int nullTermPos = (totalBytes < PAYLOAD_LEN - 1) ? totalBytes : PAYLOAD_LEN - 1;
-    strncpy(payload, canResponse, nullTermPos);
+    strncpy(payload, newResponse, nullTermPos);
     payload[nullTermPos] = '\0'; // Ensure null termination
+    if (debugMode) 
+    {
+        Serial.print("Parsed multiline response: ");
+        Serial.println(payload);
+    }
 }
 
 

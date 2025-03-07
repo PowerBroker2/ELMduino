@@ -319,7 +319,7 @@ public:
         char    codes[DTC_MAX_CODES][DTC_CODE_LEN];
     } DTC_Response;
     
-    bool begin(Stream& stream, const bool& debug = false, const uint16_t& timeout = 1000, const char& protocol = '0', const uint16_t& payloadLen = 40, const byte& dataTimeout = 0);
+    bool begin(Stream& stream, const bool& debug = false, const uint16_t& timeout = 1000, const char& protocol = '0', const uint16_t& payloadLen = 128, const byte& dataTimeout = 0);
     bool initializeELM(const char& protocol = '0', const byte& dataTimeout = 0);
     void flushInputBuff();
     uint64_t findResponse(const uint8_t &service, const uint8_t &pid);
@@ -337,7 +337,7 @@ public:
     bool   resetDTC();
     void   currentDTCCodes(const bool& isBlocking = true);
     bool   isPidSupported(uint8_t pid);
-    void parseCANResponse();
+    void parseMultiLineResponse();
     
     uint32_t supportedPIDs_1_20();
 
