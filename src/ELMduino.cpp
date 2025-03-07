@@ -439,6 +439,16 @@ int8_t ELM327::nextIndex(char const *str,
     return p - r;
 }
 
+void ELM327::removeChar(char *from, const char *remove)
+{
+    size_t i = 0, j = 0;
+    while (from[i]) {
+        if (!strchr(remove, from[i]))
+            from[j++] = from[i];
+        i++;
+    }
+    from[j] = '\0'; 
+}
 /*
  double ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 
@@ -529,6 +539,27 @@ double ELM327::conditionResponse(const uint8_t& numExpectedBytes,
         else
             return (response * scaleFactor) + bias;
     }
+}
+
+/*
+ double ELM327::conditionResponse(double (*func)())
+
+ Description:
+ ------------
+  * Provides a means to pass in a user-defined function to process the response. Useful for 
+  * processing custom PIDs which are too numerous and varied to encode in the lib. 
+
+ Inputs:
+ -------
+  * (*func)()                  - pointer to function to do response conditioning
+  
+ Return:
+ -------
+  * double - Converted numerical value
+*/
+
+double ELM327::conditionResponse(double (*func)()) {
+    return func();
 }
 
 /*
@@ -649,9 +680,7 @@ double ELM327::processPID(const uint8_t&  service,
         if (nb_rx_state == ELM_SUCCESS)
         {
             nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
-
             findResponse(service, pid);
-
             return conditionResponse(numExpectedBytes, scaleFactor, bias);
         }
         else if (nb_rx_state != ELM_GETTING_MSG)
@@ -2252,8 +2281,8 @@ int8_t ELM327::get_response(void)
 
             nb_rx_state = ELM_MSG_RXD;
         }
-        else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.'))
-            // discard all characters except for alphanumeric and decimal places.
+        else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.') && (recChar != '\r'))
+            // Keep only alphanumeric, decimal, colon, CR. These are needed for response parsing
             // decimal places needed to extract floating point numbers, e.g. battery voltage
             nb_rx_state = ELM_GETTING_MSG; // Discard this character
         else
@@ -2342,8 +2371,118 @@ int8_t ELM327::get_response(void)
     }
 
     nb_rx_state = ELM_SUCCESS;
+    // Need to process multiline repsonses, remove '\r' from non multiline resp
+    if (NULL != strchr(payload, ':')) {
+        parseMultiLineResponse();
+    } 
+    else {
+        removeChar(payload, " \r");
+    }
+    recBytes = strlen(payload); 
     return nb_rx_state;
 }
+
+/*
+ void ELM327::parseMultilineResponse()
+ 
+ Description:
+ ------------
+  * Parses a buffered multiline response into a single line with the specified data
+  * Modifies the value of payload for further processing and removes the '\r' chars
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * void
+*/
+void ELM327::parseMultiLineResponse() {
+    uint8_t totalBytes = 0;
+    uint8_t bytesReceived = 0;
+    bool headerFound = false;
+    char newResponse[PAYLOAD_LEN] = "";
+    char line[256] = "";
+    char* start = payload;
+    char* end = strchr(start, '\r');
+  
+   do 
+    {   //Step 1: Get a line from the response
+        memset(line, '\0', 256); 
+        if (end != NULL) {
+            strncpy(line, start, end - start);
+            line[end - start] = '\0';
+        } else {
+            strncpy(line, start, strlen(start));
+            line[strlen(start)] = '\0';
+    
+            // Exit when there's no more data
+            if (strlen(line) == 0) break;
+        }
+    
+        if (debugMode) {
+            Serial.print("Found line in response: ");
+            Serial.println(line);
+        }
+        // Step 2: Check if this is the first line of the response
+        if (0 == totalBytes)
+        // Some devices return the response header in the first line instead of the data length, ignore this line
+        // Line containing totalBytes indicator is 3 hex chars only, longer first line will be a header.
+        { 
+            if (strlen(line) > 3) {
+                if (debugMode)
+                {
+                    Serial.print("Found header in response line: ");
+                    Serial.println(line); 
+                }
+            }
+            else {
+                if (strlen(line) > 0) {
+                    totalBytes = strtol(line, NULL, 16) * 2;
+                    if (debugMode) {
+                        Serial.print("totalBytes = ");
+                        Serial.println(totalBytes);
+                    }
+                }
+            }
+        } 
+        // Step 3: Process data response lines 
+        else { 
+            if (strchr(line, ':')) {
+                char* dataStart = strchr(line, ':') + 1;
+                uint8_t dataLength = strlen(dataStart);
+                uint8_t bytesToCopy = (bytesReceived + dataLength > totalBytes) ? (totalBytes - bytesReceived) : dataLength;
+                strncat(newResponse, dataStart, bytesToCopy);
+                bytesReceived += bytesToCopy;
+
+                if (debugMode) {
+                    Serial.print("Response data: ");
+                    Serial.println(dataStart);
+                }
+            }
+        }
+        // if (*(end + 1) == '\0') {  
+        //     start = NULL;  
+        // } else {
+        //     start = end + 1;
+        // }
+        start = end + 1;
+        end = (start != NULL) ? strchr(start, '\r') : NULL;
+
+    } while ((bytesReceived < totalBytes || 0 == totalBytes) && start != NULL);
+
+    // Replace payload with parsed response, null-terminate after totalBytes
+    int nullTermPos = (totalBytes < PAYLOAD_LEN - 1) ? totalBytes : PAYLOAD_LEN - 1;
+    strncpy(payload, newResponse, nullTermPos);
+    payload[nullTermPos] = '\0'; // Ensure null termination
+    if (debugMode) 
+    {
+        Serial.print("Parsed multiline response: ");
+        Serial.println(payload);
+    }
+}
+
 
 /*
  uint64_t ELM327::findResponse(const uint8_t& service, const uint8_t& pid)
@@ -2359,7 +2498,7 @@ int8_t ELM327::get_response(void)
 
  Return:
  -------
-  * uint64_t - Query response value
+  * void
 */
 uint64_t ELM327::findResponse(const uint8_t& service,
                               const uint8_t& pid)
@@ -2404,26 +2543,12 @@ uint64_t ELM327::findResponse(const uint8_t& service,
     int8_t firstHeadIndex  = nextIndex(payload, header, 1);
     int8_t secondHeadIndex = nextIndex(payload, header, 2);
 
-    // int8_t firstLogColonIndex  = nextIndex(payload, ":", 1);
-    int8_t secondLogColonIndex = nextIndex(payload, ":", 2);
-
     if (firstHeadIndex >= 0)
     {
         if (longQuery | isMode0x22Query)
             firstDatum = firstHeadIndex + 6;
         else
             firstDatum = firstHeadIndex + 4;
-
-        if (secondLogColonIndex >= 0)
-        {
-            if (debugMode)
-            {
-                Serial.print(F("Log response detected at index: "));
-                Serial.println(secondLogColonIndex);
-            }
-            
-            firstDatum = secondLogColonIndex + 1;
-        }
 
         // Some ELM327s (such as my own) respond with two
         // "responses" per query. "numPayChars" represents the
@@ -2441,7 +2566,7 @@ uint64_t ELM327::findResponse(const uint8_t& service,
             if (debugMode)
                 Serial.println(F("Single response detected"));
 
-            numPayChars = recBytes - firstDatum;
+            numPayChars = strlen(payload) - firstDatum;
         }
 
         response = 0;
@@ -2455,7 +2580,6 @@ uint64_t ELM327::findResponse(const uint8_t& service,
                 Serial.print("\tProcessing hex nibble: ");
                 Serial.println(payload[payloadIndex]);
             }
-            
             response = response | ((uint64_t)ctoi(payload[payloadIndex]) << bitsOffset);
         }
 
@@ -2463,6 +2587,7 @@ uint64_t ELM327::findResponse(const uint8_t& service,
         // broken-out because some PID algorithms (standard
         // and custom) require special operations for each
         // byte returned
+
         responseByte_0 =  response        & 0xFF;
         responseByte_1 = (response >> 8)  & 0xFF;
         responseByte_2 = (response >> 16) & 0xFF;
