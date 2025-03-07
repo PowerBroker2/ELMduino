@@ -439,6 +439,16 @@ int8_t ELM327::nextIndex(char const *str,
     return p - r;
 }
 
+void ELM327::removeChar(char *from, const char *remove)
+{
+    size_t i = 0, j = 0;
+    while (from[i]) {
+        if (!strchr(remove, from[i]))
+            from[j++] = from[i];
+        i++;
+    }
+    from[j] = '\0'; 
+}
 /*
  double ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 
@@ -2361,9 +2371,14 @@ int8_t ELM327::get_response(void)
     }
 
     nb_rx_state = ELM_SUCCESS;
-    if (NULL != strchr(payload, ':'))
+    // Need to process multiline repsonses, remove '\r' from non multiline resp
+    if (NULL != strchr(payload, ':')) {
         parseMultiLineResponse();
-
+    } 
+    else {
+        removeChar(payload, " \r");
+    }
+    recBytes = strlen(payload); 
     return nb_rx_state;
 }
 
@@ -2551,7 +2566,7 @@ uint64_t ELM327::findResponse(const uint8_t& service,
             if (debugMode)
                 Serial.println(F("Single response detected"));
 
-            numPayChars = recBytes - firstDatum;
+            numPayChars = strlen(payload) - firstDatum;
         }
 
         response = 0;

@@ -445,4 +445,5 @@ private:
     int8_t  nextIndex(char const *str,
                       char const *target,
                       uint8_t     numOccur = 1);
+    void    removeChar(char *from, const char *remove);
 };
