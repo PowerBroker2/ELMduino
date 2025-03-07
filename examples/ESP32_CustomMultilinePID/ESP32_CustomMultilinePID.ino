@@ -26,10 +26,10 @@ int nb_query_state = SEND_COMMAND; // Set the inital query state ready to send a
 
 
 // Applies calculation formula for PID 0x22 (Fuel Rail Pressure)
-double calcFRP() {
-    uint8_t A = myELM327.payload[7];
-    uint8_t B = myELM327.payload[6];
-    return 0.079 * (double)((A * 256) + B);
+double calcDPF() {
+    double B = myELM327.payload[6];
+    double C = myELM327.payload[5];
+    return ((B * 256) + C) / 100;
 }
 
 void setup() 
@@ -58,7 +58,7 @@ void loop()
 {
     if (nb_query_state == SEND_COMMAND)         // We are ready to send a new command
     {
-        myELM327.sendCommand("0122");          // Send the PID commnad
+        myELM327.sendCommand("017A");          // Send the PID commnad
         nb_query_state = WAITING_RESP;          // Set the query state so we are waiting for response
     }
     else if (nb_query_state == WAITING_RESP)    // Our query has been sent, check for a response
@@ -67,11 +67,9 @@ void loop()
     }
     
     if (myELM327.nb_rx_state == ELM_SUCCESS)    // Our response is fully received, let's get our data
-    {   
-        if (NULL != strchr(myELM327.payload, ':'))
-            myELM327.parseCANResponse();        // Process a multiline response into a single uint64_t response       
-        double fuelRailPressure = myELM327.conditionResponse(calcFRP); // Apply the formula for the fuel rail pressure                                             
-        Serial.println(fuelRailPressure);       // Print the adjusted value
+    {          
+        double dpf = myELM327.conditionResponse(calcDPF); // Apply the formula for the fuel rail pressure                                             
+        Serial.println(dpf);       // Print the adjusted value
         nb_query_state = SEND_COMMAND;          // Reset the query state for the next command
         delay(5000);                            // Wait 5 seconds until we query again
     }
