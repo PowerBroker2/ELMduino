@@ -680,7 +680,7 @@ double ELM327::processPID(const uint8_t&  service,
         if (nb_rx_state == ELM_SUCCESS)
         {
             nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
-            findResponse(service, pid);
+            findResponse();
             return conditionResponse(numExpectedBytes, scaleFactor, bias);
         }
         else if (nb_rx_state != ELM_GETTING_MSG)
@@ -2422,7 +2422,7 @@ void ELM327::parseMultiLineResponse() {
         }
     
         if (debugMode) {
-            Serial.print("Found line in response: ");
+            Serial.print(F("Found line in response: "));
             Serial.println(line);
         }
         // Step 2: Check if this is the first line of the response
@@ -2433,7 +2433,7 @@ void ELM327::parseMultiLineResponse() {
             if (strlen(line) > 3) {
                 if (debugMode)
                 {
-                    Serial.print("Found header in response line: ");
+                    Serial.print(F("Found header in response line: "));
                     Serial.println(line); 
                 }
             }
@@ -2441,7 +2441,7 @@ void ELM327::parseMultiLineResponse() {
                 if (strlen(line) > 0) {
                     totalBytes = strtol(line, NULL, 16) * 2;
                     if (debugMode) {
-                        Serial.print("totalBytes = ");
+                        Serial.print(F("totalBytes = "));
                         Serial.println(totalBytes);
                     }
                 }
@@ -2457,7 +2457,7 @@ void ELM327::parseMultiLineResponse() {
                 bytesReceived += bytesToCopy;
 
                 if (debugMode) {
-                    Serial.print("Response data: ");
+                    Serial.print(F("Response data: "));
                     Serial.println(dataStart);
                 }
             }
@@ -2478,7 +2478,7 @@ void ELM327::parseMultiLineResponse() {
     payload[nullTermPos] = '\0'; // Ensure null termination
     if (debugMode) 
     {
-        Serial.print("Parsed multiline response: ");
+        Serial.print(F("Parsed multiline response: "));
         Serial.println(payload);
     }
 }
@@ -2500,8 +2500,7 @@ void ELM327::parseMultiLineResponse() {
  -------
   * void
 */
-uint64_t ELM327::findResponse(const uint8_t& service,
-                              const uint8_t& pid)
+uint64_t ELM327::findResponse()
 {
     uint8_t firstDatum = 0;
     char header[7] = {'\0'};
@@ -2577,7 +2576,7 @@ uint64_t ELM327::findResponse(const uint8_t& service,
 
             if (debugMode)
             {
-                Serial.print("\tProcessing hex nibble: ");
+                Serial.print(F("\tProcessing hex nibble: "));
                 Serial.println(payload[payloadIndex]);
             }
             response = response | ((uint64_t)ctoi(payload[payloadIndex]) << bitsOffset);
