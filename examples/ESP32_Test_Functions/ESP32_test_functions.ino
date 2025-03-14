@@ -10,8 +10,8 @@ uint8_t current_pid = 0;
 int nb_query_state = SEND_COMMAND; 
 
 // Define a list of PIDs to test
-const uint8_t pidsToTest[] = {
-  SUPPORTED_PIDS_1_20,                    // 0x00
+const uint16_t pidsToTest[] = {
+  SUPPORTED_PIDS_1_20,                    // 0x00   
   MONITOR_STATUS_SINCE_DTC_CLEARED,       // 0x01
   FREEZE_DTC,                             // 0x02
   FUEL_SYSTEM_STATUS,                     // 0x03
@@ -113,6 +113,14 @@ const uint8_t pidsToTest[] = {
   ENGINE_REFERENCE_TORQUE,                // 0x63
   ENGINE_PERCENT_TORQUE_DATA             // 0x64
 };
+const uint8_t responseBytes[0xA9] =
+{
+    4, 4, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2,
+    4, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 2,
+    4, 4, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 4, 4, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 1,
+    4, 1, 1, 2, 5, 2, 5, 3, 3, 7, 5, 5, 5, 11, 9, 3, 10, 6, 5, 5, 5, 7, 7, 5, 9, 9, 7, 7, 9, 1, 1, 13,  
+    4, 41, 41, 9, 1, 10, 5, 5, 13, 41, 41, 7, 17, 1, 1, 7, 3, 5, 2, 3, 12, 9, 9, 6, 4, 17, 4, 2, 9
+};
 
 void setup()
 {
@@ -140,22 +148,19 @@ void setup()
 
 
 void loop() {
-    uint8_t pid = pidsToTest[current_pid];
-    if (nb_query_state == SEND_COMMAND)         // We are ready to send a new command
+    if (current_pid > (sizeof(pidsToTest)/sizeof(uint16_t)) - 1)
     {
-      char query[5] = {0};
-      sprintf(query, "01%02X", pid);  
-      myELM327.sendCommand(query);              // Send the custom PID commnad
-      nb_query_state = WAITING_RESP;          // Set the query state so we are waiting for response
+        current_pid = 0;
     }
-    else if (nb_query_state == WAITING_RESP)    // Our query has been sent, check for a response
-    {
-        myELM327.get_response();                // Each time through the loop we will check again
-    }
+    uint16_t pid = pidsToTest[current_pid];
+    double result = myELM327.processPID(0x01, pid, 1, responseBytes[current_pid], 1, 0);
     
     if (myELM327.nb_rx_state == ELM_SUCCESS)    // Our response is fully received, let's get our data
     {      
-        nb_query_state = SEND_COMMAND;          // Reset the query state for the next command
+        nb_query_state = SEND_COMMAND;
+        DEBUG_PORT.print("Result: ");
+        DEBUG_PORT.println(result); 
+        current_pid++;                          // Reset the query state for the next command
         delay(500);                             // Wait 0.5 seconds until we query again
     }
     
