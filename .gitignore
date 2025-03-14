@@ -43,3 +43,4 @@ test/README
 .vscode/extensions.json
 platformio.ini
 .gitignore
+.vscode/settings.json

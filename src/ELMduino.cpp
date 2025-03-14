@@ -31,7 +31,6 @@ bool ELM327::begin(      Stream&   stream,
     PAYLOAD_LEN = payloadLen;
     debugMode   = debug;
     timeout_ms  = timeout;
-
     payload = (char *)malloc(PAYLOAD_LEN + 1); // allow for terminating '\0'
 
     // test if serial port is connected
@@ -43,6 +42,10 @@ bool ELM327::begin(      Stream&   stream,
         return false;
 
     return true;
+}
+
+ELM327::~ELM327() {
+    if (payload) free(payload);
 }
 
 /*
@@ -103,18 +106,18 @@ bool ELM327::initializeELM(const char& protocol,
     delay(100);
 
     // // Set data timeout
-    sprintf(command, SET_TIMEOUT_TO_H_X_4MS, dataTimeout / 4);
+    snprintf(command, sizeof(command), SET_TIMEOUT_TO_H_X_4MS, dataTimeout / 4);
     sendCommand_Blocking(command);
     delay(100);
 
     // Automatic searching for protocol requires setting the protocol to AUTO and then
     // sending an OBD command to initiate the protocol search. The OBD command "0100"
     // requests a list of supported PIDs 0x00 - 0x20 and is guaranteed to work
-    if ((String)protocol == "0")
+    if (protocol == '0')
     {
         // Tell the ELM327 to do an auto protocol search. If a valid protocol is found, it will be saved to memory.
         // Some ELM clones may not have memory enabled and thus will perform the search every time.
-        sprintf(command, SET_PROTOCOL_TO_AUTO_H_SAVE, protocol);
+        snprintf(command, sizeof(command), SET_PROTOCOL_TO_AUTO_H_SAVE, protocol);
         if (sendCommand_Blocking(command) == ELM_SUCCESS)
         {
             if (strstr(payload, RESPONSE_OK) != NULL)
@@ -145,7 +148,7 @@ bool ELM327::initializeELM(const char& protocol,
     else
     {
         // Set protocol
-        sprintf(command, TRY_PROT_H_AUTO_SEARCH, protocol);
+        snprintf(command, sizeof(command), TRY_PROT_H_AUTO_SEARCH, protocol);
 
         if (sendCommand_Blocking(command) == ELM_SUCCESS)
         {
@@ -166,7 +169,7 @@ bool ELM327::initializeELM(const char& protocol,
     }
 
     // Set protocol and save
-    sprintf(command, SET_PROTOCOL_TO_H_SAVE, protocol);
+    snprintf(command, sizeof(command), SET_PROTOCOL_TO_H_SAVE, protocol);
 
     if (sendCommand_Blocking(command) == ELM_SUCCESS)
     {
@@ -440,11 +443,38 @@ int8_t ELM327::nextIndex(char const *str,
 }
 
 /*
+ void ELM327::removeChar(char *from,
+                          char const *remove)
+
+ Description:
+ ------------
+  * Removes all instances of each char in string "remove" from the string "from"
+
+ Inputs:
+ -------
+  * char *from         - String to remove target(s) from
+  * char const *remove - Chars to find/remove 
+
+ Return:
+ -------
+  * void
+*/
+void ELM327::removeChar(char *from, const char *remove)
+{
+    size_t i = 0, j = 0;
+    while (from[i]) {
+        if (!strchr(remove, from[i]))
+            from[j++] = from[i];
+        i++;
+    }
+    from[j] = '\0'; 
+}
+/*
  double ELM327::conditionResponse(const uint8_t &numExpectedBytes, const float &scaleFactor, const float &bias)
 
  Description:
  ------------
-  * Converts the ELM327's response into it's correct, numerical value. Returns 0 if numExpectedBytes > numPayChars
+  * Converts the ELM327's response into its correct, numerical value. Returns 0 if numExpectedBytes > numPayChars
 
  Inputs:
  -------
@@ -459,7 +489,7 @@ int8_t ELM327::nextIndex(char const *str,
 */
 double ELM327::conditionResponse(const uint8_t& numExpectedBytes,
                                  const double&  scaleFactor,
-                                 const float&   bias)
+                                 const double&   bias)
 {
     uint8_t numExpectedPayChars = numExpectedBytes * 2;
     uint8_t payCharDiff         = numPayChars - numExpectedPayChars;
@@ -532,6 +562,28 @@ double ELM327::conditionResponse(const uint8_t& numExpectedBytes,
 }
 
 /*
+ double ELM327::conditionResponse(double (*func)())
+
+ Description:
+ ------------
+  * Provides a means to pass in a user-defined function to process the response. Used for PIDs that 
+    don't use the common scaleFactor + Bias formula to calculate the value from the response data. Also
+    useful for processing OEM custom PIDs which are too numerous and varied to encode in the lib. 
+
+ Inputs:
+ -------
+  * (*func)() - pointer to function to do calculate response value
+  
+ Return:
+ -------
+  * double - Converted numerical value
+*/
+
+double ELM327::conditionResponse(double (*func)()) {
+    return func();
+}
+
+/*
  void ELM327::flushInputBuff()
 
  Description:
@@ -560,7 +612,7 @@ void ELM327::flushInputBuff()
 
   Description:
   ------------
-  * create a PID query command string and send the command
+  * Create a PID query command string and send the command
 
   Inputs:
   -------
@@ -649,15 +701,198 @@ double ELM327::processPID(const uint8_t&  service,
         if (nb_rx_state == ELM_SUCCESS)
         {
             nb_query_state = SEND_COMMAND; // Reset the query state machine for next command
+            findResponse();
+            
+            /* This data manipulation seems duplicative of the responseByte_0, responseByte_1, etc vars and it is.
+               The duplcation is deliberate to provide a clear way for the calculator functions to access the relevant
+               data bytes from the response in the format they are commonly expressed in and without breaking backward
+               compatability with existing code that may be using the responseByte_n vars. 
+               
+               In addition, we need to place the response values into static vars that can be accessed by the (static) 
+               calculator functions. A future (breaking!) change could be made to eliminate this duplication. 
+            */
+            uint8_t responseBits = numExpectedBytes * 8;
+            uint8_t extractedBytes[8] = {0};  // Store extracted bytes
 
-            findResponse(service, pid);
+            // Extract bytes only if shift is non-negative
+            for (int i = 0; i < numExpectedBytes; i++)
+            {
+                int shiftAmount = responseBits - (8 * (i + 1));             // Compute shift amount
+                if (shiftAmount >= 0) {                                     //  Ensure valid shift
+                    extractedBytes[i] = (response >> shiftAmount) & 0xFF;   // Extract byte
+                }
+            }
 
-            return conditionResponse(numExpectedBytes, scaleFactor, bias);
+            // Assign extracted values to response_A, response_B, ..., response_H safely
+            response_A = extractedBytes[0];
+            response_B = extractedBytes[1];
+            response_C = extractedBytes[2];
+            response_D = extractedBytes[3];
+            response_E = extractedBytes[4];
+            response_F = extractedBytes[5];
+            response_G = extractedBytes[6];
+            response_H = extractedBytes[7];
+            
+            double (*calculator)() = selectCalculator(pid);
+
+            if (nullptr == calculator) {
+                //Use the default scaleFactor + Bias calculation
+                return conditionResponse(numExpectedBytes, scaleFactor, bias);
+            }
+            else {
+                return conditionResponse(calculator);
+            }
         }
         else if (nb_rx_state != ELM_GETTING_MSG)
             nb_query_state = SEND_COMMAND; // Error or timeout, so reset the query state machine for next command
     }
     return 0.0;
+}
+/*
+ double ELM327::selectCalculator(uint16_t pid))()
+
+ Description:
+ ------------
+  * Selects the appropriate calculation function for a given PID.
+
+ Inputs:
+ -------
+  * uint16_t pid             - The Parameter ID (PID) from the service
+  
+
+ Return:
+ -------
+  * double (*func()) - Pointer to a function to be used to calculate the value for this PID.
+    Returns nullptr if the PID is calculated using the default scaleFactor + Bias formula as
+    implemented in conditionResponse(). (Maintained for backward compatibility)
+*/
+double (*ELM327::selectCalculator(uint16_t pid))() 
+{       
+    switch (pid)
+    {
+        case ENGINE_LOAD:
+        case ENGINE_COOLANT_TEMP:
+        case SHORT_TERM_FUEL_TRIM_BANK_1:
+        case LONG_TERM_FUEL_TRIM_BANK_1:
+        case SHORT_TERM_FUEL_TRIM_BANK_2:
+        case LONG_TERM_FUEL_TRIM_BANK_2:
+        case FUEL_PRESSURE:
+        case INTAKE_MANIFOLD_ABS_PRESSURE:
+        case VEHICLE_SPEED:
+        case TIMING_ADVANCE:
+        case INTAKE_AIR_TEMP:
+        case THROTTLE_POSITION:
+        case COMMANDED_EGR:
+        case EGR_ERROR:
+        case COMMANDED_EVAPORATIVE_PURGE:
+        case FUEL_TANK_LEVEL_INPUT:
+        case WARM_UPS_SINCE_CODES_CLEARED:
+        case ABS_BAROMETRIC_PRESSURE:
+        case RELATIVE_THROTTLE_POSITION:
+        case AMBIENT_AIR_TEMP:
+        case ABS_THROTTLE_POSITION_B:
+        case ABS_THROTTLE_POSITION_C:
+        case ABS_THROTTLE_POSITION_D:
+        case ABS_THROTTLE_POSITION_E:
+        case ABS_THROTTLE_POSITION_F:
+        case COMMANDED_THROTTLE_ACTUATOR:
+        case ETHANOL_FUEL_PERCENT:
+        case RELATIVE_ACCELERATOR_PEDAL_POS:
+        case HYBRID_BATTERY_REMAINING_LIFE:
+        case ENGINE_OIL_TEMP:
+        case DEMANDED_ENGINE_PERCENT_TORQUE:
+        case ACTUAL_ENGINE_TORQUE:
+            return nullptr; 
+
+        case ENGINE_RPM:
+            return calculator_0C;
+
+        case MAF_FLOW_RATE:
+            return calculator_10;
+
+        case OXYGEN_SENSOR_1_A:
+        case OXYGEN_SENSOR_2_A:
+        case OXYGEN_SENSOR_3_A:
+        case OXYGEN_SENSOR_4_A:
+        case OXYGEN_SENSOR_5_A:
+        case OXYGEN_SENSOR_6_A:
+        case OXYGEN_SENSOR_7_A:
+        case OXYGEN_SENSOR_8_A:
+        case OXYGEN_SENSOR_1_B:
+        case OXYGEN_SENSOR_2_B:
+        case OXYGEN_SENSOR_3_B:
+        case OXYGEN_SENSOR_4_B:
+        case OXYGEN_SENSOR_6_B:
+        case OXYGEN_SENSOR_7_B:
+        case OXYGEN_SENSOR_8_B:
+        case OXYGEN_SENSOR_1_C:
+        case OXYGEN_SENSOR_2_C:
+        case OXYGEN_SENSOR_3_C:
+        case OXYGEN_SENSOR_4_C:
+        case OXYGEN_SENSOR_5_C:
+        case OXYGEN_SENSOR_6_C:
+        case OXYGEN_SENSOR_7_C:
+        case OXYGEN_SENSOR_8_C:
+            return calculator_14;
+
+        case RUN_TIME_SINCE_ENGINE_START:
+        case DISTANCE_TRAVELED_WITH_MIL_ON:
+        case DIST_TRAV_SINCE_CODES_CLEARED:
+        case TIME_RUN_WITH_MIL_ON:
+        case TIME_SINCE_CODES_CLEARED:
+        case ENGINE_REFERENCE_TORQUE:
+            return calculator_1F;
+
+        case FUEL_RAIL_PRESSURE:
+            return calculator_22;
+
+        case FUEL_RAIL_GUAGE_PRESSURE:
+        case FUEL_RAIL_ABS_PRESSURE:
+            return calculator_23;
+
+        case EVAP_SYSTEM_VAPOR_PRESSURE:
+            return calculator_32;
+     
+        case CATALYST_TEMP_BANK_1_SENSOR_1:
+        case CATALYST_TEMP_BANK_2_SENSOR_1:
+        case CATALYST_TEMP_BANK_1_SENSOR_2:
+        case CATALYST_TEMP_BANK_2_SENSOR_2:
+            return calculator_3C;
+
+        case CONTROL_MODULE_VOLTAGE:
+            return calculator_42;
+
+        case ABS_LOAD_VALUE:
+            return calculator_43;
+
+        case FUEL_AIR_COMMANDED_EQUIV_RATIO:
+            return calculator_44;
+
+        case MAX_VALUES_EQUIV_V_I_PRESSURE:
+            return calculator_4F;
+
+        case MAX_MAF_RATE:
+            return calculator_50;
+
+        case ABS_EVAP_SYS_VAPOR_PRESSURE:
+            return calculator_53;
+
+        case SHORT_TERM_SEC_OXY_SENS_TRIM_1_3:
+        case LONG_TERM_SEC_OXY_SENS_TRIM_1_3:
+        case SHORT_TERM_SEC_OXY_SENS_TRIM_2_4:
+        case LONG_TERM_SEC_OXY_SENS_TRIM_2_4:
+            return calculator_55;
+
+        case FUEL_INJECTION_TIMING:
+            return calculator_5D;
+
+        case ENGINE_FUEL_RATE:
+            return calculator_5E;
+
+        default:
+            return nullptr;    
+        
+    }
 }
 
 /*
@@ -2185,8 +2420,10 @@ void ELM327::sendCommand(const char *cmd)
 int8_t ELM327::sendCommand_Blocking(const char *cmd)
 {
     sendCommand(cmd);
-    while (get_response() == ELM_GETTING_MSG)
-        ;
+    uint32_t startTime = millis();
+    while (get_response() == ELM_GETTING_MSG) {
+        if (millis() - startTime > timeout_ms) break;
+    }
     return nb_rx_state;
 }
 
@@ -2252,8 +2489,8 @@ int8_t ELM327::get_response(void)
 
             nb_rx_state = ELM_MSG_RXD;
         }
-        else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.'))
-            // discard all characters except for alphanumeric and decimal places.
+        else if (!isalnum(recChar) && (recChar != ':') && (recChar != '.') && (recChar != '\r'))
+            // Keep only alphanumeric, decimal, colon, CR. These are needed for response parsing
             // decimal places needed to extract floating point numbers, e.g. battery voltage
             nb_rx_state = ELM_GETTING_MSG; // Discard this character
         else
@@ -2342,8 +2579,120 @@ int8_t ELM327::get_response(void)
     }
 
     nb_rx_state = ELM_SUCCESS;
+    // Need to process multiline repsonses, remove '\r' from non multiline resp
+    if (NULL != strchr(payload, ':')) {
+        parseMultiLineResponse();
+    } 
+    else {
+        removeChar(payload, " \r");
+    }
+    recBytes = strlen(payload); 
     return nb_rx_state;
 }
+
+/*
+ void ELM327::parseMultilineResponse()
+ 
+ Description:
+ ------------
+  * Parses a buffered multiline response into a single line with the specified data
+  * Modifies the value of payload for further processing and removes the '\r' chars
+
+ Inputs:
+ -------
+  * void
+
+ Return:
+ -------
+  * void
+*/
+void ELM327::parseMultiLineResponse() {
+    uint8_t totalBytes = 0;
+    uint8_t bytesReceived = 0;
+    bool headerFound = false;
+    char newResponse[PAYLOAD_LEN] = {0};
+    char line[256] = "";
+    char* start = payload;
+    char* end = strchr(start, '\r');
+  
+   do 
+    {   //Step 1: Get a line from the response
+        memset(line, '\0', 256); 
+        if (end != NULL) {
+            strncpy(line, start, end - start);
+            line[end - start] = '\0';
+        } else {
+            strncpy(line, start, strlen(start));
+            line[strlen(start)] = '\0';
+    
+            // Exit when there's no more data
+            if (strlen(line) == 0) break;
+        }
+    
+        if (debugMode) {
+            Serial.print(F("Found line in response: "));
+            Serial.println(line);
+        }
+        // Step 2: Check if this is the first line of the response
+        if (0 == totalBytes)
+        // Some devices return the response header in the first line instead of the data length, ignore this line
+        // Line containing totalBytes indicator is 3 hex chars only, longer first line will be a header.
+        { 
+            if (strlen(line) > 3) {
+                if (debugMode)
+                {
+                    Serial.print(F("Found header in response line: "));
+                    Serial.println(line); 
+                }
+            }
+            else {
+                if (strlen(line) > 0) {
+                    totalBytes = strtol(line, NULL, 16) * 2;
+                    if (debugMode) {
+                        Serial.print(F("totalBytes = "));
+                        Serial.println(totalBytes);
+                    }
+                }
+            }
+        } 
+        // Step 3: Process data response lines 
+        else { 
+            if (strchr(line, ':')) {
+                char* dataStart = strchr(line, ':') + 1;
+                uint8_t dataLength = strlen(dataStart);
+                uint8_t bytesToCopy = (bytesReceived + dataLength > totalBytes) ? (totalBytes - bytesReceived) : dataLength;
+                if (bytesReceived + bytesToCopy > PAYLOAD_LEN - 1) {
+                    bytesToCopy = (PAYLOAD_LEN - 1) - bytesReceived;
+                }
+                strncat(newResponse, dataStart, bytesToCopy);
+                bytesReceived += bytesToCopy;
+
+                if (debugMode) {
+                    Serial.print(F("Response data: "));
+                    Serial.println(dataStart);
+                }
+            }
+        }
+        if (*(end + 1) == '\0') {  
+            start = NULL;  
+        } else {
+            start = end + 1;
+        }
+        end = (start != NULL) ? strchr(start, '\r') : NULL;
+
+    } while ((bytesReceived < totalBytes || 0 == totalBytes) && start != NULL);
+
+    // Replace payload with parsed response, null-terminate after totalBytes
+    int nullTermPos = (totalBytes < PAYLOAD_LEN - 1) ? totalBytes : PAYLOAD_LEN - 1;
+    strncpy(payload, newResponse, nullTermPos);
+    payload[nullTermPos] = '\0'; // Ensure null termination
+    if (debugMode) 
+    {
+        Serial.print(F("Parsed multiline response: "));
+        Serial.println(payload);
+    }
+}
+
 
 /*
  uint64_t ELM327::findResponse(const uint8_t& service, const uint8_t& pid)
@@ -2359,10 +2708,9 @@ int8_t ELM327::get_response(void)
 
  Return:
  -------
-  * uint64_t - Query response value
+  * void
 */
-uint64_t ELM327::findResponse(const uint8_t& service,
-                              const uint8_t& pid)
+uint64_t ELM327::findResponse()
 {
     uint8_t firstDatum = 0;
     char header[7] = {'\0'};
@@ -2404,26 +2752,12 @@ uint64_t ELM327::findResponse(const uint8_t& service,
     int8_t firstHeadIndex  = nextIndex(payload, header, 1);
     int8_t secondHeadIndex = nextIndex(payload, header, 2);
 
-    // int8_t firstLogColonIndex  = nextIndex(payload, ":", 1);
-    int8_t secondLogColonIndex = nextIndex(payload, ":", 2);
-
     if (firstHeadIndex >= 0)
     {
         if (longQuery | isMode0x22Query)
             firstDatum = firstHeadIndex + 6;
         else
             firstDatum = firstHeadIndex + 4;
-
-        if (secondLogColonIndex >= 0)
-        {
-            if (debugMode)
-            {
-                Serial.print(F("Log response detected at index: "));
-                Serial.println(secondLogColonIndex);
-            }
-            
-            firstDatum = secondLogColonIndex + 1;
-        }
 
         // Some ELM327s (such as my own) respond with two
         // "responses" per query. "numPayChars" represents the
@@ -2441,7 +2775,7 @@ uint64_t ELM327::findResponse(const uint8_t& service,
             if (debugMode)
                 Serial.println(F("Single response detected"));
 
-            numPayChars = recBytes - firstDatum;
+            numPayChars = strlen(payload) - firstDatum;
         }
 
         response = 0;
@@ -2452,10 +2786,9 @@ uint64_t ELM327::findResponse(const uint8_t& service,
 
             if (debugMode)
             {
-                Serial.print("\tProcessing hex nibble: ");
+                Serial.print(F("\tProcessing hex nibble: "));
                 Serial.println(payload[payloadIndex]);
             }
-            
             response = response | ((uint64_t)ctoi(payload[payloadIndex]) << bitsOffset);
         }
 
@@ -2463,7 +2796,8 @@ uint64_t ELM327::findResponse(const uint8_t& service,
         // broken-out because some PID algorithms (standard
         // and custom) require special operations for each
         // byte returned
-        responseByte_0 =  response        & 0xFF;
+
+        responseByte_0 =  response        & 0xFF; 
         responseByte_1 = (response >> 8)  & 0xFF;
         responseByte_2 = (response >> 16) & 0xFF;
         responseByte_3 = (response >> 24) & 0xFF;
@@ -2644,7 +2978,7 @@ int8_t ELM327::get_vin_blocking(char vin[])
                     continue;                                  // Skip the second "1:" and third "2:" line numbers
                 
                 ascii_val = strtol(temp, 0, 16);               // Convert ASCII code to integer
-                sprintf(vin + vin_counter++, "%c", ascii_val); // Convert ASCII code integer back to character
+                snprintf(vin + vin_counter++, sizeof(uint8_t), "%c", ascii_val); // Convert ASCII code integer back to character
                                                                // Serial.printf("Chars %s, ascii_val=%d[dec] 0x%02hhx[hex] ==> VIN=%s\n", temp, ascii_val, ascii_val, vin);
             }
         }
@@ -2939,4 +3273,86 @@ bool ELM327::isPidSupported(uint8_t pid)
         return ((response >> (32 - pid)) & 0x1);
     }
     return false;
+}
+
+double ELM327::calculator_0C() {
+    return (double)((response_A << 8) | response_B)/4;
+}
+
+double ELM327::calculator_10() {
+    return (double)((response_A << 8) | response_B)/100;
+}
+
+double ELM327::calculator_14(){
+    return (double)(response_A/200) ;
+}
+
+double ELM327::calculator_1F() {
+    return (double)((response_A << 8) | response_B);
+}
+
+double ELM327::calculator_22() {
+    return (double) ((response_A << 8) | response_B) * 0.079;
+}
+
+double ELM327::calculator_23() {
+    return (double) ((response_A << 8) | response_B) * 10;
+}
+
+double ELM327::calculator_32()
+{
+    return (double) ((int16_t)((response_A << 8) | response_B)) / 4.0;
+}
+
+double ELM327::calculator_3C() {
+    return (double) (((response_A << 8) | response_B) / 10) - 40;
+}
+
+double ELM327::calculator_42() {
+    return (double) ((response_A << 8) | response_B) / 1000;
+}
+
+double ELM327::calculator_43() {
+    return (double) ((response_A << 8) | response_B) * (100.0 / 255.0);
+}
+
+double ELM327::calculator_44() {
+    return ((double) ((response_A << 8) | response_B) * 2.0) / 65536.0;
+}
+
+double ELM327::calculator_4F() {
+    return (double) (response_A);
+}
+
+double ELM327::calculator_50() {
+    return (double) (response_A * 10.0);
+}
+
+double ELM327::calculator_53() {
+    return (double) ((response_A << 8) | response_B) / 200;
+}
+
+double ELM327::calculator_54() {
+    return (double) ((int16_t)((response_A << 8) | response_B));
+}
+
+double ELM327::calculator_55() {
+    return ((double) response_A * (100.0 / 128.0)) - 100.0;
+}
+
+//calc 23
+double ELM327::calculator_59() {
+    return (double) ((response_A << 8) | response_B) * 10;
+}
+
+double ELM327::calculator_5D() {
+    return (double) (((response_A << 8) | response_B) / 128) - 210;
+} 
+
+double ELM327::calculator_5E() {
+    return (double) ((response_A << 8) | response_B) / 20;
+}
+
+double ELM327::calculator_61() {
+    return (double) response_A  - 125;
 }
