@@ -2609,10 +2609,8 @@ int8_t ELM327::get_response(void)
 void ELM327::parseMultiLineResponse() {
     uint8_t totalBytes = 0;
     uint8_t bytesReceived = 0;
-    bool headerFound = false;
     char newResponse[PAYLOAD_LEN];
     memset(newResponse, 0, PAYLOAD_LEN * sizeof(char)); // Initialize newResponse to empty string
-    
     char line[256] = "";
     char* start = payload;
     char* end = strchr(start, '\r');
