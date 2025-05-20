@@ -15,7 +15,7 @@
   * char protocol       - Protocol ID to specify the ELM327 to communicate with the ECU over
   * uint16_t payloadLen - Maximum number of bytes expected to be returned by the ELM327 after a query
   * byte dataTimeout    - Number of ms to wait after receiving data before the ELM327 will
-                          return the data - see https://www.elmelectronics.com/help/obd/tips/#UnderstandingOBD
+                          return the data - see https://web.archive.org/web/20230729213500/https://www.elmelectronics.com/help/obd/tips/#UnderstandingOBD
  Return:
  -------
   * bool - Whether or not the ELM327 was properly initialized
